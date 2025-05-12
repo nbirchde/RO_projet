@@ -665,7 +665,7 @@ def tabu_search_solver(n_players, initial_schedule_list, iterations=5000, tenure
 
 def main():
     n_arg = int(sys.argv[1]) if len(sys.argv) > 1 else 6
-    iters_arg = int(sys.argv[2]) if len(sys.argv) > 2 else 10000
+    iters_arg = int(sys.argv[2]) if len(sys.argv) > 2 else 100000
     alpha_pen_seq_arg = float(sys.argv[3]) if len(sys.argv) > 3 else config.ALPHA
     beta_arg = float(sys.argv[4]) if len(sys.argv) > 4 else config.BETA
     runs_arg = int(sys.argv[5]) if len(sys.argv) > 5 else 1
