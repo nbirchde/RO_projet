@@ -1,0 +1,372 @@
+\documentclass[11pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{listings} % For code listings
+\usepackage{pgfplots} % For heatmaps and advanced plots
+\usepackage{tikz}     % For drawing with pgfplots
+\pgfplotsset{compat=1.18} % Recommended for pgfplots
+\usepackage{booktabs} % For professional quality tables
+\usepackage{siunitx} % For typesetting numbers with units and aligning numbers in tables
+\usepackage{csvsimple} % For including CSV files as tables
+\usepackage{appendix} % For appendix
+
+\geometry{a4paper, margin=2.5cm}
+
+% Basic Python syntax highlighting
+\lstdefinestyle{python}{
+    language=Python,
+    basicstyle=\ttfamily\small,
+    literate={é}{{\'e}}1, % Handle é in listings
+    keywordstyle=\color{blue},
+    commentstyle=\color{green!40!black},
+    stringstyle=\color{red},
+    showstringspaces=false,
+    breaklines=true,
+    frame=single,
+    numbers=left,
+    numberstyle=\tiny\color{gray}
+}
+
+\title{Projet INFO-H-3000 : Planification Équitable des Tournois Round Robin avec Méta-heuristiques}
+\author{Nicholas Birch de la Calle \\ Gabriel Badan \\ Milena Paques \\[1em] Enseignant : Yves De Smet \\ Assistant : Jean Rosenfeld}
+\date{Mai 2025} % Updated date
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+\section{Introduction}
+\subsection{Contexte}
+La planification de tournois où chaque participant rencontre tous les autres une seule fois (tournoi "Round Robin" simple, ou SRR) est un problème classique en recherche opérationnelle et en gestion sportive. L'objectif de base est de s'assurer que toutes les rencontres requises aient lieu. Cependant, dans de nombreux contextes, l'équité du calendrier devient un enjeu majeur. Des avantages positionnels, comme jouer à domicile dans les sports d'équipe (football, basketball) ou jouer avec les pièces blanches aux échecs, peuvent influencer significativement l'issue des matchs et, par conséquent, le classement final du tournoi. Un calendrier qui attribue systématiquement les matchs à domicile contre les adversaires les plus faibles à une équipe, ou qui impose de longues séries de matchs à l'extérieur à une autre, peut être considéré comme injuste. Ce projet s'attaque au défi de construire des calendriers SRR qui non seulement respectent les contraintes de base, mais optimisent également l'équité selon plusieurs dimensions.
+
+\subsection{Objectifs du Projet}
+L'objectif principal de ce projet est de développer et d'évaluer des méthodes pour générer des calendriers de tournois SRR équitables pour un nombre $n$ de joueurs (supposé pair). L'équité est définie à travers un ensemble de critères quantifiables :
+\begin{itemize}
+    \item Équilibrage de l'avantage domicile/extérieur en fonction de la différence de force entre les adversaires (HomeStrength). Cette métrique évalue si les équipes les plus fortes ont tendance à recevoir les plus faibles, ou vice-versa.
+    \item Minimisation des séries de matchs consécutifs joués à domicile ou à l'extérieur ("Pénalité de séquence").
+    \item Homogénéité de la répartition des matchs domicile/extérieur entre tous les joueurs (Proxy : Max Deviation).
+\end{itemize}
+Pour atteindre cet objectif, nous avons exploré trois approches complémentaires :
+\begin{enumerate}
+    \item Une méthode exacte basée sur la Programmation Linéaire en Nombres Entiers Mixtes (MILP) pour obtenir des solutions optimales sur de petites instances.
+    \item Une méta-heuristique (Recuit Simulé, SA) optimisée pour trouver des solutions de bonne qualité pour des instances de taille moyenne et grande dans un temps raisonnable.
+    \item Une seconde méta-heuristique (Recherche Tabou "légère", TS) pour comparer les approches heuristiques et explorer différentes stratégies de recherche.
+\end{enumerate}
+
+\subsection{Structure du Rapport}
+Ce rapport détaille d'abord la modélisation mathématique du problème (Section~\ref{sec:modelisation}), incluant les variables, contraintes, et métriques d'équité. Ensuite, nous présentons l'approche exacte (Section~\ref{sec:exacte}) et ses résultats. Les approches par méta-heuristiques, Recuit Simulé (Section~\ref{sec:sa}) et Recherche Tabou (Section~\ref{sec:ts}), sont décrites ensuite, avec leurs implémentations, optimisations, et résultats de benchmarks, incluant le réglage des hyperparamètres. Une analyse comparative des trois approches et une discussion des résultats sont fournies (Section~\ref{sec:analyse}), suivies d'une analyse de complexité (Section~\ref{sec:complexite}) et d'une conclusion (Section~\ref{sec:conclusion}).
+
+\section{Modélisation Mathématique}
+\label{sec:modelisation}
+\subsection{Définition du Problème}
+Le problème consiste à générer un calendrier pour un tournoi Round Robin simple (SRR) impliquant $n$ joueurs, où $n$ est pair. Les joueurs sont numérotés de $1$ à $n$, et cet indice représente également leur classement de force (1 étant le plus fort, $n$ le plus faible). Le tournoi se déroule sur $n-1$ rondes (numérotées de $0$ à $n-2$). Dans chaque ronde, $n/2$ matchs sont joués simultanément. Chaque paire de joueurs $\{i, j\}$ doit s'affronter exactement une fois au cours du tournoi. Pour chaque match, l'un des joueurs est désigné comme jouant "à domicile" (H) et l'autre "à l'extérieur" (A). L'objectif est de produire un calendrier complet qui minimise une fonction d'équité combinant plusieurs critères.
+
+\textbf{Entrées :}
+\begin{itemize}
+    \item $n$ : Le nombre de joueurs (pair).
+\end{itemize}
+\textbf{Sortie :}
+\begin{itemize}
+    \item Un calendrier complet spécifiant pour chaque ronde $r \in \{0, \dots, n-2\}$ et chaque match $(i, j)$ qui joue à domicile (avec $i, j \in \{1, \dots, n\}$).
+\end{itemize}
+
+\subsection{Variables de Décision}
+\subsubsection{Variable Principale}
+La décision fondamentale pour chaque match potentiel est de savoir qui joue à domicile. Nous utilisons une variable binaire principale pour cela :
+\begin{equation}
+    x_{i,j,r} = 
+    \begin{cases} 
+        1 & \text{si le joueur } i \text{ joue à domicile contre le joueur } j \text{ lors de la ronde } r \\
+        0 & \text{sinon}
+    \end{cases}
+\end{equation}
+où $P = \{1, \dots, n\}$ est l'ensemble des joueurs (avec $i \neq j$) et $R = \{0, \dots, n-2\}$ représente l'ensemble des rondes. L'indice du joueur correspond à son classement (1 étant le plus fort).
+
+\subsubsection{Variables Auxiliaires pour l'Équité}
+Pour modéliser les métriques d'équité, nous introduisons les variables auxiliaires suivantes :
+\begin{itemize}
+    \item $is\_home_{i,r}$: Variable binaire valant 1 si le joueur $i \in P$ joue à domicile lors de la ronde $r \in R$.
+    \item $pen\_seq_{i,r}$: Variable binaire valant 1 si le joueur $i \in P$ subit une "pénalité de séquence" (deux matchs consécutifs à domicile ou à l'extérieur) entre les rondes $r$ et $r+1$. Définie pour $r \in R' = \{0, \dots, n-3\}$.
+    \item $H_i$: Variable entière représentant le nombre total de matchs joués à domicile par le joueur $i \in P$.
+    \item $MaxDev$: Variable continue représentant l'écart absolu maximal entre le nombre de matchs à domicile d'un joueur ($H_i$) et la moyenne idéale $\bar{H} = \frac{n-1}{2}$.
+\end{itemize}
+
+\subsection{Contraintes}
+\subsubsection{Contraintes Fondamentales du Round Robin}
+\begin{itemize}
+    \item \textbf{Un match par joueur par ronde :} Chaque joueur doit jouer exactement un match lors de chaque ronde.
+    \begin{equation}
+        \sum_{j \in P, j \neq i} x_{i,j,r} + \sum_{j \in P, j \neq i} x_{j,i,r} = 1 \quad \forall i \in P, \forall r \in R
+    \end{equation}
+    \item \textbf{Chaque paire se rencontre une fois :} Chaque paire de joueurs $\{i, j\}$ doit s'affronter exactement une fois au cours du tournoi.
+    \begin{equation}
+        \sum_{r \in R} (x_{i,j,r} + x_{j,i,r}) = 1 \quad \forall i, j \in P, i < j
+    \end{equation}
+\end{itemize}
+
+\subsubsection{Contraintes d'Équité}
+Ces contraintes lient les variables auxiliaires aux variables de décision $x_{i,j,r}$.
+\begin{itemize}
+    \item \textbf{Lien $is\_home_{i,r}$ :} Détermine si un joueur est à domicile.
+    \begin{equation}
+        is\_home_{i,r} = \sum_{j \in P, j \neq i} x_{i,j,r} \quad \forall i \in P, \forall r \in R
+    \end{equation}
+    \item \textbf{Lien $pen\_seq_{i,r}$ (Pénalités Séquence) :} Une pénalité se produit si $is\_home_{i,r} = is\_home_{i,r+1}$. Ceci est linéarisé comme suit :
+    \begin{align}
+        pen\_seq_{i,r} &\ge is\_home_{i,r} + is\_home_{i,r+1} - 1 \quad &\forall i \in P, \forall r \in R' \\
+        pen\_seq_{i,r} &\ge (1 - is\_home_{i,r}) + (1 - is\_home_{i,r+1}) - 1 \quad &\forall i \in P, \forall r \in R' 
+    \end{align}
+    où $R' = \{0, \dots, n-3\}$.
+    \item \textbf{Lien $H_i$ (Total Domicile) :} Calcule le nombre total de matchs à domicile.
+    \begin{equation}
+        H_i = \sum_{r \in R} is\_home_{i,r} \quad \forall i \in P
+    \end{equation}
+    \item \textbf{Lien $MaxDev$ (Écart Max Domicile) :} Calcule l'écart maximal par rapport à la moyenne $\bar{H} = \frac{n-1}{2}$.
+    \begin{align}
+        MaxDev &\ge H_i - \bar{H} \quad &\forall i \in P \\
+        MaxDev &\ge \bar{H} - H_i \quad &\forall i \in P
+    \end{align}
+\end{itemize}
+
+\subsection{Métriques d'Équité}
+Les objectifs d'équité sont quantifiés par les métriques suivantes, que nous cherchons à minimiser (ou, dans le cas de HomeStrength, à amener proche de zéro).
+
+\subsubsection{HomeStrength}
+Cette métrique évalue l'équilibre de la force des adversaires rencontrés par rapport au lieu du match (domicile/extérieur). Elle est définie comme la somme, sur tous les matchs, de la différence de rang entre l'adversaire et le joueur à domicile. En supposant que l'indice du joueur $k$ (de $1$ à $n$) représente son classement (1 étant le plus fort), la métrique est :
+\begin{equation}
+    \text{HomeStrength} = \sum_{i \in P} \sum_{j \in P, j \neq i} \sum_{r \in R} (j - i) \cdot x_{i,j,r}
+    \label{eq:homestrength}
+\end{equation}
+où $x_{i,j,r}=1$ si le joueur $i$ (domicile) joue contre le joueur $j$ (extérieur) en ronde $r$.
+Une valeur positive indique une tendance pour les joueurs mieux classés (petit indice $i$) à recevoir des joueurs moins bien classés (grand indice $j$), ou pour les joueurs moins bien classés (grand $i$) à recevoir des joueurs encore moins bien classés (très grand $j$). Inversement, une valeur négative indique que les joueurs moins bien classés tendent à recevoir les mieux classés. L'objectif est d'avoir une valeur proche de zéro, indiquant un équilibre global. La normalisation de cette métrique (voir Section~\ref{subsec:normalisation_calibration}) la ramène à un intervalle $[-1, 1]$.
+
+\subsubsection{Pénalité de Séquence}
+Une "pénalité de séquence" est définie comme deux matchs consécutifs joués soit à domicile (H-H), soit à l'extérieur (A-A). Le nombre total de pénalités est la somme des variables auxiliaires $pen\_seq_{i,r}$ :
+\begin{equation}
+    \text{TotalPenalitesSequence} = \sum_{i \in P} \sum_{r \in R'} pen\_seq_{i,r}
+\end{equation}
+où $R' = \{0, \dots, n-3\}$. Minimiser cette somme favorise une alternance H/A plus régulière.
+
+\subsubsection{StdDevAdvantage (Proxy : MaxDev)}
+Pour assurer une répartition homogène du nombre de matchs joués à domicile entre les joueurs, nous cherchons à minimiser la variance de $H_i$. La variance étant une fonction quadratique ($\sum (H_i - \bar{H})^2 / n$), elle ne peut être directement utilisée dans un objectif linéaire. Nous utilisons donc une approximation linéaire courante : minimiser l'écart absolu maximal par rapport à la moyenne $\bar{H} = \frac{n-1}{2}$. Cette valeur, capturée par la variable $MaxDev$, sert de proxy pour l'homogénéité de la répartition des matchs à domicile.
+\begin{equation}
+    \text{MaxDeviation} = MaxDev
+\end{equation}
+
+\subsection{Fonction Objectif}
+\label{subsec:fonction_objectif_initiale}
+Initialement, nous combinons les trois métriques d'équité principales en une fonction objectif pondérée unique. Pour HomeStrength, l'objectif est d'avoir une valeur proche de zéro. Pour les autres, c'est la minimisation.
+\begin{equation}
+    \text{Objectif} = f(\text{HomeStrength}, \text{TotalPenalitesSequence}, \text{MaxDeviation})
+\end{equation}
+La fonction exacte, incluant la pondération et la normalisation, est détaillée ci-dessous.
+
+\subsection{Fonction Objectif Normalisée et Calibration des Poids ($\alpha, \beta$)}
+\label{subsec:normalisation_calibration}
+Pour comparer et pondérer équitablement les différentes métriques, nous utilisons des fonctions de normalisation définies dans \texttt{src/metrics.py}.
+La métrique HomeStrength (Eq.~\ref{eq:homestrength}) est normalisée pour viser un intervalle de $[-1, 1]$. Les autres métriques sont normalisées pour viser $[0, 1]$.
+Les dénominateurs utilisés pour la normalisation pour un nombre $n$ de joueurs sont :
+\begin{itemize}
+    \item Pour HomeStrength: $S_{max} = \frac{n(n-1)(n+1)}{6}$. C'est la valeur absolue maximale théorique de HomeStrength.
+    \item Pour TotalPenalitesSequence: $D_{PS} = n(n-2)$.
+    \item Pour MaxDeviation: $D_{MD} = \frac{n-1}{2}$.
+\end{itemize}
+La fonction objectif normalisée que nous cherchons à minimiser est :
+\begin{equation}
+    \min \quad Z_{norm} = \frac{|\text{HomeStrength}|}{S_{max}} + \alpha \cdot \frac{\text{TotalPenalitesSequence}}{D_{PS}} + \beta \cdot \frac{\text{MaxDeviation}}{D_{MD}}
+    \label{eq:znorm}
+\end{equation}
+Soit $Z_{norm} = |\text{HS}_{norm}| + \alpha \cdot PS_{norm} + \beta \cdot MD_{norm}$. L'utilisation de la valeur absolue pour $\text{HS}_{norm}$ assure que nous minimisons l'amplitude de tout déséquilibre de force, qu'il favorise les forts ou les faibles. Dans le code MILP, cela est géré en minimisant $\text{HS}_{norm}$ directement, car le solveur tendra vers zéro pour un terme non-carré dans une minimisation. Pour le SA, la valeur absolue est conceptuellement ce que nous visons, bien que le score puisse être calculé avec $\text{HS}_{norm}$ signé si l'objectif est de le pousser vers zéro. \textbf{Note importante :} La discussion sur la calibration des poids $\alpha$ et $\beta$ ci-dessous, ainsi que les valeurs numériques spécifiques de $HS_{norm}$ mentionnées, sont basées sur une \textit{ancienne définition} de HomeStrength et sa normalisation. Une nouvelle calibration serait nécessaire avec la métrique HomeStrength actuelle (Eq.~\ref{eq:homestrength}) et la normalisation par $S_{max}$.
+
+Le choix des poids $\alpha$ et $\beta$ est crucial. Pour les fixer (avec l'ancienne métrique), nous avons effectué une calibration sur $n=6$.
+Nous avons exécuté le script \texttt{src/exact\_model.py} avec une grille de valeurs pour $\alpha$ et $\beta$ allant de 0.0 à 6.0, par pas de 0.2, pour $n=6$. Les résultats ont été sauvegardés dans \texttt{reports/alpha\_beta\_calibration\_n6\_extended\_range.csv}.
+
+Après filtrage pour ne conserver que les solutions non-dominées (basées sur l'ancienne $HS_{norm}$), la frontière de Pareto pour $n=6$ (Figure~\ref{fig:pareto_n6_calibration_final}) a guidé notre choix.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{../reports/pareto_n6_final.png} % Corrected image path
+    \caption{Frontière de Pareto pour $n=6$ issue de la calibration étendue (données de \texttt{alpha\_beta\_calibration\_n6\_extended\_range.csv}). Les graphes montrent les projections 2D des 5 uniques solutions non-dominées trouvées. Le point rouge étoilé correspond aux métriques obtenues avec $\alpha=0.4, \beta=1.2$, qui sont les plus proches de notre cible de configuration. Les valeurs plus faibles sont meilleures pour tous les axes.}
+    \label{fig:pareto_n6_calibration_final}
+\end{figure}
+
+L'analyse de cette frontière de Pareto (Figure~\ref{fig:pareto_n6_calibration_final}, basée sur l'ancienne métrique $HS_{norm}$) et des données du fichier CSV \texttt{alpha\_beta\_calibration\_n6\_extended\_range.csv} a guidé notre choix initial pour $\alpha$ et $\beta$.
+L'objectif était de minimiser fortement $PS_{norm}$ et $MD_{norm}$.
+
+Avec l'ancienne métrique, les valeurs cibles étaient $PS_{norm} \approx 0.167$ et $MD_{norm} \approx 0.20$.
+La combinaison $(\alpha=0.4, \beta=1.2)$ atteignait ces valeurs, avec l'ancienne $HS_{norm} \approx 1.76$.
+
+Les valeurs $\alpha = 0.5$ et $\beta = 1.0$ ont été retenues pour \texttt{src/config.py}. Ces valeurs sont basées sur l'ancienne définition de HomeStrength et sa normalisation. \textbf{Une nouvelle calibration est nécessaire pour déterminer les poids optimaux avec la métrique HomeStrength actuelle (Eq.~\ref{eq:homestrength}) et la fonction objectif (Eq.~\ref{eq:znorm}) qui utilise $|\text{HS}_{norm}|$.}
+
+\section{Approche par Méthode Exacte}
+\label{sec:exacte}
+\subsection{Formulation en Programmation Linéaire en Nombres Entiers (MILP)}
+Le modèle décrit ci-dessus correspond à un Programme Linéaire en Nombres Entiers Mixtes (MILP). Nous avons implémenté ce modèle en utilisant la librairie Python \texttt{PuLP}, qui permet de décrire le problème de manière symbolique et d'appeler un solveur externe comme \texttt{CBC}. L'implémentation se trouve dans \texttt{src/exact\_model.py}. Le script a été modifié pour accepter une limite de temps via la ligne de commande.
+
+\subsection{Résultats pour Petites Instances}
+Nous avons exécuté le modèle exact pour $n=4, 6,$ et $8$ joueurs. %Les résultats sont résumés dans le Tableau~\ref{tab:exact_results}.
+% \begin{table}[h!]
+%     \centering
+%     \caption{Résultats du Solveur Exact (MILP) pour Petites Instances ($\alpha=1, \beta=1$). Note : Les valeurs de HomeStrength et de l'Objectif sont basées sur l'ancienne définition.}
+%     \label{tab:exact_results}
+%     \begin{tabular}{ccS[table-format=2.2]S[table-format=2.2]S[table-format=2.0]S[table-format=1.2]c}
+%         \toprule
+%         n & Statut & {Objectif} & {HomeStrength (anc. déf.)} & {Pén. Séc.} & {Max Dev} & {Temps (s)} \\
+%         \midrule
+%         4 & Optimal & 9.50 & 7.00 & 2 & 0.50 & {$<0.2$} \\
+%         6 & Optimal & 34.50 & 25.00 & 8 & 1.50 & {$\sim$0.1} \\
+%         8 & Optimal & 83.50 & 56.00 & 24 & 3.50 & {0.1} \\ 
+%         \bottomrule
+%     \end{tabular}
+% \end{table}
+Pour $n=8$ (avec l'ancienne métrique HomeStrength), avec $\alpha=1, \beta=1$ et une limite de temps de 300s, le solveur a trouvé la solution optimale en 0.1s. Le calendrier obtenu présentait une structure où le joueur le plus fort (indice 1) jouait tous ses matchs à l'extérieur, et le plus faible (indice 8) tous à domicile. Cette configuration, bien qu'optimale pour la fonction objectif donnée (ancienne version), interroge sur la perception d'équité. Pour $n > 8$, l'approche MILP devient rapidement impraticable.
+
+\section{Approche par Méta-heuristique : Recuit Simulé (Simulated Annealing)}
+\label{sec:sa}
+\subsection{Principe et Implémentation}
+Le Recuit Simulé (SA) a été implémenté (dans \texttt{src/sa\_solver.py}) avec les optimisations suivantes :
+\begin{itemize}
+    \item \textbf{Mise à Jour Incrémentale des Métriques avec Numba :} Accélère significativement l'évaluation des voisins.
+    \item \textbf{Cache Numba Partagé :} \texttt{NUMBA\_CACHE\_DIR} configuré pour réduire les temps de redémarrage.
+    \item \textbf{Parallélisation avec \texttt{ProcessPoolExecutor} Partagé :} Pour les exécutions multiples, afin de réduire le surcoût.
+    \item \textbf{Gestion des Threads Numba :} \texttt{os.environ["NUMBA\_THREADING\_LAYER"] = "omp"} et \texttt{numba.set\_num\_threads()} sont utilisés pour contrôler le nombre de threads par worker Numba.
+\end{itemize}
+
+% Section 4.2 removed as per instruction "Delete duplicate paragraphs §§ 4.2"
+% \subsection{Paramétrage et Stratégie d'Itérations}
+% La stratégie d'itération a été adaptée en fonction de $n$: $20k$ pour $n \le 30$, $6k$ pour $n=1000$, et $\max(5k, \lfloor 2 \cdot 10^7 / n^2 \rfloor)$ sinon. Température initiale $1.0$, taux de refroidissement $0.99$.
+
+\subsection{Réglage des Hyperparamètres du SA ($\alpha, \beta$)}
+\label{subsec:sa_hyperparam_tuning}
+\subsubsection{Recherche par Grille (Grid Search)}
+Effectuée pour $\alpha, \beta \in \{0.25, 1.0, 4.0\}$ sur $n=30$ (2 runs) et $n=200$ (11 chaînes).
+Les heatmaps générées par \texttt{benchmark\_sa.py} sont présentées en Figure~\ref{fig:sa_generated_heatmaps}. Un exemple de planning pour $n=30$ issu de ces tests est disponible en Annexe~\ref{app:planning_n30}.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.48\textwidth]{../reports/heatmap_alpha_beta_n30.png}
+    \hfill
+    \includegraphics[width=0.48\textwidth]{../reports/heatmap_alpha_beta_n200.png}
+    \caption{Cartes de chaleur (échelle log) des scores objectifs moyens du SA en fonction de $\alpha$ et $\beta$ pour $n=30$ (gauche) et $n=200$ (droite), générées par \texttt{benchmark\_sa.py}.}
+    \label{fig:sa_generated_heatmaps}
+\end{figure}
+
+\subsubsection{Optimisation avec Optuna}
+Pour $n=200$ (50 essais, minimisation du score normalisé), Optuna a trouvé $\alpha \approx 0.1196, \beta \approx 0.1145$ (score normalisé $1.1285$). Ces valeurs diffèrent de la grille et des suggestions initiales du guide ($\alpha=0.5, \beta=2.0$). (Voir \texttt{sa\_alpha\_beta\_tuning\_n200.db}).
+
+\subsection{Showcase SA : Instance Très Grande \boldmath{$n=1000$}}
+\label{subsec:sa_n1000_showcase}
+Avec $\alpha=0.5, \beta=2.0$, $6000$ itérations/chaîne, 11 cœurs.
+Temps d'exécution : $\sim$\SI{5.32}{\second}. Score objectif : $\sim$\num{250686943}.
+Le planning est dans \texttt{reports/planning\_1000.csv}. La distribution des matchs à domicile pour cette instance est montrée en Figure~\ref{fig:home_games_n1000}.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.8\textwidth]{../reports/sa_home_games_dist_n1000_showcase.png}
+    \caption{Distribution des matchs à domicile par joueur pour $n=1000$ (SA Showcase).}
+    \label{fig:home_games_n1000}
+\end{figure}
+
+\begin{table}[h!]
+\centering
+\caption{Résultats SA pour $n=1000$ (11 chaînes, $6k$ iters/chaîne, $\alpha=0.5, \beta=2.0$)}
+\label{tab:sa_n1000_showcase}
+\sisetup{group-separator={,}}
+\begin{tabular}{S[table-format=4.0] S[table-format=9.0] S[table-format=1.2]} % Removed S[table-format=5.0] for Total Breaks
+\toprule
+{n} & {Objectif} & {Temps (s)} \\ % Removed Total Breaks header
+\midrule
+1000 & 250686943 & 5.32 \\ % Removed empty cell for Total Breaks
+\bottomrule
+\end{tabular}
+\end{table}
+% Removed paragraph referencing old figures and tables as per "cut ANY “old results” sub-section"
+
+\section{Approche par Méta-heuristique : Recherche Tabou (Tabu Search)}
+\label{sec:ts}
+\subsection{Principe et Implémentation "Légère"}
+Une version "légère" de TS a été implémentée (\texttt{tabu\_search\_solver} dans \texttt{src/sa\_solver.py}).
+\begin{itemize}
+    \item Voisinage : Sélection des $k$ meilleurs flips H/A parmi $k \times 5$ générés, avec recalcul complet des métriques (non incrémental).
+    \item Liste Tabou : \texttt{collections.deque}, attribut \texttt{(round\_idx, match\_idx)}.
+    \item Tenure : Adaptative, $\max(10, \text{int}(0.1 \cdot n))$.
+    \item Critère d'Aspiration : Accepte un mouvement tabou s'il améliore le meilleur score global.
+\end{itemize}
+
+\subsection{Résultats des Benchmarks TS}
+Tests sur $n=30, 200$ ($\alpha=0.5, \beta=2.0$, 200 itérations, $k=5$). % (Voir \texttt{reports/tabu\_search\_benchmark\_results.csv}).
+% \begin{table}[h!]
+% \centering
+% \caption{Résultats de la Recherche Tabou (TS) ($\alpha=0.5, \beta=2.0$, 200 iters, $k=5$). Note : Les valeurs de HomeStrength (ici HomeStr. (anc.)) et de l'Objectif sont basées sur l'ancienne définition.}
+% \label{tab:ts_benchmark_results}
+% \sisetup{group-separator={}}
+% \begin{tabular}{l S[table-format=3.0] S[table-format=7.0] S[table-format=2.2] S[table-format=7.0] S[table-format=-3.1] S[table-format=2.1]}
+% \toprule
+% Heuristique & {n} & {Score Obj.} & {Temps (s)} & {HomeStr. (anc. déf.)} & {Pén. Séc.} & {MaxDev} \\
+% \midrule
+% TabuSearch & 30 & 4582 & 1.28 & 4603 & -100.0 & 14.5 \\
+% TabuSearch & 200 & 1979948 & 46.36 & 1979827 & -124.0 & 91.5 \\
+% \bottomrule
+% \end{tabular}
+% \end{table}
+Un \texttt{RuntimeWarning} d'overflow pour \texttt{pen\_seq} a été observé, causant des valeurs négatives. Cela indique une différence de calcul par rapport au SA et affecte la comparabilité des scores.
+
+\section{Analyse Comparative et Discussion}
+\label{sec:analyse}
+\subsection{Comparaison MILP vs. Heuristiques (SA et TS)}
+Le MILP est optimal pour $n \le 8$ mais non échelonnable. Le SA optimisé est très rapide ($n=1000$ en $\sim$5s). Le TS actuel est plus lent dû au recalcul des métriques.
+La solution MILP pour $n=8$ (joueur fort toujours à l'extérieur, faible toujours à domicile) soulève des questions sur l'équité perçue vs. mathématique.
+
+\subsection{Comparaison SA vs. TS}
+Comparaison difficile à cause de paramètres et d'implémentations différents (surtout calcul de \texttt{pen\_seq} et optimisation SA vs. TS).
+Pour $n=200$, SA (avec $\alpha=0.25, \beta=0.25$) score $\sim$\num{1.96e6} (issu du CSV grid search); TS ($\alpha=0.5, \beta=2.0$) score $\sim$\num{1.98e6}. Le SA est plus rapide.
+% Removed mention of "Total Breaks >= 3" metric for TS.
+
+\subsection{Impact du Réglage des Hyperparamètres ($\alpha, \beta$) pour SA}
+La recherche par grille et Optuna pour SA ($n=200$) suggèrent que des $\alpha, \beta$ plus faibles (ex: $\sim0.1-0.25$) donnent de meilleurs scores bruts/normalisés que les valeurs initiales du guide ($\alpha=0.5, \beta=2.0$). Le tuning est crucial.
+
+% Removed subsection "Qualité de l'Équité et "Breaks"" as the metric is deprecated.
+
+\subsection{Limites et Perspectives}
+\begin{itemize}
+    \item \textbf{MILP :} Non échelonnable.
+    \item \textbf{SA :} Ne garantit pas l'optimum. Paramétrage sensible. Voisinage simple.
+    \item \textbf{TS :} Implémentation non optimisée. Problème de calcul \texttt{pen\_seq} à corriger.
+    \item \textbf{Métriques :} Explorer d'autres métriques. % Removed "Intégrer Total Breaks"
+    \item \textbf{Travaux Futurs :}
+        \begin{itemize}
+            \item Comparaison SA/TS rigoureuse (paramètres/optimisations alignés).
+            \item Intégrer contraintes plus complexes.
+        \end{itemize}
+\end{itemize}
+
+\section{Analyse de Complexité Empirique}
+\label{sec:complexite}
+L'analyse se concentre sur le SA optimisé. La Figure~\ref{fig:sa_complexity_loglog} illustre la scalabilité du temps d'exécution moyen en fonction de $n$.
+La complexité par chaîne SA est $O(N_{iter} \cdot n)$ en moyenne, $O(N_{iter} \cdot n^2)$ au pire (MaxDev). La parallélisation est efficace ($n=1000$ en $\sim$5s).
+Le TS actuel est $O(k \cdot N_{iter} \cdot n^2)$ par chaîne, moins compétitif sans optimisation incrémentale.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.7\textwidth]{../reports/sa_benchmark_loglog.png}
+    \caption{Analyse de complexité empirique du SA : Temps d'exécution moyen vs. $n$ (échelle log-log).}
+    \label{fig:sa_complexity_loglog}
+\end{figure}
+
+\section{Conclusion}
+\label{sec:conclusion}
+Ce projet a exploré la génération de calendriers SRR équitables via MILP, SA et TS. Le MILP est optimal pour $n \le 8$. Le SA optimisé est très performant et échelonnable ($n=1000$ en $\sim$5s), avec des résultats sensibles au tuning des hyperparamètres $\alpha, \beta$ (Optuna suggérant des valeurs plus faibles que celles initialement prévues). Le TS "léger" a été implémenté. Des problèmes de calcul dans TS et son manque d'optimisation limitent la comparaison directe actuelle. Les travaux futurs devraient se concentrer sur l'amélioration du TS et une comparaison plus rigoureuse des heuristiques. Les résultats du tuning d'hyperparamètres sont des contributions clés de cette phase du projet.
+
+% Appendix removed as code snippets are outdated due to Numba optimization
+
+\end{document}
