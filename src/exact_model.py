@@ -25,7 +25,8 @@ import math
 import argparse
 import csv
 import numpy as np # For np.arange
-from metrics import normalize_home_strength, normalize_total_pen_seq, normalize_max_dev
+# Import the specific functions needed, including the new denominator calculator
+from metrics import calculate_s_max_denominator, normalize_home_strength, normalize_total_pen_seq, normalize_max_dev
 import config # Import the configuration
 
 def solve_exact(n, alpha_pen_seq=None, beta=None, time_limit=None):
@@ -84,63 +85,32 @@ def solve_exact(n, alpha_pen_seq=None, beta=None, time_limit=None):
     # MaxDev = Maximum absolute deviation of H_i from the average
     MaxDev = pulp.LpVariable('MaxDev', lowBound=0, cat='Continuous')
 
-    # Auxiliary variable for abs(HS_norm)
-    abs_hs_norm_lp_var = pulp.LpVariable('abs_hs_norm_lp_var', lowBound=0, cat='Continuous')
-
     # --- Objective Function ---
     # Define terms for the objective function
-    # New HomeStrength: sum (rank_opponent - rank_home_player) * x_home_vs_opponent_in_round
+    # New HomeStrength: sum max(0, rank_opponent - rank_home_player) * x_home_vs_opponent_in_round
+    # This is equivalent to summing (j-i)*x[i][j][r] only when j > i.
     # Player indices i, j are 1-based.
     home_strength_term = pulp.lpSum(
         (j - i) * x[i][j][r]
-        for i in players for j in players if i != j for r in rounds
+        for i in players for j in players if j > i for r in rounds # Sum only where j > i
     )
     total_penalites_sequence_term = pulp.lpSum(pen_seq[i][r] for i in players for r in round_pairs)
     max_deviation_term = MaxDev
 
     # Normalization denominators (constants for a given n)
-    # These are calculated outside PuLP and used as fixed coefficients.
-    # Note: PuLP variables cannot be directly divided by constants in this way for the objective.
-    # Instead, we'd adjust the coefficients of the terms.
-    # For an exact model, if we normalize, the objective becomes non-linear or requires careful formulation.
-    # The plan implies applying normalization conceptually for choosing alpha/beta,
-    # and then using those alpha/beta with the *unnormalized* Z in the solver.
-    # However, if the goal is to solve with a *normalized* Z directly in MILP,
-    # the coefficients of delta_home_strength_term, total_penalites_sequence_term, and max_deviation_term
-    # in the objective function would need to be 1/norm_factor_hs, alpha/norm_factor_ps, beta/norm_factor_md.
-
-    # For now, sticking to the direct interpretation of the plan:
-    # Z = HS_norm + alpha*penseq_norm + beta*maxdev_norm
-    # The denominators are constants for a given 'n'.
-    
-    # Corrected S_max denominator for HomeStrength
-    denom_hs = (n * (n - 1) * (n + 1) / 6.0) if n >= 2 else 1.0
+    # Use the new S_max calculation for HomeStrength
+    denom_hs = calculate_s_max_denominator(n)
     denom_ps = n * (n - 2.0) if n > 2 else 1.0
     denom_md = (n - 1.0) / 2.0 if n > 1 else 1.0 # Kept original for MaxDev
 
-    denom_hs = max(denom_hs, 1.0) # Avoid division by zero or very small values
+    # Ensure denominators are at least 1.0 to avoid division by zero or inflation
+    denom_hs = max(denom_hs, 1.0)
     denom_ps = max(denom_ps, 1.0)
     denom_md = max(denom_md, 1.0)
 
-    # Normalized objective function
-    # Z = (home_strength_term / denom_hs) + \
-    #     alpha_pen_seq * (total_penalites_sequence_term / denom_ps) + \
-    #     beta * (max_deviation_term / denom_md)
-    # This can be rewritten as:
-    # Z = abs_hs_norm_lp_var + \
-    #     (alpha_pen_seq/denom_ps) * total_penalites_sequence_term + \
-    #     (beta/denom_md) * max_deviation_term
-    
-    # Constraints for abs_hs_norm_lp_var
-    # abs_hs_norm_lp_var >= home_strength_term / denom_hs
-    # abs_hs_norm_lp_var >= -(home_strength_term / denom_hs)
-    # PuLP expressions need to be on one side of inequality.
-    # So, abs_hs_norm_lp_var - (1/denom_hs) * home_strength_term >= 0
-    # And abs_hs_norm_lp_var + (1/denom_hs) * home_strength_term >= 0
-    prob += abs_hs_norm_lp_var - (1/denom_hs) * home_strength_term >= 0
-    prob += abs_hs_norm_lp_var + (1/denom_hs) * home_strength_term >= 0
-
-    prob += abs_hs_norm_lp_var + \
+    # Normalized objective function: Minimize HS_norm + alpha*PS_norm + beta*MD_norm
+    # Since the new home_strength_term is always non-negative, we minimize it directly.
+    prob += (1/denom_hs) * home_strength_term + \
             (alpha_pen_seq/denom_ps) * total_penalites_sequence_term + \
             (beta/denom_md) * max_deviation_term
             
@@ -229,13 +199,12 @@ def solve_exact(n, alpha_pen_seq=None, beta=None, time_limit=None):
         results["schedule_str"] = " | ".join(schedule_lines) # Pipe separated string for CSV
 
         # Calculate final metrics
-        # Use (j - i) for HomeStrength calculation to match objective
-        final_home_strength = sum((j - i) * pulp.value(x[i][j][r])
-                                  for i in players for j in players if i != j for r in rounds)
+        # Use the value of the objective term for the new HomeStrength
+        final_home_strength = pulp.value(home_strength_term)
         final_penalites_sequence = sum(pulp.value(pen_seq[i][r]) for i in players for r in round_pairs)
         final_max_dev = pulp.value(MaxDev)
         results["metrics"] = {
-            "home_strength": final_home_strength,
+            "home_strength": final_home_strength, # This is now the new raw HS
             "penalites_sequence": final_penalites_sequence,
             "max_deviation": final_max_dev
         }
@@ -356,11 +325,11 @@ if __name__ == '__main__':
                             ps_norm = normalize_total_pen_seq(raw_ps, args.n)
                             md_norm = normalize_max_dev(raw_md, args.n)
                             
-                            # Use abs for home_strength_norm in z_norm_calculated
-                            z_norm_calculated = abs(home_strength_norm) + alpha_val * ps_norm + beta_val * md_norm
+                            # Calculate z_norm using the new objective structure (no abs)
+                            z_norm_calculated = home_strength_norm + alpha_val * ps_norm + beta_val * md_norm
 
                             row_data.update({
-                                "home_strength_norm": f"{home_strength_norm:.4f}",
+                                "home_strength_norm": f"{home_strength_norm:.4f}", # This is HS_norm_new
                                 "ps_norm": f"{ps_norm:.4f}",
                                 "md_norm": f"{md_norm:.4f}",
                                 "z_norm_calculated": f"{z_norm_calculated:.4f}",
@@ -496,10 +465,11 @@ if __name__ == '__main__':
                         ps_norm = normalize_total_pen_seq(raw_ps, args.n)
                         md_norm = normalize_max_dev(raw_md, args.n)
                         
+                        # Calculate z_norm using the new objective structure (no abs)
                         z_norm_calculated = home_strength_norm + alpha_val * ps_norm + beta_val * md_norm
 
                         row_data.update({
-                            "home_strength_norm": f"{home_strength_norm:.4f}",
+                            "home_strength_norm": f"{home_strength_norm:.4f}", # This is HS_norm_new
                             "ps_norm": f"{ps_norm:.4f}",
                             "md_norm": f"{md_norm:.4f}",
                             "z_norm_calculated": f"{z_norm_calculated:.4f}",

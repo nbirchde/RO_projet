@@ -17,7 +17,8 @@ import logging
 import config # Import the configuration
 # analysis_utils import for count_breaks and compute_total_breaks removed
 from packed_array_utils import get_status_packed, set_status_packed, PLAYERS_PER_BYTE
-from metrics import calculate_home_strength, get_all_fairness_metrics # Updated imports
+# Import necessary functions from metrics, including the new denominator calculator
+from metrics import calculate_home_strength, get_all_fairness_metrics, calculate_s_max_denominator
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 log = logging.getLogger(__name__)
@@ -71,11 +72,13 @@ def sa_loop(schedule_h_input, schedule_a_input, home_cnt_input, packed_seq_input
     initial_home_cnt_snapshot = home_cnt_input.copy()
     initial_packed_seq_snapshot = packed_seq_input.copy()
     initial_T0_for_replay = T0
-    # Initial HomeStrength calculation: sum(away_rank - home_rank)
+    # Initial HomeStrength calculation: sum max(0, away_rank - home_rank)
     current_home_strength = np.float64(0)
     for r_loop_init in range(rounds):
         for m_loop_init in range(matches_per_round):
-            current_home_strength += (schedule_a[r_loop_init, m_loop_init] - schedule_h[r_loop_init, m_loop_init])
+            home_player = schedule_h[r_loop_init, m_loop_init]
+            away_player = schedule_a[r_loop_init, m_loop_init]
+            current_home_strength += max(0, away_player - home_player) # Use new definition
     
     current_pen_seq = np.int64(0)
     if rounds > 1 and n > 0:
@@ -109,8 +112,10 @@ def sa_loop(schedule_h_input, schedule_a_input, home_cnt_input, packed_seq_input
         h = schedule_h[rnd_idx, match_idx] # Original home player
         a = schedule_a[rnd_idx, match_idx] # Original away player
         
-    
-        current_home_strength += 2 * (h - a) # h and a are player IDs (ranks)
+        # Incremental HomeStrength update for new definition: max(0, h-a) - max(0, a-h)
+        # This is the change when flipping h vs a
+        hs_change = max(0, h - a) - max(0, a - h)
+        current_home_strength += hs_change
         
         max_dev_before_move = current_max_dev
         old_dev_h = abs(home_cnt[h] - ideal_home_games)
@@ -161,7 +166,8 @@ def sa_loop(schedule_h_input, schedule_a_input, home_cnt_input, packed_seq_input
             home_cnt[a] -= 1 # Revert home count for a
             current_pen_seq = _update_pen_numba_packed(h, rnd_idx, 0, 1, packed_seq, current_pen_seq, rounds) # Revert h to home
             current_pen_seq = _update_pen_numba_packed(a, rnd_idx, 1, 0, packed_seq, current_pen_seq, rounds) # Revert a to away
-            current_home_strength -= 2 * (h - a) # Revert HomeStrength change
+            # Revert HomeStrength change using the same logic
+            current_home_strength -= hs_change
             current_max_dev = max_dev_before_move
             # current_norm_score remains as it was before this candidate move
             
@@ -180,10 +186,13 @@ def sa_loop(schedule_h_input, schedule_a_input, home_cnt_input, packed_seq_input
     replayed_home_cnt = initial_home_cnt_snapshot.copy()
     replayed_packed_seq = initial_packed_seq_snapshot.copy()
     
+    # Replay initial HomeStrength calculation: sum max(0, away_rank - home_rank)
     replayed_current_home_strength = np.float64(0)
     for r_loop_rep in range(rounds):
         for m_loop_rep in range(matches_per_round):
-            replayed_current_home_strength += (replayed_schedule_a[r_loop_rep, m_loop_rep] - replayed_schedule_h[r_loop_rep, m_loop_rep])
+            home_player_rep = replayed_schedule_h[r_loop_rep, m_loop_rep]
+            away_player_rep = replayed_schedule_a[r_loop_rep, m_loop_rep]
+            replayed_current_home_strength += max(0, away_player_rep - home_player_rep) # Use new definition
 
     replayed_current_pen_seq = np.int64(0)
     if rounds > 1 and n > 0:
@@ -216,7 +225,9 @@ def sa_loop(schedule_h_input, schedule_a_input, home_cnt_input, packed_seq_input
         seq_h_char_before_replay = get_status_packed(replayed_packed_seq, h_replay, r_idx)
         seq_a_char_before_replay = get_status_packed(replayed_packed_seq, a_replay, r_idx)
         
-        replayed_current_home_strength += 2 * (h_replay - a_replay) # Update HS
+        # Replay incremental HomeStrength update for new definition
+        hs_change_replay = max(0, h_replay - a_replay) - max(0, a_replay - h_replay)
+        replayed_current_home_strength += hs_change_replay
         
         replayed_home_cnt[h_replay] -= 1
         replayed_home_cnt[a_replay] += 1
@@ -259,7 +270,8 @@ def sa_loop(schedule_h_input, schedule_a_input, home_cnt_input, packed_seq_input
             set_status_packed(replayed_packed_seq, h_replay, r_idx, seq_h_char_before_replay)
             set_status_packed(replayed_packed_seq, a_replay, r_idx, seq_a_char_before_replay)
             replayed_current_pen_seq = pen_seq_before_move_replay
-            replayed_current_home_strength = home_strength_before_move_replay # Revert HS
+            # Revert HomeStrength change using the same logic
+            replayed_current_home_strength -= hs_change_replay
             replayed_current_max_dev = max_dev_before_move_replay
             # replayed_current_norm_score remains as it was
             
@@ -414,12 +426,13 @@ def solve_sa(n, iterations=10000, initial_temp=1.0, cooling_rate=0.95, alpha_pen
                 set_status_packed(packed_seq_arr, h_init, r_init, 1)
                 set_status_packed(packed_seq_arr, a_init, r_init, 0)
     
-    # Updated normalization denominator for HomeStrength using S_max
-    max_home_strength_approx = (n * (n - 1) * (n + 1) / 6.0) if n >= 2 else 1.0
+    # Use the new S_max calculation for HomeStrength normalization denominator
+    max_home_strength_approx = calculate_s_max_denominator(n)
     max_penalites_sequence_approx = n * (n - 2.0) if n > 2 else 1.0 # Ensure float for consistency
     max_maxdev_approx = (n - 1.0) / 2.0 if n > 1 else 1.0 # Ensure float
 
-    max_home_strength_approx = max(max_home_strength_approx, 1.0) # Avoid division by zero
+    # Ensure denominators are at least 1.0
+    max_home_strength_approx = max(max_home_strength_approx, 1.0)
     max_penalites_sequence_approx = max(max_penalites_sequence_approx, 1.0)
     max_maxdev_approx = max(max_maxdev_approx, 1.0)
     
@@ -488,10 +501,13 @@ def _calculate_metrics_for_tabu(schedule_h, schedule_a, home_cnt, packed_seq, n,
                                max_home_strength_approx, max_penalites_sequence_approx, max_maxdev_approx):
     rounds = schedule_h.shape[0]
     matches_per_round = schedule_h.shape[1] # Assuming schedule_h is not empty
+    # Calculate HomeStrength using the new definition: sum max(0, away-home)
     home_strength = np.float64(0)
     for r_loop in range(rounds):
         for m_loop in range(matches_per_round):
-            home_strength += (schedule_a[r_loop, m_loop] - schedule_h[r_loop, m_loop])
+            home_player = schedule_h[r_loop, m_loop]
+            away_player = schedule_a[r_loop, m_loop]
+            home_strength += max(0, away_player - home_player) # Use new definition
             
     pen_seq = np.int64(0) 
     if rounds > 1 and n > 0:
@@ -565,11 +581,12 @@ def tabu_search_solver(n_players, initial_schedule_list, iterations=5000, tenure
     random.seed(seed)
     np.random.seed(seed)
 
-    # Updated normalization denominators using S_max
-    max_home_strength_approx = (n_players * (n_players - 1) * (n_players + 1) / 6.0) if n_players >= 2 else 1.0
+    # Use the new S_max calculation for HomeStrength normalization denominator
+    max_home_strength_approx = calculate_s_max_denominator(n_players)
     max_penalites_sequence_approx = n_players * (n_players - 2.0) if n_players > 2 else 1.0
     max_maxdev_approx = (n_players - 1.0) / 2.0 if n_players > 1 else 1.0
     
+    # Ensure denominators are at least 1.0
     max_home_strength_approx = max(max_home_strength_approx, 1.0)
     max_penalites_sequence_approx = max(max_penalites_sequence_approx, 1.0)
     max_maxdev_approx = max(max_maxdev_approx, 1.0)

@@ -1,38 +1,19 @@
 \babel@toc {french}{}\relax 
-\contentsline {section}{\numberline {1}Introduction}{3}{section.1}%
-\contentsline {subsection}{\numberline {1.1}Contexte}{3}{subsection.1.1}%
-\contentsline {subsection}{\numberline {1.2}Objectifs du Projet}{3}{subsection.1.2}%
-\contentsline {subsection}{\numberline {1.3}Structure du Rapport}{3}{subsection.1.3}%
-\contentsline {section}{\numberline {2}Modélisation Mathématique}{3}{section.2}%
-\contentsline {subsection}{\numberline {2.1}Définition du Problème}{3}{subsection.2.1}%
-\contentsline {subsection}{\numberline {2.2}Variables de Décision}{4}{subsection.2.2}%
-\contentsline {subsubsection}{\numberline {2.2.1}Variable Principale}{4}{subsubsection.2.2.1}%
-\contentsline {subsubsection}{\numberline {2.2.2}Variables Auxiliaires pour l'Équité}{4}{subsubsection.2.2.2}%
-\contentsline {subsection}{\numberline {2.3}Contraintes}{4}{subsection.2.3}%
-\contentsline {subsubsection}{\numberline {2.3.1}Contraintes Fondamentales du Round Robin}{4}{subsubsection.2.3.1}%
-\contentsline {subsubsection}{\numberline {2.3.2}Contraintes d'Équité}{5}{subsubsection.2.3.2}%
-\contentsline {subsection}{\numberline {2.4}Métriques d'Équité}{5}{subsection.2.4}%
-\contentsline {subsubsection}{\numberline {2.4.1}HomeStrength}{5}{subsubsection.2.4.1}%
-\contentsline {subsubsection}{\numberline {2.4.2}Pénalité de Séquence}{5}{subsubsection.2.4.2}%
-\contentsline {subsubsection}{\numberline {2.4.3}StdDevAdvantage (Proxy : MaxDev)}{6}{subsubsection.2.4.3}%
-\contentsline {subsection}{\numberline {2.5}Fonction Objectif}{6}{subsection.2.5}%
-\contentsline {subsection}{\numberline {2.6}Fonction Objectif Normalisée et Calibration des Poids ($\alpha , \beta $)}{6}{subsection.2.6}%
-\contentsline {section}{\numberline {3}Approche par Méthode Exacte}{7}{section.3}%
-\contentsline {subsection}{\numberline {3.1}Formulation en Programmation Linéaire en Nombres Entiers (MILP)}{7}{subsection.3.1}%
-\contentsline {subsection}{\numberline {3.2}Résultats pour Petites Instances}{7}{subsection.3.2}%
-\contentsline {section}{\numberline {4}Approche par Méta-heuristique : Recuit Simulé (Simulated Annealing)}{8}{section.4}%
-\contentsline {subsection}{\numberline {4.1}Principe et Implémentation}{8}{subsection.4.1}%
-\contentsline {subsection}{\numberline {4.2}Réglage des Hyperparamètres du SA ($\alpha , \beta $)}{8}{subsection.4.2}%
-\contentsline {subsubsection}{\numberline {4.2.1}Recherche par Grille (Grid Search)}{8}{subsubsection.4.2.1}%
-\contentsline {subsubsection}{\numberline {4.2.2}Optimisation avec Optuna}{8}{subsubsection.4.2.2}%
-\contentsline {subsection}{\numberline {4.3}Showcase SA : Instance Très Grande \boldmath {$n=1000$}}{8}{subsection.4.3}%
-\contentsline {section}{\numberline {5}Approche par Méta-heuristique : Recherche Tabou (Tabu Search)}{9}{section.5}%
-\contentsline {subsection}{\numberline {5.1}Principe et Implémentation "Légère"}{9}{subsection.5.1}%
-\contentsline {subsection}{\numberline {5.2}Résultats des Benchmarks TS}{9}{subsection.5.2}%
-\contentsline {section}{\numberline {6}Analyse Comparative et Discussion}{9}{section.6}%
-\contentsline {subsection}{\numberline {6.1}Comparaison MILP vs. Heuristiques (SA et TS)}{9}{subsection.6.1}%
-\contentsline {subsection}{\numberline {6.2}Comparaison SA vs. TS}{10}{subsection.6.2}%
-\contentsline {subsection}{\numberline {6.3}Impact du Réglage des Hyperparamètres ($\alpha , \beta $) pour SA}{10}{subsection.6.3}%
-\contentsline {subsection}{\numberline {6.4}Limites et Perspectives}{10}{subsection.6.4}%
-\contentsline {section}{\numberline {7}Analyse de Complexité Empirique}{10}{section.7}%
-\contentsline {section}{\numberline {8}Conclusion}{11}{section.8}%
+\contentsline {section}{\numberline {1}Introduction}{2}{section.1}%
+\contentsline {subsection}{\numberline {1.1}Contexte}{2}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}Objectifs du Projet}{2}{subsection.1.2}%
+\contentsline {subsection}{\numberline {1.3}Structure du Rapport}{2}{subsection.1.3}%
+\contentsline {section}{\numberline {2}Modélisation Mathématique}{2}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Définition du Problème}{2}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Variables de Décision}{3}{subsection.2.2}%
+\contentsline {subsubsection}{\numberline {2.2.1}Variable Principale}{3}{subsubsection.2.2.1}%
+\contentsline {subsubsection}{\numberline {2.2.2}Variables Auxiliaires pour l'Équité}{3}{subsubsection.2.2.2}%
+\contentsline {subsection}{\numberline {2.3}Contraintes}{3}{subsection.2.3}%
+\contentsline {subsubsection}{\numberline {2.3.1}Contraintes Fondamentales du Round Robin}{3}{subsubsection.2.3.1}%
+\contentsline {subsubsection}{\numberline {2.3.2}Contraintes d'Équité}{3}{subsubsection.2.3.2}%
+\contentsline {subsection}{\numberline {2.4}Métriques d'Équité}{4}{subsection.2.4}%
+\contentsline {subsubsection}{\numberline {2.4.1}HomeStrength}{4}{subsubsection.2.4.1}%
+\contentsline {subsubsection}{\numberline {2.4.2}Pénalité de Séquence}{4}{subsubsection.2.4.2}%
+\contentsline {subsubsection}{\numberline {2.4.3}StdDevAdvantage (Proxy : MaxDev)}{5}{subsubsection.2.4.3}%
+\contentsline {subsection}{\numberline {2.5}Fonction Objectif}{5}{subsection.2.5}%
+\contentsline {subsection}{\numberline {2.6}Fonction Objectif Normalisée et Calibration des Poids ($\alpha , \beta $)}{5}{subsection.2.6}%

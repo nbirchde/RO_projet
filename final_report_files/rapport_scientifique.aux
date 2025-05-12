@@ -9,64 +9,27 @@
 \providecommand\HyField@AuxAddToFields[1]{}
 \providecommand\HyField@AuxAddToCoFields[2]{}
 \babel@aux{french}{}
-\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{3}{section.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {1.1}Contexte}{3}{subsection.1.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {1.2}Objectifs du Projet}{3}{subsection.1.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {1.3}Structure du Rapport}{3}{subsection.1.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {2}Modélisation Mathématique}{3}{section.2}\protected@file@percent }
-\newlabel{sec:modelisation}{{2}{3}{Modélisation Mathématique}{section.2}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Définition du Problème}{3}{subsection.2.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Variables de Décision}{4}{subsection.2.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.1}Variable Principale}{4}{subsubsection.2.2.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.2}Variables Auxiliaires pour l'Équité}{4}{subsubsection.2.2.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Contraintes}{4}{subsection.2.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.3.1}Contraintes Fondamentales du Round Robin}{4}{subsubsection.2.3.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.3.2}Contraintes d'Équité}{5}{subsubsection.2.3.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}Métriques d'Équité}{5}{subsection.2.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.4.1}HomeStrength}{5}{subsubsection.2.4.1}\protected@file@percent }
-\newlabel{eq:homestrength}{{10}{5}{HomeStrength}{equation.10}{}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.4.2}Pénalité de Séquence}{5}{subsubsection.2.4.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.4.3}StdDevAdvantage (Proxy : MaxDev)}{6}{subsubsection.2.4.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.5}Fonction Objectif}{6}{subsection.2.5}\protected@file@percent }
-\newlabel{subsec:fonction_objectif_initiale}{{2.5}{6}{Fonction Objectif}{subsection.2.5}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.6}Fonction Objectif Normalisée et Calibration des Poids ($\alpha , \beta $)}{6}{subsection.2.6}\protected@file@percent }
-\newlabel{subsec:normalisation_calibration}{{2.6}{6}{Fonction Objectif Normalisée et Calibration des Poids ($\alpha , \beta $)}{subsection.2.6}{}}
-\newlabel{eq:znorm}{{14}{6}{Fonction Objectif Normalisée et Calibration des Poids ($\alpha , \beta $)}{equation.14}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Frontière de Pareto pour $n=6$ issue de la calibration étendue (données de \texttt  {alpha\_beta\_calibration\_n6\_extended\_range.csv}). Les graphes montrent les projections 2D des 5 uniques solutions non-dominées trouvées. Le point rouge étoilé correspond aux métriques obtenues avec $\alpha =0.4, \beta =1.2$, qui sont les plus proches de notre cible de configuration. Les valeurs plus faibles sont meilleures pour tous les axes.}}{7}{figure.1}\protected@file@percent }
-\newlabel{fig:pareto_n6_calibration_final}{{1}{7}{Frontière de Pareto pour $n=6$ issue de la calibration étendue (données de \texttt {alpha\_beta\_calibration\_n6\_extended\_range.csv}). Les graphes montrent les projections 2D des 5 uniques solutions non-dominées trouvées. Le point rouge étoilé correspond aux métriques obtenues avec $\alpha =0.4, \beta =1.2$, qui sont les plus proches de notre cible de configuration. Les valeurs plus faibles sont meilleures pour tous les axes}{figure.1}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {3}Approche par Méthode Exacte}{7}{section.3}\protected@file@percent }
-\newlabel{sec:exacte}{{3}{7}{Approche par Méthode Exacte}{section.3}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Formulation en Programmation Linéaire en Nombres Entiers (MILP)}{7}{subsection.3.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Résultats pour Petites Instances}{7}{subsection.3.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {4}Approche par Méta-heuristique : Recuit Simulé (Simulated Annealing)}{8}{section.4}\protected@file@percent }
-\newlabel{sec:sa}{{4}{8}{Approche par Méta-heuristique : Recuit Simulé (Simulated Annealing)}{section.4}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Principe et Implémentation}{8}{subsection.4.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Réglage des Hyperparamètres du SA ($\alpha , \beta $)}{8}{subsection.4.2}\protected@file@percent }
-\newlabel{subsec:sa_hyperparam_tuning}{{4.2}{8}{Réglage des Hyperparamètres du SA ($\alpha , \beta $)}{subsection.4.2}{}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {4.2.1}Recherche par Grille (Grid Search)}{8}{subsubsection.4.2.1}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Cartes de chaleur (échelle log) des scores objectifs moyens du SA en fonction de $\alpha $ et $\beta $ pour $n=30$ (gauche) et $n=200$ (droite), générées par \texttt  {benchmark\_sa.py}.}}{8}{figure.2}\protected@file@percent }
-\newlabel{fig:sa_generated_heatmaps}{{2}{8}{Cartes de chaleur (échelle log) des scores objectifs moyens du SA en fonction de $\alpha $ et $\beta $ pour $n=30$ (gauche) et $n=200$ (droite), générées par \texttt {benchmark\_sa.py}}{figure.2}{}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {4.2.2}Optimisation avec Optuna}{8}{subsubsection.4.2.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Showcase SA : Instance Très Grande \boldmath  {$n=1000$}}{8}{subsection.4.3}\protected@file@percent }
-\newlabel{subsec:sa_n1000_showcase}{{4.3}{8}{Showcase SA : Instance Très Grande \boldmath {$n=1000$}}{subsection.4.3}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Distribution des matchs à domicile par joueur pour $n=1000$ (SA Showcase).}}{9}{figure.3}\protected@file@percent }
-\newlabel{fig:home_games_n1000}{{3}{9}{Distribution des matchs à domicile par joueur pour $n=1000$ (SA Showcase)}{figure.3}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Résultats SA pour $n=1000$ (11 chaînes, $6k$ iters/chaîne, $\alpha =0.5, \beta =2.0$)}}{9}{table.1}\protected@file@percent }
-\newlabel{tab:sa_n1000_showcase}{{1}{9}{Résultats SA pour $n=1000$ (11 chaînes, $6k$ iters/chaîne, $\alpha =0.5, \beta =2.0$)}{table.1}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {5}Approche par Méta-heuristique : Recherche Tabou (Tabu Search)}{9}{section.5}\protected@file@percent }
-\newlabel{sec:ts}{{5}{9}{Approche par Méta-heuristique : Recherche Tabou (Tabu Search)}{section.5}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Principe et Implémentation "Légère"}{9}{subsection.5.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Résultats des Benchmarks TS}{9}{subsection.5.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {6}Analyse Comparative et Discussion}{9}{section.6}\protected@file@percent }
-\newlabel{sec:analyse}{{6}{9}{Analyse Comparative et Discussion}{section.6}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Comparaison MILP vs. Heuristiques (SA et TS)}{9}{subsection.6.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Comparaison SA vs. TS}{10}{subsection.6.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.3}Impact du Réglage des Hyperparamètres ($\alpha , \beta $) pour SA}{10}{subsection.6.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.4}Limites et Perspectives}{10}{subsection.6.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {7}Analyse de Complexité Empirique}{10}{section.7}\protected@file@percent }
-\newlabel{sec:complexite}{{7}{10}{Analyse de Complexité Empirique}{section.7}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Analyse de complexité empirique du SA : Temps d'exécution moyen vs. $n$ (échelle log-log).}}{10}{figure.4}\protected@file@percent }
-\newlabel{fig:sa_complexity_loglog}{{4}{10}{Analyse de complexité empirique du SA : Temps d'exécution moyen vs. $n$ (échelle log-log)}{figure.4}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {8}Conclusion}{11}{section.8}\protected@file@percent }
-\newlabel{sec:conclusion}{{8}{11}{Conclusion}{section.8}{}}
-\gdef \@abspage@last{11}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{2}{section.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.1}Contexte}{2}{subsection.1.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.2}Objectifs du Projet}{2}{subsection.1.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.3}Structure du Rapport}{2}{subsection.1.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2}Modélisation Mathématique}{2}{section.2}\protected@file@percent }
+\newlabel{sec:modelisation}{{2}{2}{Modélisation Mathématique}{section.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Définition du Problème}{2}{subsection.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Variables de Décision}{3}{subsection.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.1}Variable Principale}{3}{subsubsection.2.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.2}Variables Auxiliaires pour l'Équité}{3}{subsubsection.2.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Contraintes}{3}{subsection.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.3.1}Contraintes Fondamentales du Round Robin}{3}{subsubsection.2.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.3.2}Contraintes d'Équité}{3}{subsubsection.2.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}Métriques d'Équité}{4}{subsection.2.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.4.1}HomeStrength}{4}{subsubsection.2.4.1}\protected@file@percent }
+\newlabel{eq:homestrength}{{10}{4}{HomeStrength}{equation.10}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.4.2}Pénalité de Séquence}{4}{subsubsection.2.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.4.3}StdDevAdvantage (Proxy : MaxDev)}{5}{subsubsection.2.4.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.5}Fonction Objectif}{5}{subsection.2.5}\protected@file@percent }
+\newlabel{subsec:fonction_objectif_initiale}{{2.5}{5}{Fonction Objectif}{subsection.2.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.6}Fonction Objectif Normalisée et Calibration des Poids ($\alpha , \beta $)}{5}{subsection.2.6}\protected@file@percent }
+\newlabel{subsec:normalisation_calibration}{{2.6}{5}{Fonction Objectif Normalisée et Calibration des Poids ($\alpha , \beta $)}{subsection.2.6}{}}
+\newlabel{eq:znorm}{{14}{5}{Fonction Objectif Normalisée et Calibration des Poids ($\alpha , \beta $)}{equation.14}{}}
+\gdef \@abspage@last{6}
