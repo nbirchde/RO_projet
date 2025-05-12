@@ -31,6 +31,71 @@ def calculate_home_strength(schedule_list, n):
             raw_hs += max(0, rank_diff)
     return raw_hs
 
+def calculate_raw_max_deviation(schedule_list, n):
+    """
+    Calculates the raw Max Deviation metric: MaxDev = max_i | H_i - (n-1)/2 |.
+    H_i is the number of home games for player i.
+    """
+    if n <= 1:
+        return 0.0
+    
+    home_games_counts = calculate_home_games_per_player(schedule_list, n)
+    if not home_games_counts and n > 0 : # schedule_list might be empty
+         # All players have 0 home games if schedule is empty
+        home_games_counts = [0] * n
+
+
+    ideal_home_games = (n - 1) / 2.0
+    max_dev = 0.0
+    # If home_games_counts is empty (e.g. n=0), this loop won't run, max_dev remains 0.0
+    for count in home_games_counts:
+        deviation = abs(count - ideal_home_games)
+        if deviation > max_dev:
+            max_dev = deviation
+    return max_dev
+
+def calculate_raw_total_penalty_sequence(schedule_list, n):
+    """
+    Calculates the total number of breaks in the schedule.
+    A break is defined as a player playing more than two consecutive
+    home games or more than two consecutive away games.
+    A sequence of k > 2 identical game types (H or A) contributes k-2 breaks.
+    """
+    if n == 0 or not schedule_list:
+        return 0
+
+    player_schedules = [[] for _ in range(n)] 
+
+    for _round_idx, round_matches in enumerate(schedule_list):
+        for home_player, away_player in round_matches:
+            if 1 <= home_player <= n:
+                player_schedules[home_player - 1].append('H')
+            if 1 <= away_player <= n:
+                player_schedules[away_player - 1].append('A')
+            
+    total_breaks = 0
+    for i in range(n):
+        player_seq = player_schedules[i]
+        if len(player_seq) < 3:
+            continue
+
+        current_streak_type = player_seq[0]
+        current_streak_length = 1
+        for j in range(1, len(player_seq)):
+            if player_seq[j] == current_streak_type:
+                current_streak_length += 1
+            else:
+                if current_streak_length > 2:
+                    total_breaks += (current_streak_length - 2)
+                current_streak_type = player_seq[j]
+                current_streak_length = 1
+        
+        if current_streak_length > 2: # Check the last streak
+            total_breaks += (current_streak_length - 2)
+            
+    return total_breaks
+
+
 def calculate_max_home_strength_denominator(n):
     """
     Calculates the theoretical maximum possible value for the new HomeStrength
@@ -112,105 +177,8 @@ def calculate_home_games_per_player(schedule_list, n):
                 home_games_counts[home_player - 1] += 1
     return home_games_counts
 
-def calculate_raw_max_deviation(schedule_list, n):
-    """
-    Calculates the raw Max Deviation metric: MaxDev = max_i | H_i - (n-1)/2 |.
-    H_i is the number of home games for player i.
-    """
-    if n <= 1:
-        return 0.0
-    
-    home_games_counts = calculate_home_games_per_player(schedule_list, n)
-    if not home_games_counts and n > 0 : # schedule_list might be empty
-         # All players have 0 home games if schedule is empty
-        home_games_counts = [0] * n
-
-
-    ideal_home_games = (n - 1) / 2.0
-    max_dev = 0.0
-    # If home_games_counts is empty (e.g. n=0), this loop won't run, max_dev remains 0.0
-    for count in home_games_counts:
-        deviation = abs(count - ideal_home_games)
-        if deviation > max_dev:
-            max_dev = deviation
-    return max_dev
-
-def calculate_raw_total_penalty_sequence(schedule_list, n):
-    """
-    Calculates the total number of breaks in the schedule.
-    A break is defined as a player playing more than two consecutive
-    home games or more than two consecutive away games.
-    A sequence of k > 2 identical game types (H or A) contributes k-2 breaks.
-    """
-    if n == 0 or not schedule_list:
-        return 0
-
-    player_schedules = [[] for _ in range(n)] 
-
-    for _round_idx, round_matches in enumerate(schedule_list):
-        for home_player, away_player in round_matches:
-            if 1 <= home_player <= n:
-                player_schedules[home_player - 1].append('H')
-            if 1 <= away_player <= n:
-                player_schedules[away_player - 1].append('A')
-            
-    total_breaks = 0
-    for i in range(n):
-        player_seq = player_schedules[i]
-        if len(player_seq) < 3:
-            continue
-
-        current_streak_type = player_seq[0]
-        current_streak_length = 1
-        for j in range(1, len(player_seq)):
-            if player_seq[j] == current_streak_type:
-                current_streak_length += 1
-            else:
-                if current_streak_length > 2:
-                    total_breaks += (current_streak_length - 2)
-                current_streak_type = player_seq[j]
-                current_streak_length = 1
-        
-        if current_streak_length > 2: # Check the last streak
-            total_breaks += (current_streak_length - 2)
-            
-    return total_breaks
-
-def get_all_fairness_metrics(schedule_list, n):
-    """
-    Calculates and returns all fairness metrics, both raw and normalized,
-    and home games per player.
-    """
-    if n == 0: # Special case for n=0
-        return {
-            "num_players": 0,
-            "num_rounds": len(schedule_list) if schedule_list else 0,
-            "raw_home_strength": 0.0,
-            "normalized_home_strength": 0.0,
-            "home_games_per_player": [],
-            "raw_total_penalty_sequence": 0,
-            "normalized_total_penalty_sequence": 0.0,
-            "raw_max_deviation": 0.0,
-            "normalized_max_deviation": 0.0
-        }
-    
-    # Handle empty schedule_list for n > 0
-    if not schedule_list:
-        raw_hs = 0.0
-        home_games = [0] * n
-        raw_total_pen_seq = 0
-        raw_max_dev = calculate_raw_max_deviation(schedule_list, n) # handles empty schedule
-    else:
-        raw_hs = calculate_home_strength(schedule_list, n)
-        home_games = calculate_home_games_per_player(schedule_list, n)
-        raw_total_pen_seq = calculate_raw_total_penalty_sequence(schedule_list, n)
-        raw_max_dev = calculate_raw_max_deviation(schedule_list, n)
-
-    norm_hs = normalize_home_strength(raw_hs, n)
-    norm_total_pen_seq = normalize_total_pen_seq(raw_total_pen_seq, n)
-    norm_max_dev = normalize_max_dev(raw_max_dev, n)
-
-    # Calculate player H/A sequences
+def calculate_ha_sequences(schedule_list, n):
+        # Calculate player H/A sequences
     player_ha_sequences_chars = [[] for _ in range(n)]
     if schedule_list: # Only if schedule is not empty
         for r_idx in range(len(schedule_list)):
@@ -236,6 +204,19 @@ def get_all_fairness_metrics(schedule_list, n):
                 #    player_ha_sequences_chars[p_idx].append('-') # Placeholder for bye/missing
 
     player_ha_sequences_str = ["".join(seq) for seq in player_ha_sequences_chars]
+    return player_ha_sequences_str
+
+def get_all_fairness_metrics(schedule_list, n):
+    raw_hs = calculate_home_strength(schedule_list, n)
+    home_games = calculate_home_games_per_player(schedule_list, n)
+    raw_total_pen_seq = calculate_raw_total_penalty_sequence(schedule_list, n)
+    raw_max_dev = calculate_raw_max_deviation(schedule_list, n)
+        
+    norm_hs = normalize_home_strength(raw_hs, n)
+    norm_total_pen_seq = normalize_total_pen_seq(raw_total_pen_seq, n)
+    norm_max_dev = normalize_max_dev(raw_max_dev, n)
+
+    player_ha_sequences_str = calculate_ha_sequences(schedule_list, n)
 
     return {
         "num_players": n,
