@@ -25,8 +25,8 @@ import math
 import argparse
 import csv
 import numpy as np # For np.arange
-# Import the specific functions needed, including the new denominator calculator
-from metrics import calculate_s_max_denominator, normalize_home_strength, normalize_total_pen_seq, normalize_max_dev
+# Import the specific functions needed, including the updated denominator calculator
+from metrics import calculate_max_home_strength_denominator, normalize_home_strength, normalize_total_pen_seq, normalize_max_dev
 import config # Import the configuration
 
 def solve_exact(n, alpha_pen_seq=None, beta=None, time_limit=None):
@@ -98,8 +98,8 @@ def solve_exact(n, alpha_pen_seq=None, beta=None, time_limit=None):
     max_deviation_term = MaxDev
 
     # Normalization denominators (constants for a given n)
-    # Use the new S_max calculation for HomeStrength
-    denom_hs = calculate_s_max_denominator(n)
+    # Use the correct theoretical maximum S_max calculation for HomeStrength
+    denom_hs = calculate_max_home_strength_denominator(n)
     denom_ps = n * (n - 2.0) if n > 2 else 1.0
     denom_md = (n - 1.0) / 2.0 if n > 1 else 1.0 # Kept original for MaxDev
 

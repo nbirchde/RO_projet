@@ -177,7 +177,7 @@ Pour comparer et pondérer équitablement les différentes métriques, nous util
 La métrique HomeStrength (Eq.~\ref{eq:homestrength}) est maintenant toujours positive ou nulle et est normalisée pour viser un intervalle de $[0, 1]$. Les autres métriques sont également normalisées pour viser $[0, 1]$.
 Les dénominateurs utilisés pour la normalisation pour un nombre $n$ de joueurs sont :
 \begin{itemize}
-    \item Pour HomeStrength: $S_{max} = \sum_{i=1}^{n} \sum_{j=i+1}^{n} (j-i) / 2$. C'est une estimation de la valeur maximale possible, considérant qu'environ la moitié des matchs contre des plus faibles sont joués à domicile. Le calcul exact dépend du calendrier, mais cette valeur fournit un ordre de grandeur pour la normalisation. Une analyse plus fine du $S_{max}$ théorique pour cette nouvelle définition serait nécessaire pour une normalisation parfaite.
+    \item Pour HomeStrength: $S_{max} = \frac{n(n-1)(n+1)}{6}$. C'est la valeur maximale théorique de la nouvelle métrique HomeStrength, correspondant au cas où chaque joueur mieux classé reçoit à domicile chaque joueur moins bien classé.
     \item Pour TotalPenalitesSequence: $D_{PS} = n(n-2)$.
     \item Pour MaxDeviation: $D_{MD} = \frac{n-1}{2}$.
 \end{itemize}
@@ -186,7 +186,7 @@ La fonction objectif normalisée que nous cherchons à minimiser est :
     \min \quad Z_{norm} = \frac{\text{HomeStrength}}{S_{max}} + \alpha \cdot \frac{\text{TotalPenalitesSequence}}{D_{PS}} + \beta \cdot \frac{\text{MaxDeviation}}{D_{MD}}
     \label{eq:znorm}
 \end{equation}
-Soit $Z_{norm} = \text{HS}_{norm} + \alpha \cdot PS_{norm} + \beta \cdot MD_{norm}$. Comme la nouvelle définition de HomeStrength est toujours positive ou nulle, nous la minimisons directement. \textbf{Note importante :} La discussion sur la calibration des poids $\alpha$ et $\beta$ ci-dessous, ainsi que les valeurs numériques spécifiques de $HS_{norm}$ mentionnées, sont basées sur l'ancienne définition de HomeStrength et sa normalisation. Une nouvelle calibration est nécessaire avec la métrique HomeStrength actuelle (Eq.~\ref{eq:homestrength}) et la nouvelle normalisation par $S_{max}$.
+Soit $Z_{norm} = \text{HS}_{norm} + \alpha \cdot PS_{norm} + \beta \cdot MD_{norm}$. Comme la nouvelle définition de HomeStrength est toujours positive ou nulle, nous la minimisons directement. \textbf{Note importante :} La discussion sur la calibration des poids $\alpha$ et $\beta$ ci-dessous, ainsi que les valeurs numériques spécifiques de $HS_{norm}$ mentionnées, sont basées sur l'ancienne définition de HomeStrength et sa normalisation. Une nouvelle calibration est nécessaire avec la métrique HomeStrength actuelle (Eq.~\ref{eq:homestrength}) et la normalisation par le $S_{max}$ corrigé.
 
 Le choix des poids $\alpha$ et $\beta$ est crucial. Pour les fixer (avec l'ancienne métrique), nous avons effectué une calibration sur $n=6$.
 Nous avons exécuté le script \texttt{src/exact\_model.py} avec une grille de valeurs pour $\alpha$ et $\beta$ allant de 0.0 à 6.0, par pas de 0.2, pour $n=6$. Les résultats ont été sauvegardés dans \texttt{reports/alpha\_beta\_calibration\_n6\_extended\_range.csv}.

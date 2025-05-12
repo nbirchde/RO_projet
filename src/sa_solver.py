@@ -17,8 +17,8 @@ import logging
 import config # Import the configuration
 # analysis_utils import for count_breaks and compute_total_breaks removed
 from packed_array_utils import get_status_packed, set_status_packed, PLAYERS_PER_BYTE
-# Import necessary functions from metrics, including the new denominator calculator
-from metrics import calculate_home_strength, get_all_fairness_metrics, calculate_s_max_denominator
+# Import necessary functions from metrics, including the updated denominator calculator
+from metrics import calculate_home_strength, get_all_fairness_metrics, calculate_max_home_strength_denominator
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 log = logging.getLogger(__name__)
@@ -426,8 +426,8 @@ def solve_sa(n, iterations=10000, initial_temp=1.0, cooling_rate=0.95, alpha_pen
                 set_status_packed(packed_seq_arr, h_init, r_init, 1)
                 set_status_packed(packed_seq_arr, a_init, r_init, 0)
     
-    # Use the new S_max calculation for HomeStrength normalization denominator
-    max_home_strength_approx = calculate_s_max_denominator(n)
+    # Use the correct theoretical maximum S_max calculation for HomeStrength normalization denominator
+    max_home_strength_approx = calculate_max_home_strength_denominator(n)
     max_penalites_sequence_approx = n * (n - 2.0) if n > 2 else 1.0 # Ensure float for consistency
     max_maxdev_approx = (n - 1.0) / 2.0 if n > 1 else 1.0 # Ensure float
 
@@ -581,8 +581,8 @@ def tabu_search_solver(n_players, initial_schedule_list, iterations=5000, tenure
     random.seed(seed)
     np.random.seed(seed)
 
-    # Use the new S_max calculation for HomeStrength normalization denominator
-    max_home_strength_approx = calculate_s_max_denominator(n_players)
+    # Use the correct theoretical maximum S_max calculation for HomeStrength normalization denominator
+    max_home_strength_approx = calculate_max_home_strength_denominator(n_players)
     max_penalites_sequence_approx = n_players * (n_players - 2.0) if n_players > 2 else 1.0
     max_maxdev_approx = (n_players - 1.0) / 2.0 if n_players > 1 else 1.0
     

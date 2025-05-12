@@ -31,39 +31,34 @@ def calculate_home_strength(schedule_list, n):
             raw_hs += max(0, rank_diff)
     return raw_hs
 
-def calculate_s_max_denominator(n):
+def calculate_max_home_strength_denominator(n):
     """
-    Calculates the estimated maximum possible value for the new HomeStrength
-    metric, used for normalization.
-    S_max = sum_{i=1}^{n} sum_{j=i+1}^{n} (j-i) / 2
+    Calculates the theoretical maximum possible value for the new HomeStrength
+    metric (sum max(0, j-i) * x_ijr), used for normalization.
+    This maximum occurs when every stronger player 'i' plays at home against
+    every weaker player 'j'.
+    S_max = sum_{i=1}^{n-1} sum_{j=i+1}^{n} (j - i) = n(n-1)(n+1)/6
     """
     if n < 2:
         return 1.0 # Avoid division by zero, normalization will be raw_hs / 1.0
 
-    total_diff_sum = 0
-    for i in range(1, n + 1):
-        for j in range(i + 1, n + 1):
-            total_diff_sum += (j - i)
+    # Direct formula is more efficient than nested loops for large n
+    denominator = n * (n - 1) * (n + 1) / 6.0
     
-    # The denominator is half the sum of all possible positive rank differences
-    denominator = total_diff_sum / 2.0
-    
-    # Avoid division by zero if somehow the sum is zero (shouldn't happen for n>=2)
+    # Avoid division by zero if somehow the calculation yields zero (e.g., n<2 handled above)
     return denominator if denominator > 0 else 1.0
 
 
 def normalize_home_strength(raw_home_strength, n):
     """
     Normalizes the raw HomeStrength metric (new definition, non-negative).
-    The denominator is an estimate of the maximum possible value, S_max,
-    calculated as sum_{i=1}^{n} sum_{j=i+1}^{n} (j-i) / 2.
-    This aims for a range of [0, 1], although values slightly above 1 might
-    be possible depending on the specific schedule and the accuracy of S_max.
-    A value of 0 implies no home games against weaker opponents, while higher
-    values indicate a greater tendency for stronger players to play weaker
-    opponents at home.
+    The denominator is the theoretical maximum possible value, S_max = n(n-1)(n+1)/6.
+    This normalization aims for a range of [0, 1].
+    A value of 0 implies no home games against weaker opponents.
+    A value of 1 implies the maximum possible bias where every stronger player
+    plays home against every weaker player.
     """
-    denominator = calculate_s_max_denominator(n)
+    denominator = calculate_max_home_strength_denominator(n)
     return raw_home_strength / denominator
 
 def normalize_total_pen_seq(total_pen_seq, n):
@@ -316,10 +311,10 @@ if __name__ == '__main__':
         [(4, 3), (1, 2)],  # R2: P1:H, P2:A, P3:A, P4:H
         [(2, 4), (3, 1)]   # R3: P1:A, P2:H, P3:H, P4:A
     ]
-    # Expected for this n=4 example (NEW HomeStrength):
+    # Expected for this n=4 example (NEW HomeStrength, NEW Normalization):
     # HomeStrength: Raw= max(0,4-1)+max(0,3-2) + max(0,3-4)+max(0,2-1) + max(0,4-2)+max(0,1-3) = (3+1) + (0+1) + (2+0) = 7
-    # S_max = ( (2-1)+(3-1)+(4-1) + (3-2)+(4-2) + (4-3) ) / 2 = (1+2+3 + 1+2 + 1) / 2 = 10 / 2 = 5
-    # Normalized HS = 7 / 5 = 1.4
+    # S_max = n(n-1)(n+1)/6 = 4*(3)*(5)/6 = 60/6 = 10
+    # Normalized HS = 7 / 10 = 0.7
     # Home Games: P1:[H,H,A]->2, P2:[H,A,H]->2, P3:[A,A,H]->1, P4:[A,H,A]->1. Counts: [2,2,1,1]
     # Max Deviation: Ideal=(4-1)/2=1.5. Devs: |2-1.5|=0.5, |1-1.5|=0.5. Raw MaxDev=0.5
     # Normalized MaxDev = 0.5 / ((4-1)/2) = 0.5 / 1.5 = 1/3 = 0.3333
@@ -333,8 +328,8 @@ if __name__ == '__main__':
     print(f"--- Testing with n={n_test_4} Example Schedule ---")
     metrics_n4 = get_all_fairness_metrics(schedule_n4_example, n_test_4)
     pprint_fairness_metrics(metrics_n4)
-    # Verification (NEW HomeStrength):
-    # Raw HS: 7.0, Norm HS: 1.4
+    # Verification (NEW HomeStrength, NEW Normalization):
+    # Raw HS: 7.0, Norm HS: 0.7
     # Home Games: P1:2, P2:2, P3:1, P4:1
     # Raw PenSeq: 0, Norm PenSeq: 0.0
     # Raw MaxDev: 0.5, Norm MaxDev: 0.3333
@@ -370,8 +365,8 @@ if __name__ == '__main__':
     # R3: (2,3) (P1 bye) -> P2:H, P3:A
     # P1: HA, P2: AH, P3: HA. No breaks.
     # HS (NEW): max(0, 2-1) + max(0, 1-3) + max(0, 3-2) = 1 + 0 + 1 = 2.
-    # S_max (n=3) = ((2-1)+(3-1) + (3-2)) / 2 = (1+2 + 1) / 2 = 4 / 2 = 2.
-    # Norm HS = 2 / 2 = 1.0.
+    # S_max (n=3) = 3*(2)*(4)/6 = 24/6 = 4.
+    # Norm HS = 2 / 4 = 0.5.
     # Home Games: P1:1, P2:1, P3:1. Ideal=(3-1)/2=1. MaxDev=0. Norm MaxDev=0.
     schedule_n3_rr = [
         [(1,2)], # P3 bye - P1 home vs P2 away
@@ -397,10 +392,10 @@ if __name__ == '__main__':
     print("\n--- Testing with n=2, Schedule [(1,2)] ---")
     metrics_n2_sched = get_all_fairness_metrics([[(1,2)]], 2)
     pprint_fairness_metrics(metrics_n2_sched)
-    # Expected for n=2, schedule [[(1,2)]] (NEW HomeStrength):
+    # Expected for n=2, schedule [[(1,2)]] (NEW HomeStrength, NEW Normalization):
     # HS: raw=max(0, 2-1)=1.
-    # S_max (n=2) = ((2-1)) / 2 = 1 / 2 = 0.5.
-    # NormHS = 1 / 0.5 = 2.0
+    # S_max (n=2) = 2*(1)*(3)/6 = 6/6 = 1.
+    # NormHS = 1 / 1 = 1.0
     # HomeGames: P1:1, P2:0
     # PenSeq: Raw=0 (P1:H, P2:A). Norm=0
     # MaxDev: Ideal=(2-1)/2=0.5. P1:|1-0.5|=0.5, P2:|0-0.5|=0.5. RawMaxDev=0.5
