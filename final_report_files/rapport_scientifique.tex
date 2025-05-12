@@ -177,9 +177,25 @@ Pour comparer et pondérer équitablement les différentes métriques, nous util
 La métrique HomeStrength (Eq.~\ref{eq:homestrength}) est maintenant toujours positive ou nulle et est normalisée pour viser un intervalle de $[0, 1]$. Les autres métriques sont également normalisées pour viser $[0, 1]$.
 Les dénominateurs utilisés pour la normalisation pour un nombre $n$ de joueurs sont :
 \begin{itemize}
-    \item Pour HomeStrength: $S_{max} = \frac{n(n-1)(n+1)}{6}$. C'est la valeur maximale théorique de la nouvelle métrique HomeStrength, correspondant au cas où chaque joueur mieux classé reçoit à domicile chaque joueur moins bien classé.
-    \item Pour TotalPenalitesSequence: $D_{PS} = n(n-2)$.
-    \item Pour MaxDeviation: $D_{MD} = \frac{n-1}{2}$.
+    \item Pour HomeStrength: $S_{max}$. Cette valeur représente le maximum théorique de la nouvelle métrique HomeStrength (Eq.~\ref{eq:homestrength}), correspondant au cas où chaque joueur mieux classé reçoit à domicile chaque joueur moins bien classé. La métrique HomeStrength est définie comme $\sum_{i,j,r} \max(0, j - i) \cdot x_{i,j,r}$. Son maximum théorique est atteint lorsque, pour chaque paire de joueurs $(i, j)$ avec $i < j$ (joueur $i$ mieux classé que joueur $j$), le joueur $i$ joue à domicile contre le joueur $j$ exactement une fois au cours du tournoi. Dans ce cas, le terme $\max(0, j-i)$ est sommé pour toutes les paires $(i, j)$ avec $i < j$. Le maximum est donc :
+    $$ S_{max} = \sum_{i=1}^{n-1} \sum_{j=i+1}^{n} (j - i) $$
+    Cette somme peut être calculée comme suit :
+    $$ \sum_{i=1}^{n-1} \sum_{j=i+1}^{n} (j - i) = \sum_{i=1}^{n-1} \sum_{k=1}^{n-i} k \quad \text{où } k = j-i $$
+    $$ = \sum_{i=1}^{n-1} \frac{(n-i)(n-i+1)}{2} $$
+    En posant $m = n-i$, lorsque $i$ va de $1$ à $n-1$, $m$ va de $n-1$ à $1$. La somme devient :
+    $$ = \sum_{m=1}^{n-1} \frac{m(m+1)}{2} = \frac{1}{2} \sum_{m=1}^{n-1} (m^2 + m) $$
+    $$ = \frac{1}{2} \left( \sum_{m=1}^{n-1} m^2 + \sum_{m=1}^{n-1} m \right) $$
+    En utilisant les formules pour la somme des premiers entiers et des premiers carrés :
+    $$ = \frac{1}{2} \left( \frac{(n-1)n(2n-1)}{6} + \frac{(n-1)n}{2} \right) $$
+    $$ = \frac{1}{2} \left( \frac{(n-1)n(2n-1) + 3(n-1)n}{6} \right) $$
+    $$ = \frac{1}{2} \left( \frac{(n-1)n(2n-1 + 3)}{6} \right) $$
+    $$ = \frac{1}{2} \left( \frac{(n-1)n(2n+2)}{6} \right) $$
+    $$ = \frac{1}{2} \left( \frac{(n-1)n \cdot 2(n+1)}{6} \right) $$
+    $$ S_{max} = \frac{n(n-1)(n+1)}{6} $$
+    La normalisation par $S_{max}$ vise donc un score dans l'intervalle $[0,1]$.
+
+    \item Pour TotalPenalitesSequence: $D_{PS} = n(n-2)$. Chaque joueur dispute $n-1$ matchs. Il y a donc $n-2$ transitions entre matchs consécutifs pour chaque joueur où une pénalité de séquence (H-H ou A-A) peut survenir. Pour $n$ joueurs, le nombre total maximal de ces "points de pénalité potentiels" est $n(n-2)$. Ce dénominateur sert à borner la métrique normalisée, typiquement dans $[0,1]$.
+    \item Pour MaxDeviation: $D_{MD} = \frac{n-1}{2}$. Le nombre idéal de matchs à domicile pour chaque joueur est $\bar{H} = \frac{n-1}{2}$. La métrique brute $MaxDev = \max_i |H_i - \bar{H}|$ capture le plus grand écart par rapport à cet idéal. Normaliser par $D_{MD} = \bar{H}$ exprime cet écart maximal en proportion de la valeur idéale. Si un joueur jouait tous ses $n-1$ matchs à domicile (ou tous à l'extérieur), son $H_i$ serait $n-1$ (ou $0$), et l'écart par rapport à $\bar{H}$ serait $(n-1) - \frac{n-1}{2} = \frac{n-1}{2}$. Ainsi, la métrique normalisée $MD_{norm} = \frac{MaxDev}{D_{MD}}$ est bornée dans $[0,1]$.
 \end{itemize}
 La fonction objectif normalisée que nous cherchons à minimiser est :
 \begin{equation}

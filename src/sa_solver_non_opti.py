@@ -7,7 +7,7 @@ round-robin schedules by minimizing the same objective function used in the
 exact model: Z = Delta_HomeStrength + alpha_pen_seq * Pénalité_de_séquence + beta * Max_Deviation.
 
 Usage:
-    python src/sa_solver.py [n_players] [iterations] [alpha_pen_seq] [beta]
+    python src/sa_solver_non_opti.py [n_players] [iterations] [alpha_pen_seq] [beta]
 
 Args:
     n_players (int, optional): Number of players (must be even). Defaults to 6.
@@ -16,12 +16,21 @@ Args:
     beta (float, optional): Weight for the Max Deviation objective term. Defaults to 1.0.
 """
 import sys
+import os
 import random
 import math
 import copy
 import numpy as np # For calculating standard deviation if needed later, using max deviation for now
+
+# Add the project root directory to sys.path to enable importing modules from src
+# This allows running the script directly from the project root.
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.abspath(os.path.join(current_dir, os.pardir))
+sys.path.insert(0, project_root)
+
+# Now import modules directly
 from metrics import calculate_home_strength, normalize_home_strength, normalize_total_pen_seq, normalize_max_dev
-import src.config as config # Import the configuration
+import config # Import the configuration
 
 def initial_schedule(n):
     """
