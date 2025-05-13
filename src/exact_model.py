@@ -26,8 +26,8 @@ import argparse
 import csv
 import numpy as np # For np.arange
 # Import the specific functions needed, including the updated denominator calculator
-from metrics import calculate_max_home_strength_denominator, normalize_home_strength, normalize_total_pen_seq, normalize_max_dev
-import config # Import the configuration
+from .metrics import calculate_max_home_strength_denominator, normalize_home_strength, normalize_total_pen_seq, normalize_max_dev
+from . import config # Import the configuration
 
 def solve_exact(n, alpha_pen_seq=None, beta=None, time_limit=None):
     """

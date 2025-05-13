@@ -1,6 +1,14 @@
 # RO-PROJET
 
+## Running the Exact Model
 
+To execute the exact model (`src/exact_model.py`), use the following command from the project root directory:
+
+```bash
+python3 -m src.exact_model
+```
+
+Note that the exact model is computationally intensive and is typically only feasible for small instances of the problem.
 
 6.  **Compiler le rapport LaTeX (si LaTeX est installé) :**
     ```bash
@@ -8,6 +16,15 @@
     latexmk -pdf -output-directory=final_report_files final_report_files/rapport_scientifique.tex
     ```
 
+## Running the Solver
+
+To execute the simulated annealing solver (`src/sa_solver.py`) directly, use the following command from the project root directory:
+
+```bash
+python3 -m src.sa_solver
+```
+
+This method is necessary because the solver uses relative imports and must be run as a module within the project package.
 
 ### 1. Running the Calibration
 
