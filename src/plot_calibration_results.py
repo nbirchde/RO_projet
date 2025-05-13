@@ -5,20 +5,20 @@ import os
 import numpy as np
 
 # --- Configuration ---
-INPUT_CSV = "calibration_results_n6_empirical_norm_v4.csv" # Updated input file
-OUTPUT_DIR = "calibration_plots_empirical_norm"      # Updated output directory
-PARETO_PLOT_3D_FILE_HTML = os.path.join(OUTPUT_DIR, "pareto_3d_interactive_empirical.html")
-PARETO_PLOT_3D_FILE_PNG = os.path.join(OUTPUT_DIR, "pareto_3d_static_empirical.png")
-PARETO_PLOT_HS_PS_FILE_HTML = os.path.join(OUTPUT_DIR, "pareto_2d_hs_vs_ps_empirical.html")
-PARETO_PLOT_HS_PS_FILE_PNG = os.path.join(OUTPUT_DIR, "pareto_2d_hs_vs_ps_empirical.png")
-PARETO_PLOT_HS_MD_FILE_HTML = os.path.join(OUTPUT_DIR, "pareto_2d_hs_vs_md_empirical.html")
-PARETO_PLOT_HS_MD_FILE_PNG = os.path.join(OUTPUT_DIR, "pareto_2d_hs_vs_md_empirical.png")
-PARETO_PLOT_PS_MD_FILE_HTML = os.path.join(OUTPUT_DIR, "pareto_2d_ps_vs_md_empirical.html")
-PARETO_PLOT_PS_MD_FILE_PNG = os.path.join(OUTPUT_DIR, "pareto_2d_ps_vs_md_empirical.png")
+INPUT_CSV = "calibration_results_n200_empirical_norm_v2_median_subtracted.csv" # Updated input file
+OUTPUT_DIR = "calibration_plots_n200_empirical_norm_v2_median_subtracted"      # Updated output directory
+PARETO_PLOT_3D_FILE_HTML = os.path.join(OUTPUT_DIR, "pareto_3d_interactive_n200_emp_norm_v2.html")
+PARETO_PLOT_3D_FILE_PNG = os.path.join(OUTPUT_DIR, "pareto_3d_static_n200_emp_norm_v2.png")
+PARETO_PLOT_HS_PS_FILE_HTML = os.path.join(OUTPUT_DIR, "pareto_2d_hs_vs_ps_n200_emp_norm_v2.html")
+PARETO_PLOT_HS_PS_FILE_PNG = os.path.join(OUTPUT_DIR, "pareto_2d_hs_vs_ps_n200_emp_norm_v2.png")
+PARETO_PLOT_HS_MD_FILE_HTML = os.path.join(OUTPUT_DIR, "pareto_2d_hs_vs_md_n200_emp_norm_v2.html")
+PARETO_PLOT_HS_MD_FILE_PNG = os.path.join(OUTPUT_DIR, "pareto_2d_hs_vs_md_n200_emp_norm_v2.png")
+PARETO_PLOT_PS_MD_FILE_HTML = os.path.join(OUTPUT_DIR, "pareto_2d_ps_vs_md_n200_emp_norm_v2.html")
+PARETO_PLOT_PS_MD_FILE_PNG = os.path.join(OUTPUT_DIR, "pareto_2d_ps_vs_md_n200_emp_norm_v2.png")
 
 
-# Objectives to minimize
-OBJECTIVES = ['norm_hs', 'norm_ps', 'norm_md']
+# Objectives to minimize (using the median-subtracted empirical normalized scores)
+OBJECTIVES = ['emp_norm_hs', 'emp_norm_ps', 'emp_norm_md']
 # --- End Configuration ---
 
 # def is_pareto_efficient(costs, return_mask=True):
@@ -98,46 +98,52 @@ if __name__ == "__main__":
 
     # Non-Pareto points
     fig3d.add_trace(go.Scatter3d(
-        x=df[~df['is_pareto']]['norm_hs'],
-        y=df[~df['is_pareto']]['norm_ps'],
-        z=df[~df['is_pareto']]['norm_md'],
+        x=df[~df['is_pareto']]['emp_norm_hs'],
+        y=df[~df['is_pareto']]['emp_norm_ps'],
+        z=df[~df['is_pareto']]['emp_norm_md'],
         mode='markers',
         marker=dict(size=5, color='blue', opacity=0.5),
         name='Dominated Solutions',
-        customdata=df[~df['is_pareto']][['alpha', 'beta', 'total_norm_score']],
+        customdata=df[~df['is_pareto']][['alpha', 'beta', 'total_norm_score', 'raw_hs', 'raw_ps', 'raw_md']],
         hovertemplate='<b>Dominated</b><br>' +
-                      'HS_norm: %{x:.4f}<br>' +
-                      'PS_norm: %{y:.4f}<br>' +
-                      'MD_norm: %{z:.4f}<br>' +
+                      'EmpNorm HS: %{x:.4f}<br>' +
+                      'EmpNorm PS: %{y:.4f}<br>' +
+                      'EmpNorm MD: %{z:.4f}<br>' +
                       'Alpha: %{customdata[0]:.2f}<br>' +
                       'Beta: %{customdata[1]:.2f}<br>' +
-                      'Total Score: %{customdata[2]:.4f}<extra></extra>'
+                      'Total Score (SA obj): %{customdata[2]:.4f}<br>' +
+                      'Raw HS: %{customdata[3]:.0f}<br>' +
+                      'Raw PS: %{customdata[4]:.0f}<br>' +
+                      'Raw MD: %{customdata[5]:.2f}<extra></extra>'
     ))
 
     # Pareto points
     fig3d.add_trace(go.Scatter3d(
-        x=pareto_df['norm_hs'],
-        y=pareto_df['norm_ps'],
-        z=pareto_df['norm_md'],
+        x=pareto_df['emp_norm_hs'],
+        y=pareto_df['emp_norm_ps'],
+        z=pareto_df['emp_norm_md'],
         mode='markers',
         marker=dict(size=7, color='red', symbol='diamond'),
         name='Pareto Frontier',
-        customdata=pareto_df[['alpha', 'beta', 'total_norm_score']],
+        customdata=pareto_df[['alpha', 'beta', 'total_norm_score', 'raw_hs', 'raw_ps', 'raw_md']],
         hovertemplate='<b>Pareto Optimal</b><br>' +
-                      'HS_norm: %{x:.4f}<br>' +
-                      'PS_norm: %{y:.4f}<br>' +
-                      'MD_norm: %{z:.4f}<br>' +
+                      'EmpNorm HS: %{x:.4f}<br>' +
+                      'EmpNorm PS: %{y:.4f}<br>' +
+                      'EmpNorm MD: %{z:.4f}<br>' +
                       'Alpha: %{customdata[0]:.2f}<br>' +
                       'Beta: %{customdata[1]:.2f}<br>' +
-                      'Total Score: %{customdata[2]:.4f}<extra></extra>'
+                      'Total Score (SA obj): %{customdata[2]:.4f}<br>' +
+                      'Raw HS: %{customdata[3]:.0f}<br>' +
+                      'Raw PS: %{customdata[4]:.0f}<br>' +
+                      'Raw MD: %{customdata[5]:.2f}<extra></extra>'
     ))
 
     fig3d.update_layout(
-        title='3D Pareto Frontier for (norm_hs, norm_ps, norm_md)',
+        title='3D Pareto Frontier for Empirically Normalized Metrics (Median Subtracted)',
         scene=dict(
-            xaxis_title='Normalized HomeStrength (HS_norm)',
-            yaxis_title='Normalized PenaltySequence (PS_norm)',
-            zaxis_title='Normalized MaxDeviation (MD_norm)'
+            xaxis_title='Emp. Norm HS ((raw-med)/σ)',
+            yaxis_title='Emp. Norm PS ((raw-med)/σ)',
+            zaxis_title='Emp. Norm MD ((raw-med)/σ)'
         ),
         margin=dict(l=0, r=0, b=0, t=40)
     )
@@ -159,11 +165,12 @@ if __name__ == "__main__":
             mode='markers',
             marker=dict(size=8, color='blue', opacity=0.5),
             name='Dominated Solutions',
-            customdata=df_all[~df_all['is_pareto']][['alpha', 'beta', 'total_norm_score'] + OBJECTIVES],
+            customdata=df_all[~df_all['is_pareto']][['alpha', 'beta', 'total_norm_score'] + OBJECTIVES + ['raw_hs', 'raw_ps', 'raw_md']],
             hovertemplate=f'<b>Dominated</b><br>{x_col}: %{{x:.4f}}<br>{y_col}: %{{y:.4f}}<br>' +
                           'Alpha: %{customdata[0]:.2f}<br>Beta: %{customdata[1]:.2f}<br>' +
-                          'Total Score: %{customdata[2]:.4f}<br>' +
-                          'HS: %{customdata[3]:.4f}, PS: %{customdata[4]:.4f}, MD: %{customdata[5]:.4f}<extra></extra>'
+                          'Total Score (SA obj): %{customdata[2]:.4f}<br>' +
+                          f'{OBJECTIVES[0]}: %{{customdata[3]:.4f}}<br>{OBJECTIVES[1]}: %{{customdata[4]:.4f}}<br>{OBJECTIVES[2]}: %{{customdata[5]:.4f}}<br>' +
+                          'Raw HS: %{customdata[6]:.0f}<br>Raw PS: %{customdata[7]:.0f}<br>Raw MD: %{customdata[8]:.2f}<extra></extra>'
         ))
         # Pareto points
         fig2d.add_trace(go.Scatter(
@@ -172,16 +179,17 @@ if __name__ == "__main__":
             mode='markers',
             marker=dict(size=10, color='red', symbol='diamond'),
             name='Pareto Frontier Points',
-            customdata=df_pareto[['alpha', 'beta', 'total_norm_score'] + OBJECTIVES],
+            customdata=df_pareto[['alpha', 'beta', 'total_norm_score'] + OBJECTIVES + ['raw_hs', 'raw_ps', 'raw_md']],
             hovertemplate=f'<b>Pareto Optimal</b><br>{x_col}: %{{x:.4f}}<br>{y_col}: %{{y:.4f}}<br>' +
                           'Alpha: %{customdata[0]:.2f}<br>Beta: %{customdata[1]:.2f}<br>' +
-                          'Total Score: %{customdata[2]:.4f}<br>' +
-                          'HS: %{customdata[3]:.4f}, PS: %{customdata[4]:.4f}, MD: %{customdata[5]:.4f}<extra></extra>'
+                          'Total Score (SA obj): %{customdata[2]:.4f}<br>' +
+                          f'{OBJECTIVES[0]}: %{{customdata[3]:.4f}}<br>{OBJECTIVES[1]}: %{{customdata[4]:.4f}}<br>{OBJECTIVES[2]}: %{{customdata[5]:.4f}}<br>' +
+                          'Raw HS: %{customdata[6]:.0f}<br>Raw PS: %{customdata[7]:.0f}<br>Raw MD: %{customdata[8]:.2f}<extra></extra>'
         ))
         fig2d.update_layout(
             title=title,
-            xaxis_title=x_col,
-            yaxis_title=y_col,
+            xaxis_title=f'{x_col} ((raw-med)/σ)',
+            yaxis_title=f'{y_col} ((raw-med)/σ)',
             legend_title_text='Solution Type'
         )
         fig2d.write_html(filename_html)
@@ -190,170 +198,43 @@ if __name__ == "__main__":
             fig2d.write_image(filename_png, scale=2) # Higher scale for better quality
             print(f"Saved 2D static plot to: {filename_png}")
         except Exception as e:
-            print(f"Could not save 2D static plot ({filename_png}): {e}. Ensure kaleido is installed.")
+            print(f"Could not save 2D static plot (filename_png): {e}. Ensure kaleido is installed.")
 
 
     # HS vs PS
-    create_2d_plot(df, pareto_df, 'norm_hs', 'norm_ps',
-                   '2D Pareto Projection: HS_norm vs PS_norm',
+    create_2d_plot(df, pareto_df, 'emp_norm_hs', 'emp_norm_ps',
+                   '2D Pareto: Emp. Norm HS vs PS (Median Subtracted)',
                    PARETO_PLOT_HS_PS_FILE_HTML, PARETO_PLOT_HS_PS_FILE_PNG)
 
     # HS vs MD
-    create_2d_plot(df, pareto_df, 'norm_hs', 'norm_md',
-                   '2D Pareto Projection: HS_norm vs MD_norm',
+    create_2d_plot(df, pareto_df, 'emp_norm_hs', 'emp_norm_md',
+                   '2D Pareto: Emp. Norm HS vs MD (Median Subtracted)',
                    PARETO_PLOT_HS_MD_FILE_HTML, PARETO_PLOT_HS_MD_FILE_PNG)
 
     # PS vs MD
-    create_2d_plot(df, pareto_df, 'norm_ps', 'norm_md',
-                   '2D Pareto Projection: PS_norm vs MD_norm',
+    create_2d_plot(df, pareto_df, 'emp_norm_ps', 'emp_norm_md',
+                   '2D Pareto: Emp. Norm PS vs MD (Median Subtracted)',
                    PARETO_PLOT_PS_MD_FILE_HTML, PARETO_PLOT_PS_MD_FILE_PNG)
 
     print("All plots generated.")
 
     # Suggest some Pareto optimal (alpha, beta) combinations
     if not pareto_df.empty:
-        print("\n--- Suggested Pareto Optimal (alpha, beta) combinations ---")
+        print("\\n--- Suggested Pareto Optimal (alpha, beta) combinations (using Empirically Normalized Metrics) ---")
         # Sort by a composite score or individual objectives to give varied suggestions
         # Example: sort by sum of normalized objectives (lower is better)
-        pareto_df['sum_norm_objectives'] = pareto_df[OBJECTIVES].sum(axis=1)
-        suggestions = pareto_df.sort_values(by='sum_norm_objectives').head(5)
+        pareto_df['sum_emp_norm_objectives'] = pareto_df[OBJECTIVES].sum(axis=1) # Use updated OBJECTIVES
+        suggestions = pareto_df.sort_values(by='sum_emp_norm_objectives').head(5)
         for _, row in suggestions.iterrows():
             print(f"Alpha: {row['alpha']:.2f}, Beta: {row['beta']:.2f} -> "
-                  f"HS_norm: {row['norm_hs']:.4f}, PS_norm: {row['norm_ps']:.4f}, MD_norm: {row['norm_md']:.4f} "
-                  f"(Sum: {row['sum_norm_objectives']:.4f})")
+                  f"EmpNorm_HS: {row['emp_norm_hs']:.4f}, EmpNorm_PS: {row['emp_norm_ps']:.4f}, EmpNorm_MD: {row['emp_norm_md']:.4f} "
+                  f"(Sum EmpNorm: {row['sum_emp_norm_objectives']:.4f}) | "
+                  f"Raw HS: {row['raw_hs']:.0f}, Raw PS: {row['raw_ps']:.0f}, Raw MD: {row['raw_md']:.2f}")
     else:
-        print("\nNo Pareto optimal points found to suggest combinations.")
+        print("\\nNo Pareto optimal points found to suggest combinations.")
 
     # --- Additional Function for Empirical Norms ---
-    def plot_pareto_frontier(df_results, title_suffix):
-        # Use empirically normalized metrics for Pareto calculation and plotting
-        costs = df_results[['emp_norm_hs', 'emp_norm_ps', 'emp_norm_md']].values
-        pareto_indices = is_pareto_efficient_corrected(costs)
-        pareto_points = df_results[pareto_indices]
-
-        print(f"Number of Pareto-efficient points for {title_suffix}: {len(pareto_points)}")
-
-        # --- 3D Interactive Pareto Plot ---
-        fig3d_emp = go.Figure()
-
-        # Non-Pareto points
-        fig3d_emp.add_trace(go.Scatter3d(
-            x=df_results[~pareto_indices]['emp_norm_hs'],
-            y=df_results[~pareto_indices]['emp_norm_ps'],
-            z=df_results[~pareto_indices]['emp_norm_md'],
-            mode='markers',
-            marker=dict(size=5, color='blue', opacity=0.5),
-            name='Dominated Solutions',
-            customdata=df_results[~pareto_indices][['alpha', 'beta', 'total_norm_score']],
-            hovertemplate='<b>Dominated</b><br>' +
-                          'EmpHS: %{x:.4f}<br>' +
-                          'EmpPS: %{y:.4f}<br>' +
-                          'EmpMD: %{z:.4f}<br>' +
-                          'Alpha: %{customdata[0]:.2f}<br>' +
-                          'Beta: %{customdata[1]:.2f}<br>' +
-                          'Total Score: %{customdata[2]:.4f}<extra></extra>'
-        ))
-
-        # Pareto points
-        fig3d_emp.add_trace(go.Scatter3d(
-            x=pareto_points['emp_norm_hs'],
-            y=pareto_points['emp_norm_ps'],
-            z=pareto_points['emp_norm_md'],
-            mode='markers',
-            marker=dict(size=7, color='red', symbol='diamond'),
-            name='Pareto Frontier',
-            customdata=pareto_points[['alpha', 'beta', 'total_norm_score']],
-            hovertemplate='<b>Pareto Optimal</b><br>' +
-                          'EmpHS: %{x:.4f}<br>' +
-                          'EmpPS: %{y:.4f}<br>' +
-                          'EmpMD: %{z:.4f}<br>' +
-                          'Alpha: %{customdata[0]:.2f}<br>' +
-                          'Beta: %{customdata[1]:.2f}<br>' +
-                          'Total Score: %{customdata[2]:.4f}<extra></extra>'
-        ))
-
-        fig3d_emp.update_layout(
-            title=f'3D Pareto Frontier for (emp_norm_hs, emp_norm_ps, emp_norm_md) {title_suffix}',
-            scene=dict(
-                xaxis_title='Empirical HomeStrength (HS_raw / sigma_HS)',
-                yaxis_title='Empirical PenaltySequence (PS_raw / sigma_PS)',
-                zaxis_title='Empirical MaxDeviation (MD_raw / sigma_MD)'
-            ),
-            margin=dict(l=0, r=0, b=0, t=40)
-        )
-        fig3d_emp.write_html(os.path.join(OUTPUT_DIR, f"pareto_3d_interactive_empirical{title_suffix}.html"))
-        print(f"Saved 3D interactive plot (empirical) to: {os.path.join(OUTPUT_DIR, f'pareto_3d_interactive_empirical{title_suffix}.html')}")
-        try:
-            fig3d_emp.write_image(os.path.join(OUTPUT_DIR, f"pareto_3d_static_empirical{title_suffix}.png"), scale=2) # Higher scale for better quality
-            print(f"Saved 3D static plot (empirical) to: {os.path.join(OUTPUT_DIR, f'pareto_3d_static_empirical{title_suffix}.png')}")
-        except Exception as e:
-            print(f"Could not save 3D static plot (empirical): {e}. Ensure kaleido is installed.")
-
-        # --- 2D Projections ---
-        def create_2d_plot_emp(df_all, df_pareto, x_col, y_col, title, filename_html, filename_png):
-            fig2d_emp = go.Figure()
-            # Non-Pareto points
-            fig2d_emp.add_trace(go.Scatter(
-                x=df_all[~df_all['is_pareto']][x_col],
-                y=df_all[~df_all['is_pareto']][y_col],
-                mode='markers',
-                marker=dict(size=8, color='blue', opacity=0.5),
-                name='Dominated Solutions',
-                customdata=df_all[~df_all['is_pareto']][['alpha', 'beta', 'total_norm_score'] + OBJECTIVES],
-                hovertemplate=f'<b>Dominated</b><br>{x_col}: %{{x:.4f}}<br>{y_col}: %{{y:.4f}}<br>' +
-                              'Alpha: %{customdata[0]:.2f}<br>Beta: %{customdata[1]:.2f}<br>' +
-                              'Total Score: %{customdata[2]:.4f}<br>' +
-                              'HS: %{customdata[3]:.4f}, PS: %{customdata[4]:.4f}, MD: %{customdata[5]:.4f}<extra></extra>'
-            ))
-            # Pareto points
-            fig2d_emp.add_trace(go.Scatter(
-                x=df_pareto[x_col],
-                y=df_pareto[y_col],
-                mode='markers',
-                marker=dict(size=10, color='red', symbol='diamond'),
-                name='Pareto Frontier Points',
-                customdata=df_pareto[['alpha', 'beta', 'total_norm_score'] + OBJECTIVES],
-                hovertemplate=f'<b>Pareto Optimal</b><br>{x_col}: %{{x:.4f}}<br>{y_col}: %{{y:.4f}}<br>' +
-                              'Alpha: %{customdata[0]:.2f}<br>Beta: %{customdata[1]:.2f}<br>' +
-                              'Total Score: %{customdata[2]:.4f}<br>' +
-                              'HS: %{customdata[3]:.4f}, PS: %{customdata[4]:.4f}, MD: %{customdata[5]:.4f}<extra></extra>'
-            ))
-            fig2d_emp.update_layout(
-                title=title,
-                xaxis_title=x_col,
-                yaxis_title=y_col,
-                legend_title_text='Solution Type'
-            )
-            fig2d_emp.write_html(filename_html)
-            print(f"Saved 2D plot (empirical) to: {filename_html}")
-            try:
-                fig2d_emp.write_image(filename_png, scale=2) # Higher scale for better quality
-                print(f"Saved 2D static plot (empirical) to: {filename_png}")
-            except Exception as e:
-                print(f"Could not save 2D static plot (empirical) ({filename_png}): {e}. Ensure kaleido is installed.")
-
-
-        # HS vs PS
-        create_2d_plot_emp(df_results, pareto_points, 'emp_norm_hs', 'emp_norm_ps',
-                           '2D Pareto Projection: Empirical HS_norm vs PS_norm',
-                           os.path.join(OUTPUT_DIR, f"pareto_2d_hs_vs_ps_empirical{title_suffix}.html"),
-                           os.path.join(OUTPUT_DIR, f"pareto_2d_hs_vs_ps_empirical{title_suffix}.png"))
-
-        # HS vs MD
-        create_2d_plot_emp(df_results, pareto_points, 'emp_norm_hs', 'emp_norm_md',
-                           '2D Pareto Projection: Empirical HS_norm vs MD_norm',
-                           os.path.join(OUTPUT_DIR, f"pareto_2d_hs_vs_md_empirical{title_suffix}.html"),
-                           os.path.join(OUTPUT_DIR, f"pareto_2d_hs_vs_md_empirical{title_suffix}.png"))
-
-        # PS vs MD
-        create_2d_plot_emp(df_results, pareto_points, 'emp_norm_ps', 'emp_norm_md',
-                           '2D Pareto Projection: Empirical PS_norm vs MD_norm',
-                           os.path.join(OUTPUT_DIR, f"pareto_2d_ps_vs_md_empirical{title_suffix}.html"),
-                           os.path.join(OUTPUT_DIR, f"pareto_2d_ps_vs_md_empirical{title_suffix}.png"))
-
-        print("All empirical plots generated.")
-
-        # Print suggested Pareto-optimal (alpha, beta) combinations based on empirical norms
-        print("\nSuggested Pareto-optimal (alpha, beta) combinations based on empirical norms:")
-        for index, row in pareto_points.iterrows():
-            print(f"Alpha: {row['alpha']:.2f}, Beta: {row['beta']:.2f} -> EmpHS: {row['emp_norm_hs']:.4f}, EmpPS: {row['emp_norm_ps']:.4f}, EmpMD: {row['emp_norm_md']:.4f} (Raw HS: {row['raw_hs']:.0f}, Raw PS: {row['raw_ps']:.0f}, Raw MD: {row['raw_md']:.0f})")
+    # This function is now effectively integrated into the main script logic above.
+    # It can be removed to avoid confusion.
+    # def plot_pareto_frontier(df_results, title_suffix):
+    #     ... (rest of the function)

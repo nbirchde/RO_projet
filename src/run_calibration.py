@@ -21,7 +21,7 @@ ITERATIONS = 50000  # Iterations for each SA run
 RUNS_PER_COMBINATION = 6 # Number of parallel SA chains for each (alpha, beta)
 ALPHA_VALUES = np.arange(0.5, 1.51, 0.1) # 0.5 to 1.5 inclusive, step 0.1
 BETA_VALUES = np.arange(0.5, 1.51, 0.1)  # 0.5 to 1.5 inclusive, step 0.1
-OUTPUT_CSV = f"calibration_results_n{N_PLAYERS}_empirical_norm_v1.csv" # CORRECTED
+OUTPUT_CSV = f"calibration_results_n{N_PLAYERS}_empirical_norm_v2_median_subtracted.csv" # UPDATED for new normalization
 NUM_EMPIRICAL_SAMPLES = 200 # Number of samples for empirical normalization
 EMPIRICAL_FACTORS_SEED = 42 # Seed for generating empirical factors (for reproducibility)
 SA_BASE_SEED = 1000 # Base seed for SA runs, will be incremented for each combination
@@ -115,12 +115,12 @@ if __name__ == '__main__':
                 # Raw metrics from the SA solver (what it found as best for its empirical objective)
                 raw_hs, raw_ps, raw_md = raw_metrics
 
-                # Calculate empirically normalized metrics (raw_metric / sigma_metric)
+                # Calculate empirically normalized metrics (raw_metric - median_metric) / sigma_metric)
                 # These are the values SA's objective function components are based on
                 # Handle potential division by zero if sigma is zero, though unlikely for these metrics
-                emp_norm_hs = raw_hs / sigma_hs if sigma_hs != 0 else np.nan
-                emp_norm_ps = raw_ps / sigma_ps if sigma_ps != 0 else np.nan
-                emp_norm_md = raw_md / sigma_md if sigma_md != 0 else np.nan
+                emp_norm_hs = (raw_hs - med_hs) / sigma_hs if sigma_hs != 0 else np.nan
+                emp_norm_ps = (raw_ps - med_ps) / sigma_ps if sigma_ps != 0 else np.nan
+                emp_norm_md = (raw_md - med_md) / sigma_md if sigma_md != 0 else np.nan
 
                 # For reporting and verification, get metrics normalized by THEORETICAL maximums
                 # This uses the project's standard get_all_fairness_metrics

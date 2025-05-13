@@ -83,7 +83,7 @@ def get_empirical_normalization_factors(n, num_samples=200, seed=42):
 @numba.njit(fastmath=True, cache=True)
 def calculate_normalized_score(home_strength, penalites_sequence, max_dev, alpha_pen_seq, beta_obj,
                                # max_home_strength_approx, max_penalites_sequence_approx, max_maxdev_approx): # OLD PARAMS
-                               sigma_hs, sigma_ps, sigma_md): # NEW PARAMS
+                               med_hs, sigma_hs, med_ps, sigma_ps, med_md, sigma_md): # NEW PARAMS + medians
     # norm_home_strength = home_strength / max_home_strength_approx
     # norm_penalites_sequence = penalites_sequence / max_penalites_sequence_approx
     # norm_maxdev = max_dev / max_maxdev_approx
@@ -92,9 +92,9 @@ def calculate_normalized_score(home_strength, penalites_sequence, max_dev, alpha
     # Ensure sigmas are not zero to prevent division by zero.
     # get_empirical_normalization_factors ensures sigmas are >= 1.0
     
-    obj_hs = home_strength / sigma_hs
-    obj_ps = penalites_sequence / sigma_ps
-    obj_md = max_dev / sigma_md
+    obj_hs = (home_strength - med_hs) / sigma_hs
+    obj_ps = (penalites_sequence - med_ps) / sigma_ps
+    obj_md = (max_dev - med_md) / sigma_md
     return obj_hs + alpha_pen_seq * obj_ps + beta_obj * obj_md
 
 @numba.njit(fastmath=True, cache=True)
@@ -163,7 +163,7 @@ def sa_loop(schedule_h_input, schedule_a_input, home_cnt_input, packed_seq_input
     current_norm_score = calculate_normalized_score(current_home_strength, current_pen_seq, current_max_dev,
                                                     alpha_pen_seq, beta_obj,
                                                     # max_delta_approx, max_penalites_sequence_approx, max_maxdev_approx) # OLD PARAMS
-                                                    sigma_hs, sigma_ps, sigma_md) # NEW PARAMS
+                                                    med_hs, sigma_hs, med_ps, sigma_ps, med_md, sigma_md) # NEW PARAMS + medians
     current_unnorm_score = calculate_unnormalized_score(current_home_strength, current_pen_seq, current_max_dev,
                                                       alpha_pen_seq, beta_obj)
     best_norm_score_found = current_norm_score 
@@ -213,7 +213,7 @@ def sa_loop(schedule_h_input, schedule_a_input, home_cnt_input, packed_seq_input
         candidate_norm_score = calculate_normalized_score(current_home_strength, current_pen_seq, current_max_dev,
                                                           alpha_pen_seq, beta_obj,
                                                           # max_delta_approx, max_penalites_sequence_approx, max_maxdev_approx) # OLD PARAMS
-                                                          sigma_hs, sigma_ps, sigma_md) # NEW PARAMS
+                                                          med_hs, sigma_hs, med_ps, sigma_ps, med_md, sigma_md) # NEW PARAMS + medians
         delta_norm_score = candidate_norm_score - current_norm_score # current_norm_score is score before this move
         accept = delta_norm_score < 0 or np.random.random() < math.exp(-delta_norm_score / T)
         
@@ -301,7 +301,7 @@ def sa_loop(schedule_h_input, schedule_a_input, home_cnt_input, packed_seq_input
     replayed_current_norm_score = calculate_normalized_score(replayed_current_home_strength, replayed_current_pen_seq, replayed_current_max_dev,
                                                              alpha_pen_seq, beta_obj,
                                                              # max_delta_approx, max_penalites_sequence_approx, max_maxdev_approx) # OLD PARAMS
-                                                             sigma_hs, sigma_ps, sigma_md) # NEW PARAMS
+                                                             med_hs, sigma_hs, med_ps, sigma_ps, med_md, sigma_md) # NEW PARAMS + medians
     replayed_T = initial_T0_for_replay
     for k_it in range(best_found_iteration + 1):
         r_idx = rnd_round_idx_arr[k_it] 
@@ -349,7 +349,7 @@ def sa_loop(schedule_h_input, schedule_a_input, home_cnt_input, packed_seq_input
         candidate_norm_score_replay = calculate_normalized_score(replayed_current_home_strength, replayed_current_pen_seq, replayed_current_max_dev,
                                                                  alpha_pen_seq, beta_obj,
                                                                  # max_delta_approx, max_penalites_sequence_approx, max_maxdev_approx) # OLD PARAMS
-                                                                 sigma_hs, sigma_ps, sigma_md) # NEW PARAMS
+                                                                 med_hs, sigma_hs, med_ps, sigma_ps, med_md, sigma_md) # NEW PARAMS + medians
         delta_norm_score_replay = candidate_norm_score_replay - replayed_current_norm_score # replayed_current_norm_score is score before this move
         accept_replay = delta_norm_score_replay < 0 or np.random.random() < math.exp(-delta_norm_score_replay / replayed_T)
         
