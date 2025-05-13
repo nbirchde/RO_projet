@@ -17,7 +17,7 @@ Stores global constants, including the chosen weights for the objective function
 # reports/alpha_beta_calibration_n6_quick.csv
 # reports/pareto_n6_quick.png
 
-ALPHA = 0.5 # Value from previous calibration, may need tuning.
-BETA = 1.0  # Value from previous calibration, may need tuning.
+ALPHA = 0.9 # Updated to new chosen value.
+BETA = 1.3  # Updated to new chosen value.
 
 # Other configurations can be added here as needed.

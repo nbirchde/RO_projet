@@ -1,59 +1,89 @@
-# RO-PROJET
+# Fair Round-Robin Tournament Scheduling
 
-## Running the Exact Model
+This project explores different methods for generating fair round-robin tournament schedules, minimizing a weighted combination of fairness metrics using empirical normalization.
 
-To execute the exact model (`src/exact_model.py`), use the following command from the project root directory:
+## Solvers
 
-```bash
-python3 -m src.exact_model
-```
+The project includes the following solvers:
 
-Note that the exact model is computationally intensive and is typically only feasible for small instances of the problem.
+### Exact MILP Solver
 
-6.  **Compiler le rapport LaTeX (si LaTeX est installé) :**
-    ```bash
-    # Depuis la racine du projet, compile et place tous les fichiers dans final_report_files
-    latexmk -pdf -output-directory=final_report_files final_report_files/rapport_scientifique.tex
-    ```
+Uses a Mixed-Integer Linear Program (MILP) to find optimal solutions for smaller instances.
 
-## Running the Solver
-
-To execute the simulated annealing solver (`src/sa_solver.py`) directly, use the following command from the project root directory:
+To run the exact solver:
 
 ```bash
-python3 -m src.sa_solver
+python3 src/exact_model.py [n_players] [alpha] [beta] [time_limit]
 ```
 
-This method is necessary because the solver uses relative imports and must be run as a module within the project package.
+Parameters:
+- `n_players` (int, required): Number of players (must be even).
+- `alpha` (float, optional): Weight for the Penalty Sequence objective term. Defaults to the value in `src/config.py`.
+- `beta` (float, optional): Weight for the Max Deviation objective term. Defaults to the value in `src/config.py`.
+- `time_limit` (int, optional): Time limit for the solver in seconds. Defaults to None (no limit).
 
-### 1. Running the Calibration
-
-The calibration script (`run_calibration.py`) executes the simulated annealing solver (`src/sa_solver.py`) for a grid of `alpha` and `beta` values. It collects the normalized objective function components (HomeStrength, PenaltySequence, MaxDeviation) for each combination.
-
-To run the calibration (this may take several minutes for the dense grid):
+Example:
 ```bash
-python3 run_calibration.py
+python3 src/exact_model.py 6 0.9 1.3 60
 ```
-This will generate a CSV file named `calibration_results_n6_dense.csv` (or `calibration_results_n6_new.csv` if you use the older configuration in the script) in the project root.
 
-The script is configured by default for `n=6` players, `10000` iterations per SA run, and `4` parallel SA chains per (alpha, beta) combination. The `ALPHA_VALUES` and `BETA_VALUES` in `run_calibration.py` are set to range from 0.0 to 2.0 with a step of 0.1, resulting in 441 combinations.
+### Simulated Annealing (Non-Optimized)
 
-### 2. Generating Pareto Plots
+A basic Simulated Annealing heuristic implementation.
 
-After the calibration data is generated, the plotting script (`plot_calibration_results.py`) can be used to visualize the results. It identifies Pareto-optimal solutions and generates:
-- An interactive 3D scatter plot.
-- 2D scatter plot projections for each pair of objectives.
-- Static PNG versions of these plots suitable for inclusion in reports.
+To run the non-optimized SA solver:
 
-To generate the plots:
 ```bash
-python3 plot_calibration_results.py
+python3 src/sa_solver_non_opti.py [n_players] [iterations] [alpha] [beta]
 ```
-This script will read the `calibration_results_n6_dense.csv` file and save the plots into the `calibration_plots_dense/` directory.
 
-### 3. Viewing the Plots
+Parameters:
+- `n_players` (int, required): Number of players (must be even).
+- `iterations` (int, optional): Number of SA iterations. Defaults to 10000.
+- `alpha` (float, optional): Weight for the Penalty Sequence objective term. Defaults to the value in `src/config.py`.
+- `beta` (float, optional): Weight for the Max Deviation objective term. Defaults to the value in `src/config.py`.
 
-- **Interactive HTML plots:** Open the `.html` files in the `calibration_plots_dense/` directory (e.g., `calibration_plots_dense/pareto_3d_interactive.html`) in a web browser.
-- **Static PNG plots:** These can be viewed directly and are suitable for embedding in documents.
+Example:
+```bash
+python3 src/sa_solver_non_opti.py 8 50000 0.9 1.3
+```
 
-The plotting script will also print a list of suggested Pareto-optimal (alpha, beta) combinations to the console, which can help in selecting appropriate weights for `src/config.py`.
+### Simulated Annealing (Numba Optimized)
+
+A Numba-optimized version of the Simulated Annealing heuristic for better performance on larger instances. This solver also stores and loads the best-found schedule for a given `n` to potentially improve results across multiple runs.
+
+To run the Numba-optimized SA solver:
+
+```bash
+python3 src/sa_solver.py [n_players] [iterations] [alpha] [beta] [runs]
+```
+
+Parameters:
+- `n_players` (int, required): Number of players (must be even).
+- `iterations` (int, optional): Number of SA iterations per run. Defaults to 100000.
+- `alpha` (float, optional): Weight for the Penalty Sequence objective term. Defaults to the value in `src/config.py`.
+- `beta` (float, optional): Weight for the Max Deviation objective term. Defaults to the value in `src/config.py`.
+- `runs` (int, optional): Number of parallel SA runs. Defaults to 1.
+
+Other SA parameters (initial temperature, cooling rate, seed, empirical sample size, log interval) use default values defined within the script (`src/sa_solver.py`).
+
+Example:
+```bash
+python3 src/sa_solver.py 10 100000 0.9 1.3 4
+```
+
+## Normalization Data
+
+Empirical normalization factors (medians and standard deviations) and the best-found schedules for each number of players (`n`) are stored in `normalization_data.json`. This file is automatically created and updated by the solvers.
+
+## LaTeX Report
+
+The scientific report is written in LaTeX. To compile the report:
+
+Navigate to the `final_report_files` directory and run:
+
+```bash
+latexmk -pdf -output-directory=final_report_files final_report_files/rapport_scientifique.tex
+```
+
+You may need to run this command multiple times (typically 2-3 times) to ensure cross-references and the table of contents are generated correctly.

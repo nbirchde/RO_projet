@@ -111,54 +111,98 @@ def calculate_max_home_strength_denominator(n):
     denominator = n * (n - 1) * (n + 1) / 6.0
     
     # Avoid division by zero if somehow the calculation yields zero (e.g., n<2 handled above)
-    return denominator if denominator > 0 else 1.0
+import numpy as np
 
+def calculate_home_strength(schedule_list, n):
+    """
+    Calculates the raw HomeStrength metric based on player ranks.
+    HS = sum max(0, rank_away_player - rank_home_player) for all matches.
+    This only counts matches where the home player is stronger (lower rank)
+    than the away player.
+    Assumes player IDs are their ranks (1 to n).
 
-def normalize_home_strength(raw_home_strength, n):
-    """
-    Normalizes the raw HomeStrength metric (new definition, non-negative).
-    The denominator is the theoretical maximum possible value, S_max = n(n-1)(n+1)/6.
-    This normalization aims for a range of [0, 1].
-    A value of 0 implies no home games against weaker opponents.
-    A value of 1 implies the maximum possible bias where every stronger player
-    plays home against every weaker player.
-    """
-    denominator = calculate_max_home_strength_denominator(n)
-    return raw_home_strength / denominator
+    Args:
+        schedule_list (list): A list of rounds, where each round is a list of
+                              (home_player_id, away_player_id) tuples.
+        n (int): Number of players.
 
-def normalize_total_pen_seq(total_pen_seq, n):
+    Returns:
+        float: The raw HomeStrength value (always non-negative).
     """
-    Normalizes the Total Penalty Sequence metric.
-    The denominator is a theoretical maximum or a characteristic value.
-    """
-    if n <= 2: # No sequences possible for n=0,1,2
+    if not schedule_list or n == 0:
         return 0.0
-    # Denominator: Max possible penalties if each player has n-2 breaks (worst case)
-    denominator = n * (n - 2.0) 
-    if denominator == 0:
-        return 0.0
-    return total_pen_seq / denominator
 
-def normalize_max_dev(max_dev, n):
+    raw_hs = 0.0
+    for round_matches in schedule_list:
+        for home_player, away_player in round_matches:
+            # Assuming player IDs are 1-based ranks
+            rank_diff = away_player - home_player
+            raw_hs += max(0, rank_diff)
+    return raw_hs
+
+def calculate_raw_max_deviation(schedule_list, n):
     """
-    Normalizes the Max Deviation metric.
-    The denominator is a theoretical maximum or a characteristic value.
+    Calculates the raw Max Deviation metric: MaxDev = max_i | H_i - (n-1)/2 |.
+    H_i is the number of home games for player i.
     """
     if n <= 1:
         return 0.0
-    # Denominator: Max possible deviation from the mean number of home games
-    # For n even, ideal is (n-1)/2. Max actual can be n/2 or (n-2)/2. Deviation is 0.5.
-    # For n odd, ideal is (n-1)/2. Max actual can be (n-1)/2. Deviation is 0.
-    # The old denominator was (n-1.0)/2.0.
-    # If n is even, (n-1)/2 is x.5. Max dev is 0.5. Denom = (n-1)/2. Result is max_dev / ((n-1)/2)
-    # If n=4, (4-1)/2 = 1.5. Max dev is 0.5.  0.5 / 1.5 = 1/3.
-    # If n=6, (6-1)/2 = 2.5. Max dev is 0.5.  0.5 / 2.5 = 1/5.
-    # This seems to normalize to a range smaller than [0,1] if max_dev is always 0.5 for even n.
-    # Let's keep the original normalization for MaxDev as its interpretation is subtle.
-    denominator = (n - 1.0) / 2.0
-    if denominator == 0: # handles n=1
-        return 0.0
-    return max_dev / denominator
+    
+    home_games_counts = calculate_home_games_per_player(schedule_list, n)
+    if not home_games_counts and n > 0 : # schedule_list might be empty
+         # All players have 0 home games if schedule is empty
+        home_games_counts = [0] * n
+
+
+    ideal_home_games = (n - 1) / 2.0
+    max_dev = 0.0
+    # If home_games_counts is empty (e.g. n=0), this loop won't run, max_dev remains 0.0
+    for count in home_games_counts:
+        deviation = abs(count - ideal_home_games)
+        if deviation > max_dev:
+            max_dev = deviation
+    return max_dev
+
+def calculate_raw_total_penalty_sequence(schedule_list, n):
+    """
+    Calculates the total number of breaks in the schedule.
+    A break is defined as a player playing more than two consecutive
+    home games or more than two consecutive away games.
+    A sequence of k > 2 identical game types (H or A) contributes k-2 breaks.
+    """
+    if n == 0 or not schedule_list:
+        return 0
+
+    player_schedules = [[] for _ in range(n)] 
+
+    for _round_idx, round_matches in enumerate(schedule_list):
+        for home_player, away_player in round_matches:
+            if 1 <= home_player <= n:
+                player_schedules[home_player - 1].append('H')
+            if 1 <= away_player <= n:
+                player_schedules[away_player - 1].append('A')
+            
+    total_breaks = 0
+    for i in range(n):
+        player_seq = player_schedules[i]
+        if len(player_seq) < 3:
+            continue
+
+        current_streak_type = player_seq[0]
+        current_streak_length = 1
+        for j in range(1, len(player_seq)):
+            if player_seq[j] == current_streak_type:
+                current_streak_length += 1
+            else:
+                if current_streak_length > 2:
+                    total_breaks += (current_streak_length - 2)
+                current_streak_type = player_seq[j]
+                current_streak_length = 1
+        
+        if current_streak_length > 2: # Check the last streak
+            total_breaks += (current_streak_length - 2)
+            
+    return total_breaks
 
 def calculate_home_games_per_player(schedule_list, n):
     """
@@ -212,23 +256,16 @@ def get_all_fairness_metrics(schedule_list, n):
     raw_total_pen_seq = calculate_raw_total_penalty_sequence(schedule_list, n)
     raw_max_dev = calculate_raw_max_deviation(schedule_list, n)
         
-    norm_hs = normalize_home_strength(raw_hs, n)
-    norm_total_pen_seq = normalize_total_pen_seq(raw_total_pen_seq, n)
-    norm_max_dev = normalize_max_dev(raw_max_dev, n)
-
     player_ha_sequences_str = calculate_ha_sequences(schedule_list, n)
 
     return {
         "num_players": n,
         "num_rounds": len(schedule_list) if schedule_list else 0,
         "raw_home_strength": raw_hs,
-        "normalized_home_strength": norm_hs,
         "home_games_per_player": home_games,
         "raw_total_penalty_sequence": raw_total_pen_seq,
-        "normalized_total_penalty_sequence": norm_total_pen_seq,
         "raw_max_deviation": raw_max_dev,
-        "normalized_max_deviation": norm_max_dev,
-        "player_ha_sequences": player_ha_sequences_str # Added
+        "player_ha_sequences": player_ha_sequences_str
     }
 
 def pprint_fairness_metrics(metrics_dict):
@@ -243,23 +280,15 @@ def pprint_fairness_metrics(metrics_dict):
     
     print("\n  Home Strength:")
     raw_hs_val = metrics_dict.get('raw_home_strength', 'N/A')
-    norm_hs_val = metrics_dict.get('normalized_home_strength', 'N/A')
     print(f"    Raw: {raw_hs_val:.4f}" if isinstance(raw_hs_val, float) else f"    Raw: {raw_hs_val}")
-    print(f"    Normalized: {norm_hs_val:.4f}" if isinstance(norm_hs_val, float) else f"    Normalized: {norm_hs_val}")
 
     print("\n  Total Penalty Sequence (Breaks):")
     raw_tps_val = metrics_dict.get('raw_total_penalty_sequence', 'N/A')
-    norm_tps_val = metrics_dict.get('normalized_total_penalty_sequence', 'N/A')
     print(f"    Raw: {raw_tps_val}" if isinstance(raw_tps_val, int) else f"    Raw: {raw_tps_val}")
-    print(f"    Normalized: {norm_tps_val:.4f}" if isinstance(norm_tps_val, float) else f"    Normalized: {norm_tps_val}")
-
 
     print("\n  Max Deviation (from ideal home games):")
     raw_md_val = metrics_dict.get('raw_max_deviation', 'N/A')
-    norm_md_val = metrics_dict.get('normalized_max_deviation', 'N/A')
     print(f"    Raw: {raw_md_val:.4f}" if isinstance(raw_md_val, float) else f"    Raw: {raw_md_val}")
-    print(f"    Normalized: {norm_md_val:.4f}" if isinstance(norm_md_val, float) else f"    Normalized: {norm_md_val}")
-
 
     print("\n  Home Games Per Player (Player ID: Count):")
     home_games = metrics_dict.get('home_games_per_player', [])
@@ -292,63 +321,34 @@ if __name__ == '__main__':
         [(4, 3), (1, 2)],  # R2: P1:H, P2:A, P3:A, P4:H
         [(2, 4), (3, 1)]   # R3: P1:A, P2:H, P3:H, P4:A
     ]
-    # Expected for this n=4 example (NEW HomeStrength, NEW Normalization):
+    # Expected for this n=4 example (NEW HomeStrength):
     # HomeStrength: Raw= max(0,4-1)+max(0,3-2) + max(0,3-4)+max(0,2-1) + max(0,4-2)+max(0,1-3) = (3+1) + (0+1) + (2+0) = 7
-    # S_max = n(n-1)(n+1)/6 = 4*(3)*(5)/6 = 60/6 = 10
-    # Normalized HS = 7 / 10 = 0.7
     # Home Games: P1:[H,H,A]->2, P2:[H,A,H]->2, P3:[A,A,H]->1, P4:[A,H,A]->1. Counts: [2,2,1,1]
     # Max Deviation: Ideal=(4-1)/2=1.5. Devs: |2-1.5|=0.5, |1-1.5|=0.5. Raw MaxDev=0.5
-    # Normalized MaxDev = 0.5 / ((4-1)/2) = 0.5 / 1.5 = 1/3 = 0.3333
     # Penalty Sequence:
     # P1: HHA (No breaks)
     # P2: HAH (No breaks)
     # P3: AAH (No breaks)
     # P4: AHA (No breaks)
-    # Raw TotalPenSeq = 0. Normalized = 0.
+    # Raw TotalPenSeq = 0.
 
     print(f"--- Testing with n={n_test_4} Example Schedule ---")
     metrics_n4 = get_all_fairness_metrics(schedule_n4_example, n_test_4)
     pprint_fairness_metrics(metrics_n4)
-    # Verification (NEW HomeStrength, NEW Normalization):
-    # Raw HS: 7.0, Norm HS: 0.7
+    # Verification:
+    # Raw HS: 7.0
     # Home Games: P1:2, P2:2, P3:1, P4:1
-    # Raw PenSeq: 0, Norm PenSeq: 0.0
-    # Raw MaxDev: 0.5, Norm MaxDev: 0.3333
+    # Raw PenSeq: 0
+    # Raw MaxDev: 0.5
 
-    # Test with a schedule that should have breaks, e.g., n=3
-    # P1: HHH, P2: AAA, P3: HAH (for a hypothetical schedule with 3 games each)
-    n_test_3_breaks = 3
-    # Schedule: P1 plays HHH, P2 plays AAA, P3 plays HAH
-    # This requires 3 rounds for P1, P2, P3 to play 3 games each.
-    # Example: (not a round robin, just for testing breaks)
-    # R1: (1,x) (2,y) (3,z) -> P1:H, P2:A, P3:H
-    # R2: (1,x) (2,y) (3,z) -> P1:H, P2:A, P3:A
-    # R3: (1,x) (2,y) (3,z) -> P1:H, P2:A, P3:H
-    # Player sequences: P1:HHH (1 break), P2:AAA (1 break), P3:HAH (0 breaks) -> Total 2 breaks
-    # For simplicity, let's manually create player_schedules for testing breaks calculation
-    
-    # Test calculate_raw_total_penalty_sequence directly
-    print("\n--- Testing Penalty Sequence Calculation Logic ---")
-    test_sched_breaks_n3 = [ # Represents player sequences directly for this sub-test
-        ['H','H','H'], # Player 1: 1 break
-        ['A','A','A'], # Player 2: 1 break
-        ['H','A','H']  # Player 3: 0 breaks
-    ]
-    # We need to feed a schedule_list to get_all_fairness_metrics
-    # Let's make a dummy schedule_list that would result in P1:HHH, P2:AAA, P3:HAH
-    # This is tricky if we must maintain valid matches.
-    # For n=3, a single RR has 2 games per player. A double RR has 4 games.
-    # To get 3 games, it's not a standard RR.
-    # Let's use a simpler schedule for n=3 that is a valid RR and test all metrics.
+    # Test with n=3 Round Robin Schedule
     # n=3, Kirkman Triple System (3 rounds, 1 game per player per round)
     # R1: (1,2) (P3 bye) -> P1:H, P2:A
     # R2: (3,1) (P2 bye) -> P1:A, P3:H
     # R3: (2,3) (P1 bye) -> P2:H, P3:A
     # P1: HA, P2: AH, P3: HA. No breaks.
     # HS (NEW): max(0, 2-1) + max(0, 1-3) + max(0, 3-2) = 1 + 0 + 1 = 2.
-    # S_max (n=3) = 3*(2)*(4)/6 = 24/6 = 4.
-    # Norm HS = 2 / 4 = 0.5.
-    # Home Games: P1:1, P2:1, P3:1. Ideal=(3-1)/2=1. MaxDev=0. Norm MaxDev=0.
+    # Home Games: P1:1, P2:1, P3:1. Ideal=(3-1)/2=1. MaxDev=0.
     schedule_n3_rr = [
         [(1,2)], # P3 bye - P1 home vs P2 away
         [(3,1)], # P2 bye
@@ -373,11 +373,8 @@ if __name__ == '__main__':
     print("\n--- Testing with n=2, Schedule [(1,2)] ---")
     metrics_n2_sched = get_all_fairness_metrics([[(1,2)]], 2)
     pprint_fairness_metrics(metrics_n2_sched)
-    # Expected for n=2, schedule [[(1,2)]] (NEW HomeStrength, NEW Normalization):
+    # Expected for n=2, schedule [[(1,2)]] (NEW HomeStrength):
     # HS: raw=max(0, 2-1)=1.
-    # S_max (n=2) = 2*(1)*(3)/6 = 6/6 = 1.
-    # NormHS = 1 / 1 = 1.0
     # HomeGames: P1:1, P2:0
-    # PenSeq: Raw=0 (P1:H, P2:A). Norm=0
+    # PenSeq: Raw=0 (P1:H, P2:A).
     # MaxDev: Ideal=(2-1)/2=0.5. P1:|1-0.5|=0.5, P2:|0-0.5|=0.5. RawMaxDev=0.5
-    # NormMaxDev = 0.5 / ((2-1)/2) = 0.5 / 0.5 = 1.0

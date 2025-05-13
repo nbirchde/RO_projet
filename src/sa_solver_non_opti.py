@@ -3,8 +3,8 @@
 Simulated Annealing (SA) heuristic for the fair round-robin scheduling problem.
 
 This script implements an SA algorithm to find high-quality, equitable
-round-robin schedules by minimizing the same objective function used in the
-exact model: Z = Delta_HomeStrength + alpha_pen_seq * Pénalité_de_séquence + beta * Max_Deviation.
+round-robin schedules by minimizing a weighted sum of fairness metrics
+using empirical normalization.
 
 Usage:
     python src/sa_solver_non_opti.py [n_players] [iterations] [alpha_pen_seq] [beta]
@@ -20,63 +20,22 @@ import os
 import random
 import math
 import copy
-import numpy as np # For calculating standard deviation if needed later, using max deviation for now
+import numpy as np
+import os # Add os import
 
+# Add the project root directory to sys.path
+current_dir_sa_non_opti = os.path.dirname(os.path.abspath(__file__))
+project_root_sa_non_opti = os.path.abspath(os.path.join(current_dir_sa_non_opti, os.pardir))
+if project_root_sa_non_opti not in sys.path:
+    sys.path.insert(0, project_root_sa_non_opti)
 
-# Add the project root directory to sys.path to enable importing modules from src
-# This allows running the script directly from the project root.
-current_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.abspath(os.path.join(current_dir, os.pardir))
-sys.path.insert(0, project_root)
-
-from metrics import calculate_home_strength, calculate_raw_max_deviation, calculate_raw_total_penalty_sequence, normalize_home_strength, normalize_total_pen_seq, normalize_max_dev
-import src.config as config # Import the configuration
-
-def initial_schedule(n):
-    """
-    Generates an initial round-robin schedule using the circle method.
-
-    Assigns home/away arbitrarily in the first instance. Handles odd 'n'
-    by adding a dummy player (None) for bye rounds, although the main
-    solver logic assumes even 'n'.
-
-    Args:
-        n (int): Number of players.
-
-    Returns:
-        list: A list of rounds, where each round is a list of
-              (home_player, away_player) tuples (using 1-based indexing).
-    """
-    players = list(range(1, n + 1)) # Use 1-based indexing
-    original_n = n
-    if n % 2:
-        # If n is odd, add a dummy player for the circle method logic
-        players.append(None)
-        n_effective = n + 1 # Use n_effective for circle method calculation
-    else:
-        n_effective = n
-
-    half = n_effective // 2
-    schedule = []
-    for r in range(n_effective - 1): # Iterate through rounds needed for n_effective players
-        round_pairs = []
-        for i in range(half):
-            p1 = players[i]
-            p2 = players[n_effective - 1 - i] # if i = 0, n_effective - 1 - i = 5 (last player)
-            # Only add the match if both players are not the dummy player
-            if p1 is not None and p2 is not None:
-                # Assign home arbitrarily (e.g., p2 is home)
-                round_pairs.append((p2, p1))
-        if round_pairs: # Only add non-empty rounds (relevant if n was odd)
-             schedule.append(round_pairs)
-        # Rotate players for the next round (excluding the fixed player 1)
-        fixed_player = players[0]
-        rotated_part = [players[n_effective - 1]] + players[1:n_effective - 1] #[2,3,4,5,6] -> [6,2,3,4,5]
-        players = [fixed_player] + rotated_part #[1,6,2,3,4,5]
-
-    # Ensure the schedule has the correct number of rounds for the original n
-    return schedule[:original_n - 1] # example: [[(2,1), (3,4)], [(4,5), (6,3)], [(5,2), (1,6)], [(1,4), (2,3)], [(3,5), (6,1)]]
-
+# Import necessary functions for raw metric calculation
+from src.metrics import calculate_home_strength, calculate_raw_max_deviation, calculate_raw_total_penalty_sequence
+# Import necessary functions from normalization_manager
+from src.normalization_manager import get_or_calculate_normalization_factors, calculate_normalized_score
+# Import schedule generator utility
+from src.schedule_utils import initial_schedule
+from src import config # Import the configuration
 
 def compute_metrics(schedule, n):
     """
@@ -95,11 +54,11 @@ def compute_metrics(schedule, n):
     Returns:
         tuple: (delta_strength, penalites_sequence, max_deviation)
     """
-    
+
     raw_home_strength = calculate_home_strength(schedule, n)
     penalites_sequence = calculate_raw_total_penalty_sequence(schedule, n)
     max_dev = calculate_raw_max_deviation(schedule, n)
-    
+
     return raw_home_strength, penalites_sequence, max_dev
 
 
@@ -187,24 +146,18 @@ def solve_sa(n, iterations=10000, initial_temp=1.0, cooling_rate=0.95, alpha_pen
         return [], 0, (0, 0, 0)
 
     # --- Normalization Setup ---
-    # Corrected S_max denominator for HomeStrength
-    max_home_strength_approx = (n * (n - 1) * (n + 1) / 6.0) if n >= 2 else 1.0
-    max_penalites_sequence_approx = n * (n - 2.0) if n > 2 else 1.0
-    max_maxdev_approx = (n - 1.0) / 2.0 if n > 1 else 1.0
-    
-    max_home_strength_approx = max(max_home_strength_approx, 1.0)
-    max_penalites_sequence_approx = max(max_penalites_sequence_approx, 1.0)
-    max_maxdev_approx = max(max_maxdev_approx, 1.0)
+    # Get empirical normalization factors
+    med_hs, sigma_hs, med_ps, sigma_ps, med_md, sigma_md = get_or_calculate_normalization_factors(n)
 
     # --- Initialization ---
     c_home_strength, c_penalites_sequence, c_max_dev = compute_metrics(current_sched, n)
-    
-    # Use imported normalization functions
-    norm_c_home_strength = normalize_home_strength(c_home_strength, n)
-    norm_c_pen_seq = normalize_total_pen_seq(c_penalites_sequence, n)
-    norm_c_max_dev = normalize_max_dev(c_max_dev, n)
-    
-    current_norm_score = norm_c_home_strength + alpha_pen_seq * norm_c_pen_seq + beta_obj * norm_c_max_dev
+
+    # Calculate initial normalized score using the centralized function
+    current_norm_score = calculate_normalized_score(
+        c_home_strength, c_penalites_sequence, c_max_dev,
+        alpha_pen_seq, beta_obj,
+        med_hs, sigma_hs, med_ps, sigma_ps, med_md, sigma_md
+    )
     current_unnorm_score = c_home_strength + alpha_pen_seq * c_penalites_sequence + beta_obj * c_max_dev # For reporting
 
     best_sched = copy.deepcopy(current_sched)
@@ -219,13 +172,13 @@ def solve_sa(n, iterations=10000, initial_temp=1.0, cooling_rate=0.95, alpha_pen
     for it in range(iterations):
         candidate_sched = neighbor(current_sched, n)
         cand_home_strength, cand_penalites_sequence, cand_max_dev = compute_metrics(candidate_sched, n)
-        
-        # Use imported normalization functions for candidate
-        norm_cand_home_strength = normalize_home_strength(cand_home_strength, n)
-        norm_cand_pen_seq = normalize_total_pen_seq(cand_penalites_sequence, n)
-        norm_cand_max_dev = normalize_max_dev(cand_max_dev, n)
-        
-        candidate_norm_score = norm_cand_home_strength + alpha_pen_seq * norm_cand_pen_seq + beta_obj * norm_cand_max_dev
+
+        # Calculate candidate normalized score using the centralized function
+        candidate_norm_score = calculate_normalized_score(
+            cand_home_strength, cand_penalites_sequence, cand_max_dev,
+            alpha_pen_seq, beta_obj,
+            med_hs, sigma_hs, med_ps, sigma_ps, med_md, sigma_md
+        )
         candidate_unnorm_score = cand_home_strength + alpha_pen_seq * cand_penalites_sequence + beta_obj * cand_max_dev # For reporting
 
         # Acceptance criterion (using NORMALIZED scores)
@@ -262,6 +215,10 @@ def main():
     iters_arg = int(sys.argv[2]) if len(sys.argv) > 2 else 10000
     alpha_pen_seq_arg = float(sys.argv[3]) if len(sys.argv) > 3 else config.ALPHA
     beta_arg = float(sys.argv[4]) if len(sys.argv) > 4 else config.BETA
+
+    if n_arg % 2 != 0:
+        print(f"Error: Number of players (n={n_arg}) must be even.")
+        sys.exit(1)
 
     print(f"Running SA for n={n_arg}, iterations={iters_arg}, alpha_pen_seq={alpha_pen_seq_arg}, beta={beta_arg}")
 

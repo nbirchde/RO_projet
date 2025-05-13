@@ -22,12 +22,19 @@ import sys
 import itertools
 import pulp
 import math
-import argparse
 import csv
 import numpy as np # For np.arange
-# Import the specific functions needed, including the updated denominator calculator
-from .metrics import calculate_max_home_strength_denominator, normalize_home_strength, normalize_total_pen_seq, normalize_max_dev
-from . import config # Import the configuration
+import os # Add os import
+
+# Add the project root directory to sys.path
+current_dir_exact = os.path.dirname(os.path.abspath(__file__))
+project_root_exact = os.path.abspath(os.path.join(current_dir_exact, os.pardir))
+if project_root_exact not in sys.path:
+    sys.path.insert(0, project_root_exact)
+
+# Import necessary functions from normalization_manager
+from src.normalization_manager import get_or_calculate_normalization_factors, calculate_normalized_score
+from src import config # Import the configuration
 
 def solve_exact(n, alpha_pen_seq=None, beta=None, time_limit=None):
     """
@@ -97,22 +104,15 @@ def solve_exact(n, alpha_pen_seq=None, beta=None, time_limit=None):
     total_penalites_sequence_term = pulp.lpSum(pen_seq[i][r] for i in players for r in round_pairs)
     max_deviation_term = MaxDev
 
-    # Normalization denominators (constants for a given n)
-    # Use the correct theoretical maximum S_max calculation for HomeStrength
-    denom_hs = calculate_max_home_strength_denominator(n)
-    denom_ps = n * (n - 2.0) if n > 2 else 1.0
-    denom_md = (n - 1.0) / 2.0 if n > 1 else 1.0 # Kept original for MaxDev
+    # Get empirical normalization factors
+    med_hs, sigma_hs, med_ps, sigma_ps, med_md, sigma_md = get_or_calculate_normalization_factors(n)
 
-    # Ensure denominators are at least 1.0 to avoid division by zero or inflation
-    denom_hs = max(denom_hs, 1.0)
-    denom_ps = max(denom_ps, 1.0)
-    denom_md = max(denom_md, 1.0)
-
-    # Normalized objective function: Minimize HS_norm + alpha*PS_norm + beta*MD_norm
-    # Since the new home_strength_term is always non-negative, we minimize it directly.
-    prob += (1/denom_hs) * home_strength_term + \
-            (alpha_pen_seq/denom_ps) * total_penalites_sequence_term + \
-            (beta/denom_md) * max_deviation_term
+    # Define the normalized objective function using empirical factors
+    # Minimize (raw_hs - med_hs)/sigma_hs + alpha * (raw_ps - med_ps)/sigma_ps + beta * (raw_md - med_md)/sigma_md
+    # Note: raw_hs, raw_ps, raw_md are represented by the pulp variables home_strength_term, total_penalites_sequence_term, MaxDev
+    prob += (home_strength_term - med_hs) / sigma_hs + \
+            alpha_pen_seq * (total_penalites_sequence_term - med_ps) / sigma_ps + \
+            beta * (max_deviation_term - med_md) / sigma_md
             
     # --- Constraints ---
     # Basic Round Robin Constraints
@@ -248,266 +248,25 @@ def solve_exact(n, alpha_pen_seq=None, beta=None, time_limit=None):
 
 
 if __name__ == '__main__':
-    # Check if specific grid arguments are provided. If not, run a default single instance.
-    if any(arg.startswith('--grid') for arg in sys.argv):
-        # Grid search mode
-        parser = argparse.ArgumentParser(description="Run MILP for fair round-robin scheduling over a grid of alpha and beta values.")
-        parser.add_argument("--n", type=int, required=True, help="Number of players (must be even).")
-        parser.add_argument("--grid_alpha_start", type=float, required=True, help="Start value for alpha grid.")
-        parser.add_argument("--grid_alpha_end", type=float, required=True, help="End value for alpha grid.")
-        parser.add_argument("--grid_alpha_step", type=float, required=True, help="Step value for alpha grid.")
-        parser.add_argument("--grid_beta_start", type=float, required=True, help="Start value for beta grid.")
-        parser.add_argument("--grid_beta_end", type=float, required=True, help="End value for beta grid.")
-        parser.add_argument("--grid_beta_step", type=float, required=True, help="Step value for beta grid.")
-        parser.add_argument("--output_csv", type=str, required=True, help="Path to save the CSV results.")
-        parser.add_argument("--time_limit", type=int, default=None, help="Time limit for the solver in seconds for each run.")
-        args = parser.parse_args()
+    n_arg = int(sys.argv[1]) if len(sys.argv) > 1 else 6
+    alpha_pen_seq_arg = float(sys.argv[2]) if len(sys.argv) > 2 else config.ALPHA
+    beta_arg = float(sys.argv[3]) if len(sys.argv) > 3 else config.BETA
+    time_limit_arg = int(sys.argv[4]) if len(sys.argv) > 4 else None # Assuming time limit was 4th arg
 
-        if args.n % 2 != 0:
-            print(f"Error: Number of players (n={args.n}) must be even.")
-            sys.exit(1)
-        
-        if args.grid_alpha_step <= 0 or args.grid_beta_step <= 0:
-            print("Error: Alpha and Beta steps must be positive.")
-            sys.exit(1)
-
-        alpha_values = np.arange(args.grid_alpha_start, args.grid_alpha_end + args.grid_alpha_step, args.grid_alpha_step)
-        if not np.isclose(alpha_values[-1], args.grid_alpha_end) and alpha_values[-1] < args.grid_alpha_end :
-             alpha_values = np.append(alpha_values, args.grid_alpha_end)
-        if alpha_values[-1] > args.grid_alpha_end and not np.isclose(alpha_values[-1], args.grid_alpha_end):
-            alpha_values = alpha_values[:-1]
-
-        beta_values = np.arange(args.grid_beta_start, args.grid_beta_end + args.grid_beta_step, args.grid_beta_step)
-        if not np.isclose(beta_values[-1], args.grid_beta_end) and beta_values[-1] < args.grid_beta_end:
-            beta_values = np.append(beta_values, args.grid_beta_end)
-        if beta_values[-1] > args.grid_beta_end and not np.isclose(beta_values[-1], args.grid_beta_end):
-            beta_values = beta_values[:-1]
-
-        print(f"Starting calibration for n={args.n}")
-        print(f"Alpha range: {args.grid_alpha_start} to {args.grid_alpha_end} step {args.grid_alpha_step} ({len(alpha_values)} values)")
-        print(f"Beta range: {args.grid_beta_start} to {args.grid_beta_end} step {args.grid_beta_step} ({len(beta_values)} values)")
-        print(f"Output CSV: {args.output_csv}")
-        print(f"Time limit per run: {args.time_limit if args.time_limit is not None else 'None'} seconds.")
-
-        fieldnames = [
-            "alpha", "beta", "home_strength_norm", "ps_norm", "md_norm",
-            "z_norm_calculated", "z_norm_solver",
-            "raw_home_strength", "raw_ps", "raw_md", "status"
-        ]
-
-        with open(args.output_csv, 'w', newline='') as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-            writer.writeheader()
-
-            total_runs = len(alpha_values) * len(beta_values)
-            current_run = 0
-
-            for alpha_val in alpha_values:
-                for beta_val in beta_values:
-                    current_run += 1
-                    print(f"\nRunning ({current_run}/{total_runs}): n={args.n}, alpha={alpha_val:.2f}, beta={beta_val:.2f}")
-                    
-                    try:
-                        results = solve_exact(args.n, alpha_pen_seq=alpha_val, beta=beta_val, time_limit=args.time_limit)
-                        
-                        row_data = {
-                            "alpha": f"{alpha_val:.2f}", 
-                            "beta": f"{beta_val:.2f}",
-                            "status": results["status"]
-                        }
-
-                        if results["status"] == "Optimal" and results["metrics"]:
-                            raw_home_strength = results["metrics"]["home_strength"]
-                            raw_ps = results["metrics"]["penalites_sequence"]
-                            raw_md = results["metrics"]["max_deviation"]
-
-                            home_strength_norm = normalize_home_strength(raw_home_strength, args.n)
-                            ps_norm = normalize_total_pen_seq(raw_ps, args.n)
-                            md_norm = normalize_max_dev(raw_md, args.n)
-                            
-                            # Calculate z_norm using the new objective structure (no abs)
-                            z_norm_calculated = home_strength_norm + alpha_val * ps_norm + beta_val * md_norm
-
-                            row_data.update({
-                                "home_strength_norm": f"{home_strength_norm:.4f}", # This is HS_norm_new
-                                "ps_norm": f"{ps_norm:.4f}",
-                                "md_norm": f"{md_norm:.4f}",
-                                "z_norm_calculated": f"{z_norm_calculated:.4f}",
-                                "z_norm_solver": f"{results['objective_value']:.4f}" if results['objective_value'] is not None else "N/A",
-                                "raw_home_strength": f"{raw_home_strength:.2f}",
-                                "raw_ps": f"{raw_ps:.0f}",
-                                "raw_md": f"{raw_md:.2f}"
-                            })
-                        else:
-                            for key in ["home_strength_norm", "ps_norm", "md_norm", "z_norm_calculated", "z_norm_solver", "raw_home_strength", "raw_ps", "raw_md"]:
-                                row_data[key] = "N/A"
-                        
-                        writer.writerow(row_data)
-                        csvfile.flush() 
-
-                    except ValueError as e:
-                        print(f"Error during solve_exact for alpha={alpha_val}, beta={beta_val}: {e}")
-                        writer.writerow({
-                            "alpha": f"{alpha_val:.2f}", "beta": f"{beta_val:.2f}", "status": "ValueError",
-                            "home_strength_norm": "N/A", "ps_norm": "N/A", "md_norm": "N/A",
-                            "z_norm_calculated": "N/A", "z_norm_solver": "N/A",
-                            "raw_home_strength": "N/A", "raw_ps": "N/A", "raw_md": "N/A"
-                        })
-                    except pulp.PulpSolverError as e:
-                        print(f"Solver Error for alpha={alpha_val}, beta={beta_val}: {e}")
-                        writer.writerow({
-                            "alpha": f"{alpha_val:.2f}", "beta": f"{beta_val:.2f}", "status": "PulpSolverError",
-                            "home_strength_norm": "N/A", "ps_norm": "N/A", "md_norm": "N/A",
-                            "z_norm_calculated": "N/A", "z_norm_solver": "N/A",
-                            "raw_home_strength": "N/A", "raw_ps": "N/A", "raw_md": "N/A"
-                        })
-                    except Exception as e:
-                        print(f"An unexpected error occurred for alpha={alpha_val}, beta={beta_val}: {e}")
-                        writer.writerow({
-                            "alpha": f"{alpha_val:.2f}", "beta": f"{beta_val:.2f}", "status": f"UnexpectedError: {type(e).__name__}",
-                            "home_strength_norm": "N/A", "ps_norm": "N/A", "md_norm": "N/A",
-                            "z_norm_calculated": "N/A", "z_norm_solver": "N/A",
-                            "raw_home_strength": "N/A", "raw_ps": "N/A", "raw_md": "N/A"
-                        })
-        print(f"\nCalibration finished. Results saved to {args.output_csv}")
-    else:
-        # Single run mode (not grid search)
-        parser_single = argparse.ArgumentParser(description="Run MILP for a single instance.")
-        parser_single.add_argument("--n", type=int, default=6, help="Number of players (must be even). Default is 6.")
-        parser_single.add_argument("--alpha", type=float, default=config.ALPHA, help=f"Alpha weight for penalty sequence. Default is {config.ALPHA} from config.")
-        parser_single.add_argument("--beta", type=float, default=config.BETA, help=f"Beta weight for max deviation. Default is {config.BETA} from config.")
-        parser_single.add_argument("--time_limit", type=int, default=None, help="Time limit for the solver in seconds. Default is no limit.")
-        
-        args_single = parser_single.parse_args()
-
-        if args_single.n % 2 != 0:
-            print(f"Error: Number of players (n={args_single.n}) must be even.")
-            sys.exit(1)
-
-        print(f"Running single exact model instance: n={args_single.n}, alpha={args_single.alpha:.2f}, beta={args_single.beta:.2f}, time_limit={args_single.time_limit}")
-        
-        results = solve_exact(args_single.n, alpha_pen_seq=args_single.alpha, beta=args_single.beta, time_limit=args_single.time_limit)
-        
-        # The detailed printout, including H/A sequences, is now handled within solve_exact's __main__ block.
-        # We can add a summary here if needed, but it might be redundant.
-        if results["status"] != "Optimal":
-            print(f"Solver did not find an optimal solution for n={args_single.n}, alpha={args_single.alpha:.2f}, beta={args_single.beta:.2f}.")
-            sys.exit(1)
-        else:
-            # A brief confirmation that it finished, details are printed by solve_exact
-            print(f"\nSingle run finished for n={args_single.n}, alpha={args_single.alpha:.2f}, beta={args_single.beta:.2f}. Status: {results['status']}.")
-        sys.exit(0) # Exit successfully after single run
-
-    # This part below is for grid search, ensure it's not reached by single run due to sys.exit(0) above.
-    # The following check should ideally be inside the grid block or handled by argparse structure.
-    # For now, this structure assumes if --grid args are present, args object is from that parser.
-    # If we reached here, it means grid arguments were parsed by the first parser.
-    
-    # Defensive check, though single run mode should exit before this.
-    if not hasattr(args, 'grid_alpha_step') or args.grid_alpha_step <= 0 or args.grid_beta_step <= 0 :
-        print("Error: Grid step arguments are invalid or missing for grid mode.")
+    if n_arg % 2 != 0:
+        print(f"Error: Number of players (n={n_arg}) must be even.")
         sys.exit(1)
 
-    alpha_values = np.arange(args.grid_alpha_start, args.grid_alpha_end + args.grid_alpha_step, args.grid_alpha_step)
-    # Ensure the end value is included if the step doesn't perfectly align, by slightly adjusting the end for arange
-    if not np.isclose(alpha_values[-1], args.grid_alpha_end) and alpha_values[-1] < args.grid_alpha_end :
-         alpha_values = np.append(alpha_values, args.grid_alpha_end)
-    if alpha_values[-1] > args.grid_alpha_end and not np.isclose(alpha_values[-1], args.grid_alpha_end): # If overshot, remove last
-        alpha_values = alpha_values[:-1]
+    print(f"Running single exact model instance: n={n_arg}, alpha={alpha_pen_seq_arg:.2f}, beta={beta_arg:.2f}, time_limit={time_limit_arg}")
 
+    results = solve_exact(n_arg, alpha_pen_seq=alpha_pen_seq_arg, beta=beta_arg, time_limit=time_limit_arg)
 
-    beta_values = np.arange(args.grid_beta_start, args.grid_beta_end + args.grid_beta_step, args.grid_beta_step)
-    if not np.isclose(beta_values[-1], args.grid_beta_end) and beta_values[-1] < args.grid_beta_end:
-        beta_values = np.append(beta_values, args.grid_beta_end)
-    if beta_values[-1] > args.grid_beta_end and not np.isclose(beta_values[-1], args.grid_beta_end):
-        beta_values = beta_values[:-1]
-
-
-    print(f"Starting calibration for n={args.n}")
-    print(f"Alpha range: {args.grid_alpha_start} to {args.grid_alpha_end} step {args.grid_alpha_step} ({len(alpha_values)} values)")
-    print(f"Beta range: {args.grid_beta_start} to {args.grid_beta_end} step {args.grid_beta_step} ({len(beta_values)} values)")
-    print(f"Output CSV: {args.output_csv}")
-    print(f"Time limit per run: {args.time_limit if args.time_limit is not None else 'None'} seconds.")
-
-    fieldnames = [
-        "alpha", "beta", "home_strength_norm", "ps_norm", "md_norm",
-        "z_norm_calculated", "z_norm_solver",
-        "raw_home_strength", "raw_ps", "raw_md", "status"
-    ]
-
-    with open(args.output_csv, 'w', newline='') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-
-        total_runs = len(alpha_values) * len(beta_values)
-        current_run = 0
-
-        for alpha_val in alpha_values:
-            for beta_val in beta_values:
-                current_run += 1
-                print(f"\nRunning ({current_run}/{total_runs}): n={args.n}, alpha={alpha_val:.2f}, beta={beta_val:.2f}")
-                
-                try:
-                    results = solve_exact(args.n, alpha_pen_seq=alpha_val, beta=beta_val, time_limit=args.time_limit)
-                    
-                    row_data = {
-                        "alpha": f"{alpha_val:.2f}", # Store with consistent formatting
-                        "beta": f"{beta_val:.2f}",
-                        "status": results["status"]
-                    }
-
-                    if results["status"] == "Optimal" and results["metrics"]:
-                        raw_home_strength = results["metrics"]["home_strength"]
-                        raw_ps = results["metrics"]["penalites_sequence"]
-                        raw_md = results["metrics"]["max_deviation"]
-
-                        home_strength_norm = normalize_home_strength(raw_home_strength, args.n)
-                        ps_norm = normalize_total_pen_seq(raw_ps, args.n)
-                        md_norm = normalize_max_dev(raw_md, args.n)
-                        
-                        # Calculate z_norm using the new objective structure (no abs)
-                        z_norm_calculated = home_strength_norm + alpha_val * ps_norm + beta_val * md_norm
-
-                        row_data.update({
-                            "home_strength_norm": f"{home_strength_norm:.4f}", # This is HS_norm_new
-                            "ps_norm": f"{ps_norm:.4f}",
-                            "md_norm": f"{md_norm:.4f}",
-                            "z_norm_calculated": f"{z_norm_calculated:.4f}",
-                            "z_norm_solver": f"{results['objective_value']:.4f}" if results['objective_value'] is not None else "N/A",
-                            "raw_home_strength": f"{raw_home_strength:.2f}",
-                            "raw_ps": f"{raw_ps:.0f}",
-                            "raw_md": f"{raw_md:.2f}"
-                        })
-                    else:
-                        # Fill with N/A if not optimal or metrics missing
-                        for key in ["home_strength_norm", "ps_norm", "md_norm", "z_norm_calculated", "z_norm_solver", "raw_home_strength", "raw_ps", "raw_md"]:
-                            row_data[key] = "N/A"
-                    
-                    writer.writerow(row_data)
-                    csvfile.flush() # Ensure data is written progressively
-
-                except ValueError as e:
-                    print(f"Error during solve_exact for alpha={alpha_val}, beta={beta_val}: {e}")
-                    writer.writerow({
-                        "alpha": f"{alpha_val:.2f}", "beta": f"{beta_val:.2f}", "status": "ValueError",
-                        "home_strength_norm": "N/A", "ps_norm": "N/A", "md_norm": "N/A",
-                        "z_norm_calculated": "N/A", "z_norm_solver": "N/A",
-                        "raw_home_strength": "N/A", "raw_ps": "N/A", "raw_md": "N/A"
-                    })
-                except pulp.PulpSolverError as e:
-                    print(f"Solver Error for alpha={alpha_val}, beta={beta_val}: {e}")
-                    writer.writerow({
-                        "alpha": f"{alpha_val:.2f}", "beta": f"{beta_val:.2f}", "status": "PulpSolverError",
-                        "home_strength_norm": "N/A", "ps_norm": "N/A", "md_norm": "N/A",
-                        "z_norm_calculated": "N/A", "z_norm_solver": "N/A",
-                        "raw_home_strength": "N/A", "raw_ps": "N/A", "raw_md": "N/A"
-                    })
-                except Exception as e:
-                    print(f"An unexpected error occurred for alpha={alpha_val}, beta={beta_val}: {e}")
-                    writer.writerow({
-                        "alpha": f"{alpha_val:.2f}", "beta": f"{beta_val:.2f}", "status": f"UnexpectedError: {type(e).__name__}",
-                        "home_strength_norm": "N/A", "ps_norm": "N/A", "md_norm": "N/A",
-                        "z_norm_calculated": "N/A", "z_norm_solver": "N/A",
-                        "raw_home_strength": "N/A", "raw_ps": "N/A", "raw_md": "N/A"
-                    })
-    print(f"\nCalibration finished. Results saved to {args.output_csv}")
+    # The detailed printout, including H/A sequences, is now handled within solve_exact's __main__ block.
+    # We can add a summary here if needed, but it might be redundant.
+    if results["status"] != "Optimal":
+        print(f"Solver did not find an optimal solution for n={n_arg}, alpha={alpha_pen_seq_arg:.2f}, beta={beta_arg:.2f}.")
+        sys.exit(1)
+    else:
+        # A brief confirmation that it finished, details are printed by solve_exact
+        print(f"\nSingle run finished for n={n_arg}, alpha={alpha_pen_seq_arg:.2f}, beta={beta_arg:.2f}. Status: {results['status']}.")
+    sys.exit(0) # Exit successfully after single run
