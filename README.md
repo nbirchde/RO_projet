@@ -85,5 +85,3 @@ Navigate to the `final_report_files` directory and run:
 ```bash
 latexmk -pdf -output-directory=final_report_files final_report_files/rapport_scientifique.tex
 ```
-
-You may need to run this command multiple times (typically 2-3 times) to ensure cross-references and the table of contents are generated correctly.

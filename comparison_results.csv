@@ -1,0 +1,13 @@
+Solver,n,HomeStrength,TotalPenalitesSequence,MaxDeviation,Time (s)
+Exact,6,13.00,4,0.50,1.921
+Exact,8,34.00,6,0.50,54.586
+Exact,4,3.00,2,0.50,0.409
+SA_non_opti,4,3.0,0,0.50,0.131
+SA_non_opti,6,13.0,0,0.50,0.259
+SA_non_opti,20,475.0,13,2.50,1.573
+SA_non_opti,40,3775.0,70,5.50,6.208
+SA_non_opti,60,13202.0,149,7.50,14.350
+SA_non_opti,80,33074.0,316,7.50,27.051
+SA_non_opti,100,60166.0,873,11.50,43.160
+SA_optimized,4,3.00,0,0.50,1.858
+SA_optimized,6,13.00,0,0.50,0.904

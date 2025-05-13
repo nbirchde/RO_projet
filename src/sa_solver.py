@@ -320,8 +320,15 @@ def sa_loop(schedule_h_input, schedule_a_input, home_cnt_input, packed_seq_input
 def _sa_worker(args):
     n_arg, iterations_arg, seed_arg, num_threads_for_this_worker_arg, kwargs_arg = args
     numba.set_num_threads(num_threads_for_this_worker_arg)
-    # Pass kwargs_arg directly to solve_sa
-    return solve_sa(n_arg, iterations=iterations_arg, seed=seed_arg, **kwargs_arg)
+    # Extract expected arguments from kwargs_arg and pass them to solve_sa
+    # solve_sa will load normalization factors internally using get_or_calculate_normalization_factors
+    return solve_sa(
+        n_arg,
+        iterations=iterations_arg,
+        seed=seed_arg,
+        alpha_pen_seq=kwargs_arg.get('alpha_pen_seq', config.ALPHA),
+        beta_obj=kwargs_arg.get('beta_obj', config.BETA)
+    )
 
 def _convert_schedule_to_np_format(schedule_list, n):
     rounds = len(schedule_list)
