@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.4.19)  13 MAY 2025 13:33
+This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.4.19)  13 MAY 2025 15:05
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1009,6 +1009,11 @@ té-rieur entre tous les joueurs (Proxy :
 
 [3]
 
+LaTeX Warning: Reference `subsec:normalisation_calibration' on page 4 undefined
+ on input line 151.
+
+
+
 [4]
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
@@ -1029,60 +1034,71 @@ Package hyperref Warning: Token not allowed in a PDF string (Unicode):
 
 
 [5]
-Overfull \hbox (5.38304pt too wide) in paragraph at lines 210--212
-[]\T1/cmr/m/n/10.95 Après fil-trage pour ne conser-ver que les so-lu-tions non-
-dominées (ba-sées sur l'an-cienne $\OML/cmm/m/it/10.95 HS[]$\T1/cmr/m/n/10.95 )
-,
+Overfull \hbox (38.26535pt too wide) in paragraph at lines 199--200
+\T1/cmr/m/n/10.95 leurs des trois mé-triques nor-ma-li-sées em-pi-ri-que-ment (
+$\OML/cmm/m/it/10.95 emp[]norm[]hs$\T1/cmr/m/n/10.95 , $\OML/cmm/m/it/10.95 emp
+[]norm[]ps$\T1/cmr/m/n/10.95 , $\OML/cmm/m/it/10.95 emp[]norm[]md$\T1/cmr/m/n/1
+0.95 )
  []
 
+<../calibration_plots_n200_empirical_norm_v1/pareto_3d_static_empirical_n200.pn
+g, id=163, 1405.25pt x 1003.75pt>
+File: ../calibration_plots_n200_empirical_norm_v1/pareto_3d_static_empirical_n2
+00.png Graphic file (type png)
+<use ../calibration_plots_n200_empirical_norm_v1/pareto_3d_static_empirical_n20
+0.png>
+Package pdftex.def Info: ../calibration_plots_n200_empirical_norm_v1/pareto_3d_
+static_empirical_n200.png  used on input line 204.
+(pdftex.def)             Requested size: 409.71692pt x 292.6576pt.
 
-Overfull \hbox (178.01173pt too wide) in paragraph at lines 210--212
-\T1/cmr/m/n/10.95 une ana-lyse de la fron-tière de Pa-reto pour $\OML/cmm/m/it/
-10.95 n \OT1/cmr/m/n/10.95 = 6$ \T1/cmr/m/n/10.95 (is-sue des don-nées dans \T1
-/cmtt/m/n/10.95 reports/alpha_beta_calibration_n6_extended_range.csv\T1/cmr/m/n
-/10.95 )
- []
 
+[6]
 
+[7 <final_report_files/../calibration_plots_n200_empirical_norm_v1/pareto_3d_st
+atic_empirical_n200.png>]
 
-[6] (final_report_files/rapport_scientifique.aux)
+[8] (final_report_files/rapport_scientifique.aux)
  ***********
 LaTeX2e <2024-11-01> patch level 2
 L3 programming layer <2025-01-18>
  ***********
+
+
+LaTeX Warning: There were undefined references.
+
 Package rerunfilecheck Info: File `rapport_scientifique.out' has not changed.
-(rerunfilecheck)             Checksum: EBC29D9665B9E080638E6994400300C4;3281.
+(rerunfilecheck)             Checksum: 4D8F87587C060E9F75FE378001A43929;3662.
  ) 
 Here is how much of TeX's memory you used:
- 38783 strings out of 473190
- 917968 string characters out of 5715800
- 1365005 words of memory out of 5000000
- 61450 multiletter control sequences out of 15000+600000
- 573834 words of font info for 72 fonts, out of 8000000 for 9000
+ 38803 strings out of 473190
+ 918818 string characters out of 5715800
+ 1366663 words of memory out of 5000000
+ 61465 multiletter control sequences out of 15000+600000
+ 574196 words of font info for 72 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 99i,10n,101p,1124b,1153s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 99i,10n,101p,1316b,1127s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb
 ></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb>
 </usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb><
-/usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></u
-sr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr
-/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/l
-ocal/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/loca
-l/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local
-/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy6.pfb></usr/local/t
-exlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/local/tex
-live/2025/texmf-dist/fonts/type1/public/cm-super/sfbx1095.pfb></usr/local/texli
-ve/2025/texmf-dist/fonts/type1/public/cm-super/sfbx1200.pfb></usr/local/texlive
-/2025/texmf-dist/fonts/type1/public/cm-super/sfbx1440.pfb></usr/local/texlive/2
-025/texmf-dist/fonts/type1/public/cm-super/sfrm1095.pfb></usr/local/texlive/202
-5/texmf-dist/fonts/type1/public/cm-super/sfrm1200.pfb></usr/local/texlive/2025/
-texmf-dist/fonts/type1/public/cm-super/sfrm1728.pfb></usr/local/texlive/2025/te
-xmf-dist/fonts/type1/public/cm-super/sftt1095.pfb>
-Output written on final_report_files/rapport_scientifique.pdf (6 pages, 277528 
+/usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></u
+sr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr
+/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/lo
+cal/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/loc
+al/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy6.pfb></usr/local
+/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/local/t
+exlive/2025/texmf-dist/fonts/type1/public/cm-super/sfbx1095.pfb></usr/local/tex
+live/2025/texmf-dist/fonts/type1/public/cm-super/sfbx1200.pfb></usr/local/texli
+ve/2025/texmf-dist/fonts/type1/public/cm-super/sfbx1440.pfb></usr/local/texlive
+/2025/texmf-dist/fonts/type1/public/cm-super/sfcc1095.pfb></usr/local/texlive/2
+025/texmf-dist/fonts/type1/public/cm-super/sfrm0800.pfb></usr/local/texlive/202
+5/texmf-dist/fonts/type1/public/cm-super/sfrm1095.pfb></usr/local/texlive/2025/
+texmf-dist/fonts/type1/public/cm-super/sfrm1200.pfb></usr/local/texlive/2025/te
+xmf-dist/fonts/type1/public/cm-super/sfrm1728.pfb>
+Output written on final_report_files/rapport_scientifique.pdf (8 pages, 388166 
 bytes).
 PDF statistics:
- 250 PDF objects out of 1000 (max. 8388607)
- 205 compressed objects within 3 object streams
- 43 named destinations out of 1000 (max. 500000)
- 157 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 270 PDF objects out of 1000 (max. 8388607)
+ 221 compressed objects within 3 object streams
+ 48 named destinations out of 1000 (max. 500000)
+ 170 words of extra memory for PDF output out of 10000 (max. 10000000)
 

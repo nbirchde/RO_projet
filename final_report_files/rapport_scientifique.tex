@@ -64,7 +64,7 @@ Pour atteindre cet objectif, nous avons exploré trois approches complémentaire
 \end{enumerate}
 
 \subsection{Structure du Rapport}
-Ce rapport détaille la modélisation mathématique du problème (Section~\ref{sec:modelisation}), incluant la définition du problème, les variables de décision, les contraintes fondamentales et d'équité, les métriques d'équité (notamment HomeStrength, Pénalité de Séquence, et Max Deviation), ainsi que la fonction objectif normalisée et la discussion sur la calibration des poids $\alpha$ et $\beta$.
+Ce rapport détaille la modélisation mathématique du problème (Section~\ref{sec:modelisation}), incluant la définition du problème, les variables de décision, les contraintes fondamentales et d'équité, ainsi que les métriques d'équité (HomeStrength, Pénalité de Séquence, et Max Deviation). La Section~\ref{sec:normalisation_et_objectif_sa} aborde ensuite la normalisation des métriques et la fonction objectif utilisée par la méta-heuristique. Enfin, la Section~\ref{sec:calibration_pareto_empirique} présente la méthode de calibration des poids de cette fonction objectif via l'analyse d'un front de Pareto empirique et discute de la sélection d'un point opératoire.
 
 \section{Modélisation Mathématique}
 \label{sec:modelisation}
@@ -172,47 +172,46 @@ Initialement, nous combinons les trois métriques d'équité principales en une 
 La fonction exacte, incluant la pondération et la normalisation, est détaillée ci-dessous.
 
 \subsection{Fonction Objectif Normalisée et Calibration des Poids ($\alpha, \beta$)}
-\label{subsec:normalisation_calibration}
-Pour comparer et pondérer équitablement les différentes métriques, nous utilisons des fonctions de normalisation définies dans \texttt{src/metrics.py}.
-La métrique HomeStrength (Eq.~\ref{eq:homestrength}) est maintenant toujours positive ou nulle et est normalisée pour viser un intervalle de $[0, 1]$. Les autres métriques sont également normalisées pour viser $[0, 1]$.
-Les dénominateurs utilisés pour la normalisation pour un nombre $n$ de joueurs sont :
-\begin{itemize}
-    \item Pour HomeStrength: $S_{max}$. Cette valeur représente le maximum théorique de la nouvelle métrique HomeStrength (Eq.~\ref{eq:homestrength}), correspondant au cas où chaque joueur mieux classé reçoit à domicile chaque joueur moins bien classé. La métrique HomeStrength est définie comme $\sum_{i,j,r} \max(0, j - i) \cdot x_{i,j,r}$. Son maximum théorique est atteint lorsque, pour chaque paire de joueurs $(i, j)$ avec $i < j$ (joueur $i$ mieux classé que joueur $j$), le joueur $i$ joue à domicile contre le joueur $j$ exactement une fois au cours du tournoi. Dans ce cas, le terme $\max(0, j-i)$ est sommé pour toutes les paires $(i, j)$ avec $i < j$. Le maximum est donc :
-    $$ S_{max} = \sum_{i=1}^{n-1} \sum_{j=i+1}^{n} (j - i) $$
-    Cette somme peut être calculée comme suit :
-    $$ \sum_{i=1}^{n-1} \sum_{j=i+1}^{n} (j - i) = \sum_{i=1}^{n-1} \sum_{k=1}^{n-i} k \quad \text{où } k = j-i $$
-    $$ = \sum_{i=1}^{n-1} \frac{(n-i)(n-i+1)}{2} $$
-    En posant $m = n-i$, lorsque $i$ va de $1$ à $n-1$, $m$ va de $n-1$ à $1$. La somme devient :
-    $$ = \sum_{m=1}^{n-1} \frac{m(m+1)}{2} = \frac{1}{2} \sum_{m=1}^{n-1} (m^2 + m) $$
-    $$ = \frac{1}{2} \left( \sum_{m=1}^{n-1} m^2 + \sum_{m=1}^{n-1} m \right) $$
-    En utilisant les formules pour la somme des premiers entiers et des premiers carrés :
-    $$ = \frac{1}{2} \left( \frac{(n-1)n(2n-1)}{6} + \frac{(n-1)n}{2} \right) $$
-    $$ = \frac{1}{2} \left( \frac{(n-1)n(2n-1) + 3(n-1)n}{6} \right) $$
-    $$ = \frac{1}{2} \left( \frac{(n-1)n(2n-1 + 3)}{6} \right) $$
-    $$ = \frac{1}{2} \left( \frac{(n-1)n(2n+2)}{6} \right) $$
-    $$ = \frac{1}{2} \left( \frac{(n-1)n \cdot 2(n+1)}{6} \right) $$
-    $$ S_{max} = \frac{n(n-1)(n+1)}{6} $$
-    La normalisation par $S_{max}$ vise donc un score dans l'intervalle $[0,1]$.
+\label{sec:normalisation_et_objectif_sa}
+Les trois métriques d'équité -- HomeStrength (HS, Équation~\ref{eq:homestrength}), TotalPenalitesSequence (PS), et MaxDeviation (MD) -- sont de natures et d'échelles intrinsèquement différentes. Une combinaison directe dans une fonction objectif pondérée pour une méta-heuristique comme le Recuit Simulé (SA) nécessite une normalisation adéquate pour que les poids attribués à chaque critère reflètent fidèlement leur importance relative et pour que la recherche ne soit pas biaisée par les échelles disparates.
 
-    \item Pour TotalPenalitesSequence: $D_{PS} = n(n-2)$. Chaque joueur dispute $n-1$ matchs. Il y a donc $n-2$ transitions entre matchs consécutifs pour chaque joueur où une pénalité de séquence (H-H ou A-A) peut survenir. Pour $n$ joueurs, le nombre total maximal de ces "points de pénalité potentiels" est $n(n-2)$. Ce dénominateur sert à borner la métrique normalisée, typiquement dans $[0,1]$.
-    \item Pour MaxDeviation: $D_{MD} = \frac{n-1}{2}$. Le nombre idéal de matchs à domicile pour chaque joueur est $\bar{H} = \frac{n-1}{2}$. La métrique brute $MaxDev = \max_i |H_i - \bar{H}|$ capture le plus grand écart par rapport à cet idéal. Normaliser par $D_{MD} = \bar{H}$ exprime cet écart maximal en proportion de la valeur idéale. Si un joueur jouait tous ses $n-1$ matchs à domicile (ou tous à l'extérieur), son $H_i$ serait $n-1$ (ou $0$), et l'écart par rapport à $\bar{H}$ serait $(n-1) - \frac{n-1}{2} = \frac{n-1}{2}$. Ainsi, la métrique normalisée $MD_{norm} = \frac{MaxDev}{D_{MD}}$ est bornée dans $[0,1]$.
-\end{itemize}
-La fonction objectif normalisée que nous cherchons à minimiser est :
+Bien qu'une normalisation basée sur des bornes théoriques (comme $S_{max}$, $D_{PS}$, $D_{MD}$ précédemment évoqués pour un modèle exact) puisse être envisagée, elle présente des inconvénients pour l'optimisation heuristique. Les maximums théoriques ne capturent souvent pas la distribution typique ou la variabilité des métriques dans l'espace des solutions exploré par une heuristique. Par exemple, une métrique pourrait avoir un maximum théorique très élevé mais varier dans une plage beaucoup plus restreinte pour la majorité des calendriers "raisonnables". Cela peut conduire à ce que certaines métriques, même après une telle normalisation, dominent l'objectif composite ou rendent l'interprétation et l'ajustement fin des poids de la fonction objectif peu intuitifs.
+
+Pour surmonter ces limitations dans le cadre de notre méta-heuristique SA, une stratégie de \textbf{normalisation empirique} a été adoptée. Pour chaque métrique brute $M_k^{raw}$ (où $k \in \{\text{HS, PS, MD}\}$), une valeur normalisée $M_k^{emp\_norm}$ est calculée en utilisant des facteurs d'échelle dérivés de l'observation statistique des valeurs brutes de ces métriques sur un grand ensemble de calendriers divers. Spécifiquement, pour un nombre $n$ de joueurs donné, nous générons un échantillon de calendriers (par exemple, via des exécutions initiales du SA avec différents paramètres ou des constructions aléatoires) et calculons la médiane ($med_k$) et l'écart-type ($\sigma_k$) pour chaque métrique brute. La métrique normalisée empiriquement est alors définie comme :
 \begin{equation}
-    \min \quad Z_{norm} = \frac{\text{HomeStrength}}{S_{max}} + \alpha \cdot \frac{\text{TotalPenalitesSequence}}{D_{PS}} + \beta \cdot \frac{\text{MaxDeviation}}{D_{MD}}
-    \label{eq:znorm}
+    M_k^{emp\_norm} = \frac{M_k^{raw} - med_k}{\sigma_k} \quad \text{ou plus simplement} \quad M_k^{emp\_norm} = \frac{M_k^{raw}}{\sigma_k^{emp}}
+    \label{eq:emp_norm_general}
 \end{equation}
-Soit $Z_{norm} = \text{HS}_{norm} + \alpha \cdot PS_{norm} + \beta \cdot MD_{norm}$. Comme la nouvelle définition de HomeStrength est toujours positive ou nulle, nous la minimisons directement. \textbf{Note importante :} La discussion sur la calibration des poids $\alpha$ et $\beta$ ci-dessous, ainsi que les valeurs numériques spécifiques de $HS_{norm}$ mentionnées, sont basées sur l'ancienne définition de HomeStrength et sa normalisation. Une nouvelle calibration est nécessaire avec la métrique HomeStrength actuelle (Eq.~\ref{eq:homestrength}) et la normalisation par le $S_{max}$ corrigé.
+Dans notre implémentation, nous avons utilisé la seconde forme, où $\sigma_k^{emp}$ représente l'écart-type empirique (ou une mesure de dispersion similaire) servant de facteur d'échelle. Cette approche assure que les métriques normalisées se situent sur des échelles comparables qui reflètent leur variabilité typique observée en pratique, rendant la fonction objectif du SA plus équilibrée.
 
-Le choix des poids $\alpha$ et $\beta$ est crucial. Pour les fixer (avec l'ancienne métrique), nous avons effectué une calibration sur $n=6$.
-Nous avons exécuté le script \texttt{src/exact\_model.py} avec une grille de valeurs pour $\alpha$ et $\beta$ allant de 0.0 à 6.0, par pas de 0.2, pour $n=6$. Les résultats ont été sauvegardés dans \texttt{reports/alpha\_beta\_calibration\_n6\_extended\_range.csv}.
+Le problème de la génération de calendriers équitables est ainsi traité par le SA comme un problème d'optimisation cherchant à minimiser une combinaison pondérée de ces métriques normalisées empiriquement :
+\begin{equation}
+    Z_{SA} = emp\_norm\_hs + \alpha \cdot emp\_norm\_ps + \beta \cdot emp\_norm\_md
+    \label{eq:sa_objectif_empirique}
+\end{equation}
+Les paramètres $\alpha \geq 0$ et $\beta \geq 0$ représentent les poids qui modulent l'importance relative de la pénalité de séquence et de la déviation maximale par rapport à HomeStrength, toutes exprimées dans leurs échelles empiriquement normalisées. Plutôt que de fixer $\alpha$ et $\beta$ a priori, une exploration systématique de leurs valeurs est entreprise pour analyser les compromis inhérents entre les trois objectifs. Cette exploration mène à la construction d'un front de Pareto empirique, comme détaillé dans la section suivante, permettant un choix éclairé des poids.
 
-Après filtrage pour ne conserver que les solutions non-dominées (basées sur l'ancienne $HS_{norm}$), une analyse de la frontière de Pareto pour $n=6$ (issue des données dans \texttt{reports/alpha\_beta\_calibration\_n6\_extended\_range.csv}) a guidé notre choix initial pour $\alpha$ et $\beta$.
-L'objectif était de minimiser fortement $PS_{norm}$ et $MD_{norm}$.
 
-Avec l'ancienne métrique, les valeurs cibles étaient $PS_{norm} \approx 0.167$ et $MD_{norm} \approx 0.20$.
-La combinaison $(\alpha=0.4, \beta=1.2)$ atteignait ces valeurs, avec l'ancienne $HS_{norm} \approx 1.76$.
+\section{Calibration des Poids par Analyse du Front de Pareto Empirique}
+\label{sec:calibration_pareto_empirique}
+La calibration des poids $\alpha$ et $\beta$ de la fonction objectif du Recuit Simulé (Équation~\ref{eq:sa_objectif_empirique}) est une étape cruciale pour comprendre les compromis possibles entre les différentes dimensions de l'équité, exprimées via leurs formes normalisées empiriquement. Cette calibration a été réalisée en exécutant l'algorithme de Recuit Simulé pour un nombre $n=200$ joueurs, sur un ensemble de paires de valeurs $(\alpha, \beta)$. Typiquement, ces paires sont choisies sur une grille (par exemple, $\alpha \in [0.5, 1.5]$ et $\beta \in [0.5, 1.5]$ avec un pas de $0.1$ pour notre étude sur $n=200$).
 
-Les valeurs $\alpha = 0.5$ et $\beta = 1.0$ ont été retenues pour \texttt{src/config.py}. Ces valeurs sont basées sur l'ancienne définition de HomeStrength et sa normalisation. \textbf{Une nouvelle calibration est nécessaire pour déterminer les poids optimaux avec la métrique HomeStrength actuelle (Eq.~\ref{eq:homestrength}) et la fonction objectif (Eq.~\ref{eq:znorm}) qui utilise $|\text{HS}_{norm}|$.}
+Pour chaque calendrier résultant d'une exécution du SA avec une paire $(\alpha, \beta)$ donnée, les valeurs des trois métriques normalisées empiriquement ($emp\_norm\_hs$, $emp\_norm\_ps$, $emp\_norm\_md$) sont calculées. Ces points forment un nuage dans l'espace tridimensionnel des objectifs. À partir de cet ensemble de solutions, le front de Pareto est identifié. Un front de Pareto est constitué de l'ensemble des solutions non-dominées, c'est-à-dire des solutions pour lesquelles aucune amélioration sur un objectif n'est possible sans dégrader au moins un autre objectif.
+
+\begin{figure}[htbp]
+    \centering
+    % Path updated based on workspace structure
+    \includegraphics[width=0.9\textwidth]{../calibration_plots_n200_empirical_norm_v1/pareto_3d_static_empirical_n200.png}
+    \caption{Front de Pareto 3D illustrant les compromis entre les trois métriques d'équité normalisées empiriquement ($emp\_norm\_hs$, $emp\_norm\_ps$, $emp\_norm\_md$) pour un tournoi de $n=200$ joueurs. Les points rouges représentent les solutions Pareto-optimales, tandis que les points bleus représentent les solutions dominées. Les axes représentent les valeurs des métriques normalisées empiriquement, où des valeurs plus faibles sont préférées pour chaque axe.}
+    \label{fig:pareto_3d_empirique}
+\end{figure}
+
+La Figure~\ref{fig:pareto_3d_empirique} montre le front de Pareto obtenu pour $n=200$ joueurs en utilisant les métriques normalisées empiriquement. Ce front illustre visuellement les relations de compromis : par exemple, chercher à minimiser agressivement les pénalités de séquence ($emp\_norm\_ps$) pourrait conduire à une augmentation de la déviation maximale ($emp\_norm\_md$) ou à une valeur moins favorable de HomeStrength ($emp\_norm\_hs$).
+
+Le choix d'une solution spécifique (et donc d'une paire $(\alpha, \beta)$) sur le front de Pareto dépend des priorités de l'organisateur du tournoi. La métrique HomeStrength (Équation~\ref{eq:homestrength}), même normalisée empiriquement, mesure toujours la tendance des joueurs les mieux classés à affronter à domicile des joueurs moins bien classés. Une valeur élevée de $emp\_norm\_hs$ est donc généralement considérée comme inéquitable car elle confère un avantage potentiellement systématique aux équipes déjà fortes. Par conséquent, une stratégie de sélection judicieuse pourrait privilégier les points sur le front qui offrent une faible valeur pour $emp\_norm\_hs$, tout en maintenant des niveaux acceptables pour $emp\_norm\_ps$ et $emp\_norm\_md$. Il est important de noter que, en raison de la nature de la normalisation empirique (division par $\sigma_k^{emp}$), les valeurs numériques des $emp\_norm$ ne sont pas directement interprétables comme des pourcentages ou des rapports à un maximum théorique, mais servent à comparer les solutions entre elles sur une base équitable.
+
+Pour notre étude avec $n=200$, l'analyse du front de Pareto a mis en évidence plusieurs combinaisons $(\alpha, \beta)$ intéressantes. La configuration avec $\alpha=0.50$ et $\beta=1.50$ a généré une solution caractérisée par les valeurs suivantes pour les métriques normalisées empiriquement : $emp\_norm\_hs \approx 99.16$, $emp\_norm\_ps \approx 153.60$, et $emp\_norm\_md \approx 5.90$. Cette solution est considérée comme un compromis équilibré. Bien que la valeur de $emp\_norm\_ps$ soit plus élevée que pour d'autres points sur le front, ce choix reflète une priorisation de la métrique $emp\_norm\_hs$, qui est significativement plus basse avec cette configuration. La minimisation de HomeStrength est cruciale car cette métrique reflète un aspect fondamental de l'équité sportive : éviter que les équipes fortes bénéficient indûment d'un calendrier favorable en termes d'avantage du terrain contre des adversaires plus faibles. Ce point offre donc un bon équilibre entre la réduction de cet avantage positionnel (faible $emp\_norm\_hs$) et le maintien des autres critères d'équité ($emp\_norm\_ps$ et $emp\_norm\_md$) à des niveaux acceptables dans le contexte des compromis identifiés par le front de Pareto.
+
+En conclusion, l'exploration systématique de l'espace des poids $(\alpha, \beta)$ et l'analyse du front de Pareto empirique fournissent un outil décisionnel robuste. Elles permettent de choisir un calendrier qui correspond au mieux aux préférences spécifiques en matière d'équité, en se basant sur la performance relative des solutions dans l'espace des objectifs normalisés empiriquement.
 
 \end{document}
