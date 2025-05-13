@@ -22,15 +22,15 @@ import math
 import copy
 import numpy as np # For calculating standard deviation if needed later, using max deviation for now
 
+
 # Add the project root directory to sys.path to enable importing modules from src
 # This allows running the script directly from the project root.
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.abspath(os.path.join(current_dir, os.pardir))
 sys.path.insert(0, project_root)
 
-# Now import modules directly
-from metrics import calculate_home_strength, normalize_home_strength, normalize_total_pen_seq, normalize_max_dev
-import config # Import the configuration
+from metrics import calculate_home_strength, calculate_raw_max_deviation, calculate_raw_total_penalty_sequence, normalize_home_strength, normalize_total_pen_seq, normalize_max_dev
+import src.config as config # Import the configuration
 
 def initial_schedule(n):
     """
@@ -62,22 +62,20 @@ def initial_schedule(n):
         round_pairs = []
         for i in range(half):
             p1 = players[i]
-            p2 = players[n_effective - 1 - i]
+            p2 = players[n_effective - 1 - i] # if i = 0, n_effective - 1 - i = 5 (last player)
             # Only add the match if both players are not the dummy player
             if p1 is not None and p2 is not None:
-                # Assign home arbitrarily (e.g., p1 is home)
-                round_pairs.append((p1, p2))
+                # Assign home arbitrarily (e.g., p2 is home)
+                round_pairs.append((p2, p1))
         if round_pairs: # Only add non-empty rounds (relevant if n was odd)
              schedule.append(round_pairs)
         # Rotate players for the next round (excluding the fixed player 1)
-        # Note: The circle method traditionally fixes player 0.
-        # If we use 1-based indexing, we fix player 1.
         fixed_player = players[0]
-        rotated_part = [players[-1]] + players[1:-1]
-        players = [fixed_player] + rotated_part
+        rotated_part = [players[n_effective - 1]] + players[1:n_effective - 1] #[2,3,4,5,6] -> [6,2,3,4,5]
+        players = [fixed_player] + rotated_part #[1,6,2,3,4,5]
 
     # Ensure the schedule has the correct number of rounds for the original n
-    return schedule[:original_n - 1]
+    return schedule[:original_n - 1] # example: [[(2,1), (3,4)], [(4,5), (6,3)], [(5,2), (1,6)], [(1,4), (2,3)], [(3,5), (6,1)]]
 
 
 def compute_metrics(schedule, n):
@@ -97,42 +95,11 @@ def compute_metrics(schedule, n):
     Returns:
         tuple: (delta_strength, penalites_sequence, max_deviation)
     """
-    players = list(range(1, n + 1)) # Use 1-based indexing
-    if not schedule: # Handle empty schedule
-        return 0, 0, 0
-    rounds = len(schedule)
-    if rounds == 0:
-        return 0, 0, 0
-    ideal_home_games = (n - 1) / 2
-
-    # Use the new central function to calculate raw home strength
-    raw_home_strength = calculate_home_strength(schedule, n)
     
-    home_games = {i: 0 for i in players} # Use 1-based keys, still needed for max_dev and pen_seq
-    sequences_dom_ext = {i: [] for i in players} # For penalty calculation, 1-based keys
-
-    for r, rnd in enumerate(schedule):
-        for home, away in rnd:
-            home_games[home] += 1
-            sequences_dom_ext[home].append('H')
-            sequences_dom_ext[away].append('A')
-
-    # Pénalité de séquence: consecutive same H/A
-    penalites_sequence = 0
-    for i in players: # Iterate over 1-based player list
-        for r in range(rounds - 1):
-            # Check sequence for player i
-            if sequences_dom_ext[i][r] == sequences_dom_ext[i][r+1]:
-                penalites_sequence += 1
-
-    # Max Deviation (Proxy for StdDevAdvantage)
-    max_dev = 0
-    if ideal_home_games > 0: # Avoid division by zero if n=0 or n=1 (edge cases)
-        for i in players: # Iterate over 1-based player list
-            deviation = abs(home_games[i] - ideal_home_games)
-            if deviation > max_dev:
-                max_dev = deviation
-
+    raw_home_strength = calculate_home_strength(schedule, n)
+    penalites_sequence = calculate_raw_total_penalty_sequence(schedule, n)
+    max_dev = calculate_raw_max_deviation(schedule, n)
+    
     return raw_home_strength, penalites_sequence, max_dev
 
 
