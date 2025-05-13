@@ -20,7 +20,7 @@ from packed_array_utils import get_status_packed, set_status_packed, PLAYERS_PER
 # Import necessary functions from metrics, including the updated denominator calculator
 from metrics import calculate_home_strength, get_all_fairness_metrics, calculate_max_home_strength_denominator
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 log = logging.getLogger(__name__)
 
 PENALTY_LUT = np.array([1, 0, 0, 1], dtype=np.int8)
@@ -58,7 +58,7 @@ def _update_pen_numba_packed(player, round_idx, old_player_status_at_round, new_
 def sa_loop(schedule_h_input, schedule_a_input, home_cnt_input, packed_seq_input,
             rnd_round_idx_arr, rnd_match_idx_arr,
             iterations, T0, cooling, alpha_pen_seq, beta_obj, ideal_home_games,
-            max_delta_approx, max_penalites_sequence_approx, max_maxdev_approx, seed):
+            max_delta_approx, max_penalites_sequence_approx, max_maxdev_approx, seed, log_interval): # Added log_interval
     np.random.seed(seed)
     rounds = schedule_h_input.shape[0]
     matches_per_round = schedule_h_input.shape[1]
@@ -172,6 +172,9 @@ def sa_loop(schedule_h_input, schedule_a_input, home_cnt_input, packed_seq_input
             # current_norm_score remains as it was before this candidate move
             
         T *= cooling
+        if log_interval > 0 and it % log_interval == 0:
+            print("SA_LOOP_PROGRESS:", "Iter:", it, "Temp:", T, "CurrUnnormScore:", current_unnorm_score, "BestUnnormScore:", actual_best_unnorm_score)
+            
     if best_found_iteration == -1: # No better solution found than initial
         return initial_schedule_h_snapshot, initial_schedule_a_snapshot, initial_packed_seq_snapshot, \
                actual_best_unnorm_score, actual_best_home_strength, actual_best_pen_seq, actual_best_max_dev
@@ -396,7 +399,7 @@ def neighbor(schedule, n):
          return schedule
     return new_sched
 
-def solve_sa(n, iterations=10000, initial_temp=1.0, cooling_rate=0.95, alpha_pen_seq=None, beta_obj=None, seed=42):
+def solve_sa(n, iterations=10000, initial_temp=1.0, cooling_rate=0.95, alpha_pen_seq=None, beta_obj=None, seed=42, log_interval_sa_loop=0): # Added log_interval_sa_loop
     if alpha_pen_seq is None:
         alpha_pen_seq = config.ALPHA
     if beta_obj is None:
@@ -450,13 +453,14 @@ def solve_sa(n, iterations=10000, initial_temp=1.0, cooling_rate=0.95, alpha_pen
         effective_cooling_rate = (T_min / initial_temp)**(1.0 / iterations)
     elif iterations == 0 and initial_temp > 0 :
         effective_cooling_rate = 1.0
-    log.info(f"Starting SA loop with {iterations} iterations... Initial Temp: {initial_temp:.2e}, Cooling Rate (effective): {effective_cooling_rate:.6f}, Target T_min: {T_min:.2e}")
+    log.info(f"Starting SA loop with {iterations} iterations. Initial Temp: {initial_temp:.2e}, Cooling Rate (effective): {effective_cooling_rate:.6f}. Log interval: {log_interval_sa_loop if log_interval_sa_loop > 0 else 'disabled'}")
     
     best_schedule_h_arr, best_schedule_a_arr, final_best_packed_seq, \
     best_unnorm_score, best_home_strength, best_pen_seq, best_max_dev = sa_loop(
         schedule_h, schedule_a, home_cnt, packed_seq_arr, rnd_round_idx_arr, rnd_match_idx_arr,
         iterations, initial_temp, effective_cooling_rate, alpha_pen_seq, beta_obj, ideal_home_games,
-        max_home_strength_approx, max_penalites_sequence_approx, max_maxdev_approx, seed # Pass new denom name
+        max_home_strength_approx, max_penalites_sequence_approx, max_maxdev_approx, seed, # Pass new denom name
+        log_interval_sa_loop # Pass the new log_interval parameter
     )
     elapsed = time.time() - start_time
     log.info(f"SA loop finished in {elapsed:.4f} seconds.")
