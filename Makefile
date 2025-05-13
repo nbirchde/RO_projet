@@ -11,11 +11,24 @@ install: venv
 run:
 	source venv/bin/activate && python3 src/exact_model.py
 
+runM:
+	python.exe src/exact_model.py
+
+
 validate:
 	source venv/bin/activate && python3 src/validate_small_n.py
+
+validateM:
+	python.exe src/validate_small_n.py	
 
 sa:
 	source venv/bin/activate && python3 src/sa_solver.py
 
+saM:
+	python.exe src/sa_solver.py
+
 benchmark:
 	source venv/bin/activate && python3 src/benchmark_sa.py
+
+benchmarkM:
+	python.exe src/benchmark_sa.py
