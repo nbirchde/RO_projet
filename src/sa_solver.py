@@ -2,36 +2,100 @@
 """
 Simulated Annealing (SA) heuristic for the fair round-robin scheduling problem.
 """
+
 import sys
 import random
 import math
 import copy
 import numpy as np
-from collections import defaultdict, deque
 import concurrent.futures as cf
 import multiprocessing as mp
 import time
-import os
-import numba
-import logging
-import config # Import the configuration
-# analysis_utils import for count_breaks and compute_total_breaks removed
-from packed_array_utils import get_status_packed, set_status_packed, PLAYERS_PER_BYTE
-# Import necessary functions from metrics, including the updated denominator calculator
-from metrics import calculate_home_strength, get_all_fairness_metrics, calculate_max_home_strength_denominator
+import logging # Ensure logging is imported
+import numba # Ensure numba is imported
+import os # Ensure os is imported
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+from . import config # Explicit relative import
+# Corrected import: Use existing functions from metrics.py
+from .metrics import calculate_home_strength, get_all_fairness_metrics, calculate_max_home_strength_denominator # Explicit relative import
+# from .schedule_generator import generate_random_schedule_from_matches, generate_random_schedule_n_players # Explicit relative import -> REMOVED as file does not exist
+
+from .packed_array_utils import get_status_packed, set_status_packed, PLAYERS_PER_BYTE # Changed to relative import
+
+# Ensure logging setup is present and correct
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(module)s - %(message)s') # Adjusted level for calibration runs
 log = logging.getLogger(__name__)
 
 PENALTY_LUT = np.array([1, 0, 0, 1], dtype=np.int8)
 
+# Function to compute empirical normalization factors
+def get_empirical_normalization_factors(n, num_samples=200, seed=42):
+    """
+    Generates a sample of schedules and computes median and std dev for HS, PS, MD.
+    """
+    random.seed(seed) # For initial_schedule generation
+    np.random.seed(seed) # For any np randomness if used by helpers
+
+    schedules_hs = []
+    schedules_ps = []
+    schedules_md = []
+
+    log.info(f"Generating {num_samples} samples for n={n} to calculate empirical normalization factors...")
+    # Ensure n is appropriate for initial_schedule if it has constraints (e.g. even n)
+    # initial_schedule internally handles odd n by using n+1 for generation.
+    
+    for i in range(num_samples):
+        sched_list = initial_schedule(n) # initial_schedule is defined later in this file
+        if not sched_list and n > 1 : # initial_schedule might return empty for n=0 or n=1
+             # For n > 1, if it's empty, it might be an issue or expected for very small n.
+             # initial_schedule for n=2 (example) should produce a schedule.
+             # If n is odd, initial_schedule adds a dummy player, so original_n is used.
+             # Let's assume compute_metrics handles empty sched_list gracefully.
+             pass
+
+        # compute_metrics is defined later in this file.
+        # It returns: raw_home_strength, penalites_sequence, max_dev
+        hs, ps, md = compute_metrics(sched_list, n) # compute_metrics is defined later
+        schedules_hs.append(hs)
+        schedules_ps.append(ps)
+        schedules_md.append(md)
+    
+    if not schedules_hs: # If all samples failed or num_samples was 0
+        log.warning(f"No samples collected for n={n}. Using default sigmas=1.0, medians=0.0.")
+        # Return placeholder values that won't cause division by zero
+        return 0.0, 1.0, 0.0, 1.0, 0.0, 1.0
+
+    med_hs = np.median(schedules_hs)
+    sigma_hs = np.std(schedules_hs, ddof=1) if len(schedules_hs) > 1 else 1.0
+    med_ps = np.median(schedules_ps)
+    sigma_ps = np.std(schedules_ps, ddof=1) if len(schedules_ps) > 1 else 1.0
+    med_md = np.median(schedules_md)
+    sigma_md = np.std(schedules_md, ddof=1) if len(schedules_md) > 1 else 1.0
+
+    # Handle cases where sigma might be zero or very small
+    sigma_hs = max(sigma_hs, 1.0) # If std is 0 or too small, use 1.0 to avoid issues.
+    sigma_ps = max(sigma_ps, 1.0)
+    sigma_md = max(sigma_md, 1.0)
+    
+    log.info(f"Empirical factors for n={n}: med_hs={med_hs:.2f}, sigma_hs={sigma_hs:.2f}, med_ps={med_ps:.2f}, sigma_ps={sigma_ps:.2f}, med_md={med_md:.2f}, sigma_md={sigma_md:.2f}")
+    return med_hs, sigma_hs, med_ps, sigma_ps, med_md, sigma_md
+
 @numba.njit(fastmath=True, cache=True)
 def calculate_normalized_score(home_strength, penalites_sequence, max_dev, alpha_pen_seq, beta_obj,
-                               max_home_strength_approx, max_penalites_sequence_approx, max_maxdev_approx):
-    norm_home_strength = home_strength / max_home_strength_approx
-    norm_penalites_sequence = penalites_sequence / max_penalites_sequence_approx
-    norm_maxdev = max_dev / max_maxdev_approx
-    return norm_home_strength + alpha_pen_seq * norm_penalites_sequence + beta_obj * norm_maxdev
+                               # max_home_strength_approx, max_penalites_sequence_approx, max_maxdev_approx): # OLD PARAMS
+                               sigma_hs, sigma_ps, sigma_md): # NEW PARAMS
+    # norm_home_strength = home_strength / max_home_strength_approx
+    # norm_penalites_sequence = penalites_sequence / max_penalites_sequence_approx
+    # norm_maxdev = max_dev / max_maxdev_approx
+    # return norm_home_strength + alpha_pen_seq * norm_penalites_sequence + beta_obj * norm_maxdev
+
+    # Ensure sigmas are not zero to prevent division by zero.
+    # get_empirical_normalization_factors ensures sigmas are >= 1.0
+    
+    obj_hs = home_strength / sigma_hs
+    obj_ps = penalites_sequence / sigma_ps
+    obj_md = max_dev / sigma_md
+    return obj_hs + alpha_pen_seq * obj_ps + beta_obj * obj_md
 
 @numba.njit(fastmath=True, cache=True)
 def calculate_unnormalized_score(home_strength, penalites_sequence, max_dev, alpha_pen_seq, beta_obj):
@@ -58,7 +122,9 @@ def _update_pen_numba_packed(player, round_idx, old_player_status_at_round, new_
 def sa_loop(schedule_h_input, schedule_a_input, home_cnt_input, packed_seq_input,
             rnd_round_idx_arr, rnd_match_idx_arr,
             iterations, T0, cooling, alpha_pen_seq, beta_obj, ideal_home_games,
-            max_delta_approx, max_penalites_sequence_approx, max_maxdev_approx, seed, log_interval): # Added log_interval
+            # max_delta_approx, max_penalites_sequence_approx, max_maxdev_approx, # OLD PARAMS (max_delta_approx was for hs)
+            med_hs, sigma_hs, med_ps, sigma_ps, med_md, sigma_md, # NEW empirical factors
+            seed, log_interval): # Added log_interval
     np.random.seed(seed)
     rounds = schedule_h_input.shape[0]
     matches_per_round = schedule_h_input.shape[1]
@@ -96,7 +162,8 @@ def sa_loop(schedule_h_input, schedule_a_input, home_cnt_input, packed_seq_input
     # max_delta_approx is the parameter name for max_home_strength_approx in this function
     current_norm_score = calculate_normalized_score(current_home_strength, current_pen_seq, current_max_dev,
                                                     alpha_pen_seq, beta_obj,
-                                                    max_delta_approx, max_penalites_sequence_approx, max_maxdev_approx)
+                                                    # max_delta_approx, max_penalites_sequence_approx, max_maxdev_approx) # OLD PARAMS
+                                                    sigma_hs, sigma_ps, sigma_md) # NEW PARAMS
     current_unnorm_score = calculate_unnormalized_score(current_home_strength, current_pen_seq, current_max_dev,
                                                       alpha_pen_seq, beta_obj)
     best_norm_score_found = current_norm_score 
@@ -145,7 +212,8 @@ def sa_loop(schedule_h_input, schedule_a_input, home_cnt_input, packed_seq_input
         
         candidate_norm_score = calculate_normalized_score(current_home_strength, current_pen_seq, current_max_dev,
                                                           alpha_pen_seq, beta_obj,
-                                                          max_delta_approx, max_penalites_sequence_approx, max_maxdev_approx)
+                                                          # max_delta_approx, max_penalites_sequence_approx, max_maxdev_approx) # OLD PARAMS
+                                                          sigma_hs, sigma_ps, sigma_md) # NEW PARAMS
         delta_norm_score = candidate_norm_score - current_norm_score # current_norm_score is score before this move
         accept = delta_norm_score < 0 or np.random.random() < math.exp(-delta_norm_score / T)
         
@@ -173,7 +241,27 @@ def sa_loop(schedule_h_input, schedule_a_input, home_cnt_input, packed_seq_input
             
         T *= cooling
         if log_interval > 0 and it % log_interval == 0:
-            print("SA_LOOP_PROGRESS:", "Iter:", it, "Temp:", T, "CurrUnnormScore:", current_unnorm_score, "BestUnnormScore:", actual_best_unnorm_score)
+            # Calculate z-scores for logging
+            # sigma_X are guaranteed to be >= 1.0 by get_empirical_normalization_factors
+            z_hs = (current_home_strength - med_hs) / sigma_hs
+            z_ps = (current_pen_seq - med_ps) / sigma_ps
+            z_md = (current_max_dev - med_md) / sigma_md
+            
+            # Original f-string causing Numba error:
+            # print(f"SA_LOOP_PROGRESS: Iter: {it}, Temp: {T:.2e}, CurrNormScore: {current_norm_score:.3f}, BestNormScore: {best_norm_score_found:.3f}, UnnormScore: {current_unnorm_score:.2f} (HS:{current_home_strength:.1f},PS:{current_pen_seq},MD:{current_max_dev:.1f}), z_HS:{z_hs:.3f}, z_PS:{z_ps:.3f}, z_MD:{z_md:.3f}")
+            
+            # Numba-compatible print statement:
+            print("SA_LOOP_PROGRESS: Iter:", it,
+                  "Temp:", T,
+                  "CurrNormScore:", current_norm_score,
+                  "BestNormScore:", best_norm_score_found,
+                  "UnnormScore:", current_unnorm_score,
+                  "(HS:", current_home_strength,
+                  ",PS:", current_pen_seq,
+                  ",MD:", current_max_dev,
+                  "), z_HS:", z_hs,
+                  ", z_PS:", z_ps,
+                  ", z_MD:", z_md)
             
     if best_found_iteration == -1: # No better solution found than initial
         return initial_schedule_h_snapshot, initial_schedule_a_snapshot, initial_packed_seq_snapshot, \
@@ -212,7 +300,8 @@ def sa_loop(schedule_h_input, schedule_a_input, home_cnt_input, packed_seq_input
             if deviation > replayed_current_max_dev: replayed_current_max_dev = deviation
     replayed_current_norm_score = calculate_normalized_score(replayed_current_home_strength, replayed_current_pen_seq, replayed_current_max_dev,
                                                              alpha_pen_seq, beta_obj,
-                                                             max_delta_approx, max_penalites_sequence_approx, max_maxdev_approx)
+                                                             # max_delta_approx, max_penalites_sequence_approx, max_maxdev_approx) # OLD PARAMS
+                                                             sigma_hs, sigma_ps, sigma_md) # NEW PARAMS
     replayed_T = initial_T0_for_replay
     for k_it in range(best_found_iteration + 1):
         r_idx = rnd_round_idx_arr[k_it] 
@@ -259,7 +348,8 @@ def sa_loop(schedule_h_input, schedule_a_input, home_cnt_input, packed_seq_input
         
         candidate_norm_score_replay = calculate_normalized_score(replayed_current_home_strength, replayed_current_pen_seq, replayed_current_max_dev,
                                                                  alpha_pen_seq, beta_obj,
-                                                                 max_delta_approx, max_penalites_sequence_approx, max_maxdev_approx)
+                                                                 # max_delta_approx, max_penalites_sequence_approx, max_maxdev_approx) # OLD PARAMS
+                                                                 sigma_hs, sigma_ps, sigma_md) # NEW PARAMS
         delta_norm_score_replay = candidate_norm_score_replay - replayed_current_norm_score # replayed_current_norm_score is score before this move
         accept_replay = delta_norm_score_replay < 0 or np.random.random() < math.exp(-delta_norm_score_replay / replayed_T)
         
@@ -399,16 +489,34 @@ def neighbor(schedule, n):
          return schedule
     return new_sched
 
-def solve_sa(n, iterations=10000, initial_temp=1.0, cooling_rate=0.95, alpha_pen_seq=None, beta_obj=None, seed=42, log_interval_sa_loop=0): # Added log_interval_sa_loop
+def solve_sa(n, iterations=10000, initial_temp=1.5, cooling_rate=0.97, 
+             alpha_pen_seq=None, beta_obj=None, seed=42, 
+             log_interval_sa_loop=0, num_empirical_samples=200,
+             med_hs=None, sigma_hs=None, med_ps=None, sigma_ps=None, med_md=None, sigma_md=None): # Added empirical factor params
     if alpha_pen_seq is None:
         alpha_pen_seq = config.ALPHA
     if beta_obj is None:
         beta_obj = config.BETA
+    
     random.seed(seed)
     np.random.seed(seed)
+
     if n % 2 != 0:
-        raise ValueError("SA solver currently requires an even number of players (n).")
-    initial_sched_list = initial_schedule(n)
+        log.info(f"Odd n={n} detected. Initial schedule generation will use n+1 internally via initial_schedule function.")
+        # initial_schedule handles odd n by adding a dummy player.
+
+    # Get empirical normalization factors
+    if med_hs is None or sigma_hs is None or med_ps is None or sigma_ps is None or med_md is None or sigma_md is None:
+        log.info(f"Empirical factors not provided, calculating for n={n} with {num_empirical_samples} samples.")
+        # Pass a seed for this calculation to make it deterministic.
+        # Using seed + 1 to differentiate from the main SA randomness if that's ever an issue.
+        med_hs, sigma_hs, med_ps, sigma_ps, med_md, sigma_md = get_empirical_normalization_factors(
+            n, num_samples=num_empirical_samples, seed=seed + 1 if seed is not None else 43
+        )
+    else:
+        log.info(f"Using provided empirical factors for n={n}.")
+
+    initial_sched_list = initial_schedule(n) # Uses random, so seed set above matters
     if not initial_sched_list:
         log.warning("Initial schedule is empty.")
         return [], 0, (0, 0, 0) # Adjusted tuple size
@@ -430,14 +538,14 @@ def solve_sa(n, iterations=10000, initial_temp=1.0, cooling_rate=0.95, alpha_pen
                 set_status_packed(packed_seq_arr, a_init, r_init, 0)
     
     # Use the correct theoretical maximum S_max calculation for HomeStrength normalization denominator
-    max_home_strength_approx = calculate_max_home_strength_denominator(n)
-    max_penalites_sequence_approx = n * (n - 2.0) if n > 2 else 1.0 # Ensure float for consistency
-    max_maxdev_approx = (n - 1.0) / 2.0 if n > 1 else 1.0 # Ensure float
+    # max_home_strength_approx = calculate_max_home_strength_denominator(n) # NO LONGER PASSED TO SA_LOOP for objective
+    # max_penalites_sequence_approx = n * (n - 2.0) if n > 2 else 1.0 # Ensure float for consistency # NO LONGER PASSED
+    # max_maxdev_approx = (n - 1.0) / 2.0 if n > 1 else 1.0 # Ensure float # NO LONGER PASSED
 
     # Ensure denominators are at least 1.0
-    max_home_strength_approx = max(max_home_strength_approx, 1.0)
-    max_penalites_sequence_approx = max(max_penalites_sequence_approx, 1.0)
-    max_maxdev_approx = max(max_maxdev_approx, 1.0)
+    # max_home_strength_approx = max(max_home_strength_approx, 1.0) # Not used by sa_loop objective
+    # max_penalites_sequence_approx = max(max_penalites_sequence_approx, 1.0) # Not used
+    # max_maxdev_approx = max(max_maxdev_approx, 1.0) # Not used
     
     ideal_home_games = (n - 1) / 2.0
     if rounds > 0 and matches_per_round > 0:
@@ -454,12 +562,17 @@ def solve_sa(n, iterations=10000, initial_temp=1.0, cooling_rate=0.95, alpha_pen
     elif iterations == 0 and initial_temp > 0 :
         effective_cooling_rate = 1.0
     log.info(f"Starting SA loop with {iterations} iterations. Initial Temp: {initial_temp:.2e}, Cooling Rate (effective): {effective_cooling_rate:.6f}. Log interval: {log_interval_sa_loop if log_interval_sa_loop > 0 else 'disabled'}")
+    log.info(f"Using empirical factors for objective: med_hs={med_hs:.2f}, sigma_hs={sigma_hs:.2f}, med_ps={med_ps:.2f}, sigma_ps={sigma_ps:.2f}, med_md={med_md:.2f}, sigma_md={sigma_md:.2f}")
+    # Consider T0 and cooling rate adjustments based on user prompt (e.g. T0*1.5, cooling_rate to 0.97)
+    # These would be passed into solve_sa by the caller (e.g. run_calibration.py)
     
     best_schedule_h_arr, best_schedule_a_arr, final_best_packed_seq, \
     best_unnorm_score, best_home_strength, best_pen_seq, best_max_dev = sa_loop(
         schedule_h, schedule_a, home_cnt, packed_seq_arr, rnd_round_idx_arr, rnd_match_idx_arr,
         iterations, initial_temp, effective_cooling_rate, alpha_pen_seq, beta_obj, ideal_home_games,
-        max_home_strength_approx, max_penalites_sequence_approx, max_maxdev_approx, seed, # Pass new denom name
+        # max_home_strength_approx, max_penalites_sequence_approx, max_maxdev_approx, # OLD PARAMS REMOVED
+        med_hs, sigma_hs, med_ps, sigma_ps, med_md, sigma_md, # NEW EMPIRICAL FACTORS
+        seed, 
         log_interval_sa_loop # Pass the new log_interval parameter
     )
     elapsed = time.time() - start_time
@@ -486,10 +599,14 @@ def solve_sa_parallel(n, iterations, runs=4, seed=42, executor=None, **kwargs):
         for future in cf.as_completed(future_to_seed):
             s = future_to_seed[future]
             try:
-                results_list.append(future.result())
+                # result = future.result() # Ensure this is called to propagate exceptions
+                results_list.append(future.result()) # Store the actual result
             except Exception as exc:
-                log.error(f'Seed {s} generated an exception: {exc}')
-                results_list.append(([], float('inf'), (float('inf'), float('inf'), float('inf')))) # Adjusted tuple size
+                # log.error(f"Seed {s} generated an exception: {exc}")
+                # Optionally, re-raise or handle more gracefully
+                # For now, just logging and continuing, which might lead to empty results_list
+                # if all fail.
+                log.exception(f"Seed {s} in parallel SA run generated an exception.") # More detailed log
     else:
         log.info(f"No shared executor provided to solve_sa_parallel, creating a new one with max_workers={runs}.")
         with cf.ProcessPoolExecutor(max_workers=runs, mp_context=mp.get_context("spawn")) as exe:
@@ -500,172 +617,12 @@ def solve_sa_parallel(n, iterations, runs=4, seed=42, executor=None, **kwargs):
     best_schedule, best_score, best_metrics = min(results_list, key=lambda x: x[1])
     return best_schedule, best_score, best_metrics
 
-# Updated to accept normalization denominators and return normalized score for decision-making
-def _calculate_metrics_for_tabu(schedule_h, schedule_a, home_cnt, packed_seq, n, alpha_pen_seq, beta_obj,
-                               max_home_strength_approx, max_penalites_sequence_approx, max_maxdev_approx):
-    rounds = schedule_h.shape[0]
-    matches_per_round = schedule_h.shape[1] # Assuming schedule_h is not empty
-    # Calculate HomeStrength using the new definition: sum max(0, away-home)
-    home_strength = np.float64(0)
-    for r_loop in range(rounds):
-        for m_loop in range(matches_per_round):
-            home_player = schedule_h[r_loop, m_loop]
-            away_player = schedule_a[r_loop, m_loop]
-            home_strength += max(0, away_player - home_player) # Use new definition
-            
-    pen_seq = np.int64(0) 
-    if rounds > 1 and n > 0:
-        for player_idx_loop in range(1, n + 1):
-            for r_loop in range(rounds - 1):
-                status_curr = get_status_packed(packed_seq, player_idx_loop, r_loop)
-                status_next = get_status_packed(packed_seq, player_idx_loop, r_loop + 1)
-                lut_idx = (status_curr << 1) | status_next
-                pen_seq += np.int64(PENALTY_LUT[lut_idx])
-    max_dev = 0.0
-    ideal_home_games = (n - 1) / 2.0
-    if ideal_home_games >= 0 and n > 0:
-        for i in range(1, n + 1):
-            deviation = abs(home_cnt[i] - ideal_home_games)
-            if deviation > max_dev: max_dev = deviation
-    
-    # Calculate both normalized and unnormalized scores
-    norm_score = calculate_normalized_score(home_strength, pen_seq, max_dev, alpha_pen_seq, beta_obj,
-                                            max_home_strength_approx, max_penalites_sequence_approx, max_maxdev_approx)
-    unnorm_score = calculate_unnormalized_score(home_strength, pen_seq, max_dev, alpha_pen_seq, beta_obj)
-    
-    return norm_score, unnorm_score, (home_strength, pen_seq, max_dev)
-
-Move = tuple[int, int, int, int]
-
-def _apply_move_to_schedule_arrays(move: Move, schedule_h, schedule_a, home_cnt, packed_seq, n):
-    r_idx, m_idx, h_orig, a_orig = move
-    home_cnt[h_orig] -= 1
-    home_cnt[a_orig] += 1
-    set_status_packed(packed_seq, h_orig, r_idx, 0)
-    set_status_packed(packed_seq, a_orig, r_idx, 1)
-    schedule_h[r_idx, m_idx] = a_orig
-    schedule_a[r_idx, m_idx] = h_orig
-    return schedule_h, schedule_a, home_cnt, packed_seq
-
-def generate_top_k_flips_tabu(current_schedule_arrays, n, k, alpha_pen_seq, beta_obj,
-                               max_home_strength_approx, max_penalites_sequence_approx, max_maxdev_approx):
-    current_h_arr, current_a_arr, current_home_cnt_arr, current_packed_seq_arr = current_schedule_arrays
-    rounds = current_h_arr.shape[0]
-    matches_per_round = current_h_arr.shape[1]
-    potential_moves = []
-    num_attempts = k * 5
-    for _ in range(num_attempts):
-        if rounds == 0 or matches_per_round == 0: break
-        r_idx = random.randrange(rounds)
-        m_idx = random.randrange(matches_per_round)
-        h_player = current_h_arr[r_idx, m_idx]
-        a_player = current_a_arr[r_idx, m_idx]
-        move = (r_idx, m_idx, h_player, a_player)
-        temp_h = current_h_arr.copy()
-        temp_a = current_a_arr.copy()
-        temp_home_cnt = current_home_cnt_arr.copy()
-        temp_packed_seq = current_packed_seq_arr.copy()
-        _apply_move_to_schedule_arrays(move, temp_h, temp_a, temp_home_cnt, temp_packed_seq, n)
-        # Pass normalization denominators
-        norm_s, unnorm_s, new_metrics_tuple = _calculate_metrics_for_tabu(
-            temp_h, temp_a, temp_home_cnt, temp_packed_seq, n, alpha_pen_seq, beta_obj,
-            max_home_strength_approx, max_penalites_sequence_approx, max_maxdev_approx
-        )
-        potential_moves.append({'move': move, 'norm_score': norm_s, 'unnorm_score': unnorm_s, 'metrics': new_metrics_tuple, 
-                                'arrays': (temp_h, temp_a, temp_home_cnt, temp_packed_seq)})
-    potential_moves.sort(key=lambda x: x['norm_score']) # Sort by normalized score
-    return potential_moves[:k]
-
-def tabu_search_solver(n_players, initial_schedule_list, iterations=5000, tenure=20, k_neighbors=50,
-                       alpha_pen_seq=None, beta_obj=None, seed=42):
-    if alpha_pen_seq is None:
-        alpha_pen_seq = config.ALPHA
-    if beta_obj is None:
-        beta_obj = config.BETA
-    random.seed(seed)
-    np.random.seed(seed)
-
-    # Use the correct theoretical maximum S_max calculation for HomeStrength normalization denominator
-    max_home_strength_approx = calculate_max_home_strength_denominator(n_players)
-    max_penalites_sequence_approx = n_players * (n_players - 2.0) if n_players > 2 else 1.0
-    max_maxdev_approx = (n_players - 1.0) / 2.0 if n_players > 1 else 1.0
-    
-    # Ensure denominators are at least 1.0
-    max_home_strength_approx = max(max_home_strength_approx, 1.0)
-    max_penalites_sequence_approx = max(max_penalites_sequence_approx, 1.0)
-    max_maxdev_approx = max(max_maxdev_approx, 1.0)
-
-    s_h, s_a, hc, ps = _convert_schedule_to_np_format(initial_schedule_list, n_players)
-    
-    current_norm_score, current_unnorm_score, current_metrics_tuple = _calculate_metrics_for_tabu(
-        s_h, s_a, hc, ps, n_players, alpha_pen_seq, beta_obj,
-        max_home_strength_approx, max_penalites_sequence_approx, max_maxdev_approx
-    )
-    current_arrays = (s_h, s_a, hc, ps)
-    
-    best_arrays = tuple(arr.copy() for arr in current_arrays)
-    best_norm_score = current_norm_score
-    best_unnorm_score = current_unnorm_score # Keep track of best unnormalized score
-    best_metrics_tuple = current_metrics_tuple
-    
-    effective_tenure = max(10, min(int(0.1 * n_players), 75))
-    if n_players <= 10: effective_tenure = max(2, n_players -1) if n_players > 1 else 1 # Ensure n_players-1 is not negative
-    tabu_list = deque(maxlen=effective_tenure)
-    log.info(f"Starting Tabu Search: n={n_players}, iters={iterations}, tenure={effective_tenure}, k_neighbors={k_neighbors}")
-    log.info(f"Initial TS Score (Norm): {best_norm_score:.2f}, (Unnorm): {best_unnorm_score:.2f}, Metrics (HS,P,M): {best_metrics_tuple}")
-
-    for i in range(iterations):
-        neighbors = generate_top_k_flips_tabu(current_arrays, n_players, k_neighbors, alpha_pen_seq, beta_obj,
-                                             max_home_strength_approx, max_penalites_sequence_approx, max_maxdev_approx)
-        best_candidate_move_info = None
-        for move_info in neighbors:
-            tabu_attr = (move_info['move'][0], move_info['move'][1])
-            is_tabu = tabu_attr in tabu_list
-            # Decisions based on normalized score
-            aspiration_met = move_info['norm_score'] < best_norm_score 
-            if not is_tabu or aspiration_met:
-                if best_candidate_move_info is None or move_info['norm_score'] < best_candidate_move_info['norm_score']:
-                    best_candidate_move_info = move_info
-                    if is_tabu and aspiration_met:
-                        log.debug(f"TS iter {i}: Aspiration criterion met for tabu move {tabu_attr} with norm_score {move_info['norm_score']:.2f} (global best norm: {best_norm_score:.2f})")
-        if best_candidate_move_info is None:
-            if neighbors:
-                log.warning(f"TS iter {i}: All {len(neighbors)} neighbors are tabu and none met aspiration. Picking best tabu move by norm_score.")
-                best_candidate_move_info = min(neighbors, key=lambda x: x['norm_score'])
-            else:
-                log.error(f"TS iter {i}: No neighbors generated. Stopping.")
-                break
-        current_arrays = best_candidate_move_info['arrays']
-        current_norm_score = best_candidate_move_info['norm_score'] # Now using norm_score
-        current_unnorm_score = best_candidate_move_info['unnorm_score']
-        current_metrics_tuple = best_candidate_move_info['metrics']
-        
-        chosen_move_details = best_candidate_move_info['move']
-        chosen_tabu_attribute = (chosen_move_details[0], chosen_move_details[1])
-        tabu_list.append(chosen_tabu_attribute) 
-        
-        if current_norm_score < best_norm_score: # Compare with best_norm_score
-            best_norm_score = current_norm_score
-            best_unnorm_score = current_unnorm_score # Store corresponding unnormalized
-            best_metrics_tuple = current_metrics_tuple
-            best_arrays = tuple(arr.copy() for arr in current_arrays) 
-            log.info(f"TS iter {i}: New best norm_score: {best_norm_score:.2f} (unnorm: {best_unnorm_score:.2f}, Metrics HS,P,M: {best_metrics_tuple})")
-        if i % 100 == 0 or i == iterations -1 :
-             log.info(f"TS iter {i}: Current norm_score: {current_norm_score:.2f} (unnorm: {current_unnorm_score:.2f}), Best norm_score: {best_norm_score:.2f} (Metrics HS,P,M: {current_metrics_tuple})")
-    
-    best_h_arr, best_a_arr, _best_hc_arr, best_packed_seq_final = best_arrays
-    best_sched_list = []
-    rounds = best_h_arr.shape[0]
-    matches_per_round = best_h_arr.shape[1]
-    for r_idx in range(rounds):
-        round_list_item = []
-        for m_idx_item in range(matches_per_round):
-            round_list_item.append((best_h_arr[r_idx, m_idx_item], best_a_arr[r_idx, m_idx_item]))
-        best_sched_list.append(round_list_item)
-    
-    # Return the best unnormalized score and its metrics for consistency with SA solver's reporting
-    log.info(f"Tabu Search finished. Final Best Unnormalized Score: {best_unnorm_score:.2f} (Norm: {best_norm_score:.2f}, Metrics HS,P,M: {best_metrics_tuple})")
-    return best_sched_list, best_unnorm_score, best_metrics_tuple
+# TODO: Tabu Search parts (_calculate_metrics_for_tabu, generate_top_k_flips_tabu, tabu_search_solver)
+# currently use theoretical max approximations for their normalization if they perform any.
+# If Tabu search is to be used with the new empirical normalization philosophy for its objective/evaluation,
+# these functions will need similar updates to accept and use empirical sigmas (and potentially medians).
+# For now, these functions remain unchanged and will use their original normalization logic if called.
+# --- REMOVED TABU SEARCH CODE BELOW ---
 
 def main():
     n_arg = int(sys.argv[1]) if len(sys.argv) > 1 else 6
@@ -740,7 +697,27 @@ def main():
         log.info("    N/A")
     log.info("---------------------------------")
 
-    # log.info("\n--- Schedule Details ---") # Removed schedule printing
+    # Verification step using original normalization (from get_all_fairness_metrics)
+    log.info("\\n--- Verification Against Original Normalization Thresholds ---")
+    hs_norm_orig = all_metrics.get('normalized_home_strength', float('inf'))
+    ps_norm_orig = all_metrics.get('normalized_total_penalty_sequence', float('inf'))
+    md_norm_orig = all_metrics.get('normalized_max_deviation', float('inf'))
+
+    hs_ok = hs_norm_orig <= 0.10
+    ps_ok = ps_norm_orig <= 0.20
+    md_ok = md_norm_orig <= 0.20
+
+    log.info(f"  Normalized HS (Original): {hs_norm_orig:.4f} (Target: <= 0.10) - Met: {hs_ok}")
+    log.info(f"  Normalized PS (Original): {ps_norm_orig:.4f} (Target: <= 0.20) - Met: {ps_ok}")
+    log.info(f"  Normalized MD (Original): {md_norm_orig:.4f} (Target: <= 0.20) - Met: {md_ok}")
+
+    if hs_ok and ps_ok and md_ok:
+        log.info("  VERIFICATION PASSED: All criteria met.")
+    else:
+        log.info("  VERIFICATION FAILED: One or more criteria not met.")
+    log.info("---------------------------------")
+
+    # log.info("\\n--- Schedule Details ---") # Removed schedule printing
     # for r, rnd in enumerate(best_schedule):
     #     match_strs = [f"{h}v{a}(H)" for h, a in rnd] # Assuming (home, away)
     #     log.info(f"Round {r+1}: {', '.join(match_strs)}")

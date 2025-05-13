@@ -8,9 +8,6 @@
     latexmk -pdf -output-directory=final_report_files final_report_files/rapport_scientifique.tex
     ```
 
-## Alpha/Beta Calibration and Pareto Plots
-
-This project includes scripts to perform a calibration of the `alpha` and `beta` weights used in the simulated annealing solver's objective function and to visualize the resulting Pareto frontiers.
 
 ### 1. Running the Calibration
 
