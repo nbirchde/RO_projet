@@ -1,0 +1,36 @@
+Round,Match 1,Match 2,Match 3,Match 4,Match 5
+Round 1,1v10(H),2v9(H),8v3(H),7v4(H),5v6(H)
+Round 2,9v1(H),10v8(H),2v7(H),6v3(H),4v5(H)
+Round 3,8v1(H),7v9(H),10v6(H),5v2(H),3v4(H)
+Round 4,1v7(H),6v8(H),9v5(H),4v10(H),2v3(H)
+Round 5,6v1(H),7v5(H),8v4(H),3v9(H),10v2(H)
+Round 6,5v1(H),4v6(H),7v3(H),2v8(H),9v10(H)
+Round 7,1v4(H),3v5(H),6v2(H),10v7(H),8v9(H)
+Round 8,3v1(H),4v2(H),5v10(H),9v6(H),7v8(H)
+Round 9,1v2(H),10v3(H),9v4(H),8v5(H),6v7(H)
+
+Metric,Value
+Overall Score,81.45
+Home Strength,70.0
+Penalty Sequence,12
+Max Deviation,0.5
+Home Games Player 1,4
+Home Games Player 2,4
+Home Games Player 3,4
+Home Games Player 4,4
+Home Games Player 5,4
+Home Games Player 6,5
+Home Games Player 7,5
+Home Games Player 8,5
+Home Games Player 9,5
+Home Games Player 10,5
+Sequence Player 1,HAAHAAHAH
+Sequence Player 2,HHAHAHAAA
+Sequence Player 3,AAHAHAHHA
+Sequence Player 4,AHAHAHAHA
+Sequence Player 5,HAHAAHAHA
+Sequence Player 6,AHAHHAHAH
+Sequence Player 7,HAHAHHAHA
+Sequence Player 8,HAHAHAHAH
+Sequence Player 9,AHAHAHAHH
+Sequence Player 10,AHHAHAHAH

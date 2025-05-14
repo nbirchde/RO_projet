@@ -688,6 +688,48 @@ def main():
         log.info("    N/A")
     log.info("---------------------------------")
 
+    # --- Print Schedule and Metrics to CSV ---
+    csv_filename = f"sa_schedule_n{n_arg}.csv"
+    log.info(f"\n--- Writing schedule and metrics to {csv_filename} ---")
+    try:
+        with open(csv_filename, 'w', newline='') as csvfile:
+            import csv
+            writer = csv.writer(csvfile)
+
+            # Write Schedule
+            if best_schedule:
+                rounds = len(best_schedule)
+                matches_per_round = n_arg // 2
+                schedule_header = ["Round"] + [f"Match {i+1}" for i in range(matches_per_round)]
+                writer.writerow(schedule_header)
+
+                for r_idx, rnd in enumerate(best_schedule):
+                    round_row = [f"Round {r_idx+1}"] + [f"{h}v{a}(H)" for h, a in rnd]
+                    writer.writerow(round_row)
+                writer.writerow([]) # Empty row for separation
+
+            # Write Metrics
+            writer.writerow(["Metric", "Value"])
+            writer.writerow(["Overall Score", best_score])
+            writer.writerow(["Home Strength", all_metrics.get('raw_home_strength', 'N/A')])
+            writer.writerow(["Penalty Sequence", all_metrics.get('raw_total_penalty_sequence', 'N/A')])
+            writer.writerow(["Max Deviation", all_metrics.get('raw_max_deviation', 'N/A')])
+
+            home_games = all_metrics.get('home_games_per_player', [])
+            if home_games:
+                for i, count in enumerate(home_games):
+                    writer.writerow([f"Home Games Player {i+1}", count])
+
+            player_sequences = all_metrics.get('player_ha_sequences', [])
+            if player_sequences:
+                 for i, seq_str in enumerate(player_sequences):
+                     writer.writerow([f"Sequence Player {i+1}", seq_str])
+
+        log.info(f"Successfully wrote schedule and metrics to {csv_filename}")
+
+    except Exception as e:
+        log.error(f"Error writing CSV file {csv_filename}: {e}")
+
     # Remove verification step using original normalization
     # log.info("\\n--- Verification Against Original Normalization Thresholds ---")
     # hs_norm_orig = all_metrics.get('normalized_home_strength', float('inf'))
