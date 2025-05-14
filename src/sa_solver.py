@@ -408,14 +408,14 @@ def neighbor(schedule, n):
          return schedule
     return new_sched
 
-def solve_sa(n, iterations=10000, initial_temp=1.5, cooling_rate=0.97, 
-             alpha_pen_seq=None, beta_obj=None, seed=42, 
-             log_interval_sa_loop=0, num_empirical_samples=200):
+def solve_sa(n, iterations=10000, initial_temp=1.5, cooling_rate=0.97,
+             alpha_pen_seq=None, beta_obj=None, seed=42,
+             log_interval_sa_loop=0, num_empirical_samples=200): # Removed load_best_schedule parameter
     if alpha_pen_seq is None:
         alpha_pen_seq = config.ALPHA
     if beta_obj is None:
         beta_obj = config.BETA
-    
+
     random.seed(seed)
     np.random.seed(seed)
 
@@ -423,38 +423,29 @@ def solve_sa(n, iterations=10000, initial_temp=1.5, cooling_rate=0.97,
         log.info(f"Odd n={n} detected. Initial schedule generation will use n+1 internally via initial_schedule function.")
 
     # Get empirical normalization factors from the manager
+    # These are needed for the objective function calculation
     med_hs, sigma_hs, med_ps, sigma_ps, med_md, sigma_md = get_or_calculate_normalization_factors(
         n,
         schedule_generator=initial_schedule,
         num_samples=num_empirical_samples,
-        seed=seed + 1 if seed is not None else 43
+        seed=seed + 1 if seed is not None else 43 # Use a different seed for factor calculation
     )
 
-    # Attempt to load previous best schedule
-    loaded_best_schedule_list, loaded_best_norm_score = get_best_schedule(n)
+    # Always generate a new random initial schedule
+    log.info(f"Generating initial random schedule for n={n}.")
+    current_sched_list = initial_schedule(n) # Uses random, so seed set above matters
+    if not current_sched_list:
+        log.warning("Initial schedule is empty.")
+        return [], 0, (0, 0, 0)
 
-    if loaded_best_schedule_list is not None:
-        log.info(f"Starting SA from loaded best schedule for n={n} with normalized score {loaded_best_norm_score:.4f}.")
-        current_sched_list = loaded_best_schedule_list
-        # Need to compute raw metrics for the loaded schedule to get initial unnormalized score
-        c_home_strength, c_penalites_sequence, c_max_dev = compute_metrics(current_sched_list, n)
-        current_norm_score = loaded_best_norm_score # Use the loaded normalized score
-        current_unnorm_score = c_home_strength + alpha_pen_seq * c_penalites_sequence + beta_obj * c_max_dev # Calculate unnormalized for reporting
-    else:
-        log.info(f"No previous best schedule found for n={n}. Generating initial random schedule.")
-        current_sched_list = initial_schedule(n) # Uses random, so seed set above matters
-        if not current_sched_list:
-            log.warning("Initial schedule is empty.")
-            return [], 0, (0, 0, 0)
-
-        # Calculate initial metrics and scores for the random schedule
-        c_home_strength, c_penalites_sequence, c_max_dev = compute_metrics(current_sched_list, n)
-        current_norm_score = calculate_normalized_score(
-            c_home_strength, c_penalites_sequence, c_max_dev,
-            alpha_pen_seq, beta_obj,
-            med_hs, sigma_hs, med_ps, sigma_ps, med_md, sigma_md
-        )
-        current_unnorm_score = c_home_strength + alpha_pen_seq * c_penalites_sequence + beta_obj * c_max_dev # Calculate unnormalized for reporting
+    # Calculate initial metrics and scores for the random schedule
+    c_home_strength, c_penalites_sequence, c_max_dev = compute_metrics(current_sched_list, n)
+    current_norm_score = calculate_normalized_score(
+        c_home_strength, c_penalites_sequence, c_max_dev,
+        alpha_pen_seq, beta_obj,
+        med_hs, sigma_hs, med_ps, sigma_ps, med_md, sigma_md
+    )
+    current_unnorm_score = c_home_strength + alpha_pen_seq * c_penalites_sequence + beta_obj * c_max_dev # Calculate unnormalized for reporting
 
     # Calculate ideal home games before converting to numpy format
     ideal_home_games = (n - 1) / 2.0
@@ -509,13 +500,7 @@ def solve_sa(n, iterations=10000, initial_temp=1.5, cooling_rate=0.97,
         med_hs, sigma_hs, med_ps, sigma_ps, med_md, sigma_md
     )
 
-    # Save the best schedule if it's better than the loaded one (or if none was loaded)
-    if loaded_best_norm_score is None or best_norm_score_calculated < loaded_best_norm_score:
-        log.info(f"Found a new best schedule for n={n} with normalized score {best_norm_score_calculated:.4f}. Saving...")
-        save_best_schedule(n, best_sched_list, best_norm_score_calculated)
-    else:
-        log.info(f"Best found normalized score ({best_norm_score_calculated:.4f}) is not better than the loaded best ({loaded_best_norm_score:.4f}). Not saving.")
-
+    # Removed logic to save the best schedule
 
     best_metrics = (best_home_strength, best_pen_seq, best_max_dev)
     log.info(f"Final Best Score (Unnormalized): {best_unnorm_score_found:.2f} (HomeStrength: {best_home_strength}, PénSeq: {best_pen_seq}, MaxDev: {best_max_dev:.2f})")
@@ -528,10 +513,7 @@ def solve_sa_parallel(n, iterations, runs=4, seed=42, executor=None, **kwargs):
     # Get empirical normalization factors once for score comparison
     med_hs, sigma_hs, med_ps, sigma_ps, med_md, sigma_md = get_or_calculate_normalization_factors(n)
 
-    # Load the initial best schedule once before parallel runs
-    loaded_best_schedule_list, loaded_best_norm_score = get_best_schedule(n)
-    overall_best_schedule_list = loaded_best_schedule_list
-    overall_best_norm_score = loaded_best_norm_score
+    # Removed logic to load the initial best schedule
 
     seeds = [seed + i for i in range(runs)]
     # Pass empirical factors and other kwargs to the worker
@@ -557,11 +539,7 @@ def solve_sa_parallel(n, iterations, runs=4, seed=42, executor=None, **kwargs):
 
     if not results_list:
         log.error("All parallel SA runs failed to produce results.")
-        # If no runs succeeded, return the loaded best if it exists, otherwise default empty
-        if overall_best_schedule_list is not None:
-             # Need to compute raw metrics for the loaded schedule to return
-             loaded_raw_metrics = compute_metrics(overall_best_schedule_list, n)
-             return overall_best_schedule_list, overall_best_norm_score, loaded_raw_metrics # Return loaded best
+        # If no runs succeeded, return default empty
         return [], float('inf'), (float('inf'), float('inf'), float('inf')) # Adjusted tuple size
 
     # Find the best result among all parallel runs
@@ -585,17 +563,11 @@ def solve_sa_parallel(n, iterations, runs=4, seed=42, executor=None, **kwargs):
             best_norm_score_from_runs = norm_score
             best_result_from_runs = (sched_list, unnorm_score, metrics_tuple)
 
-    # Compare the best from this batch of runs with the overall best loaded schedule
-    if overall_best_norm_score is None or best_norm_score_from_runs < overall_best_norm_score:
-        log.info(f"Found a new overall best schedule for n={n} with normalized score {best_norm_score_from_runs:.4f}. Saving...")
-        overall_best_schedule_list, overall_best_unnorm_score, overall_best_metrics = best_result_from_runs
-        save_best_schedule(n, overall_best_schedule_list, best_norm_score_from_runs)
-    else:
-        log.info(f"Best normalized score from this batch ({best_norm_score_from_runs:.4f}) is not better than the loaded overall best ({overall_best_norm_score:.4f}). Not saving.")
-        # If no new best was found, return the loaded best schedule and its metrics
-        overall_best_schedule_list, overall_best_unnorm_score, overall_best_metrics = loaded_best_schedule_list, overall_best_norm_score, compute_metrics(loaded_best_schedule_list, n) # Need to recompute metrics for loaded schedule
+    # Removed logic to compare with and save overall best schedule
 
-    return overall_best_schedule_list, overall_best_unnorm_score, overall_best_metrics # Return the overall best found (either new or loaded)
+    overall_best_schedule_list, overall_best_unnorm_score, overall_best_metrics = best_result_from_runs
+
+    return overall_best_schedule_list, overall_best_unnorm_score, overall_best_metrics # Return the best found from this batch
 
 # TODO: Tabu Search parts (_calculate_metrics_for_tabu, generate_top_k_flips_tabu, tabu_search_solver)
 # currently use theoretical max approximations for their normalization if they perform any.

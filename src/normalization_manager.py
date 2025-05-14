@@ -65,14 +65,14 @@ def save_best_schedule(n, schedule, norm_score):
     if n_str not in data:
         data[n_str] = {} # Create entry if it doesn't exist
 
-    # Preserve existing normalization factors if they exist
+    # Preserve existing normalization factors if they exist, using defaults if not present
     current_factors = {
-        'med_hs': data[n_str].get('med_hs'),
-        'sigma_hs': data[n_str].get('sigma_hs'),
-        'med_ps': data[n_str].get('med_ps'),
-        'sigma_ps': data[n_str].get('sigma_ps'),
-        'med_md': data[n_str].get('med_md'),
-        'sigma_md': data[n_str].get('sigma_md')
+        'med_hs': data[n_str].get('med_hs', 0.0),
+        'sigma_hs': data[n_str].get('sigma_hs', 1.0),
+        'med_ps': data[n_str].get('med_ps', 0.0),
+        'sigma_ps': data[n_str].get('sigma_ps', 1.0),
+        'med_md': data[n_str].get('med_md', 0.0),
+        'sigma_md': data[n_str].get('sigma_md', 1.0)
     }
 
     # Convert NumPy int64 to standard Python int for JSON serialization
@@ -156,13 +156,24 @@ def get_or_calculate_normalization_factors(n, schedule_generator=initial_schedul
     if n_str in data and not force_recalculate and 'med_hs' in existing_data: # Check if factors exist
         log.info(f"Loading empirical factors for n={n} from {NORMALIZATION_DATA_FILE}.")
         factors = existing_data # Use existing data
-        # Ensure sigmas are floats and handle potential missing keys gracefully
-        med_hs = float(factors.get('med_hs', 0.0))
-        sigma_hs = float(factors.get('sigma_hs', 1.0))
-        med_ps = float(factors.get('med_ps', 0.0))
-        sigma_ps = float(factors.get('sigma_ps', 1.0))
-        med_md = float(factors.get('med_md', 0.0))
-        sigma_md = float(factors.get('sigma_md', 1.0))
+        # Ensure values are floats and handle potential missing keys or None values gracefully
+        med_hs_val = factors.get('med_hs')
+        med_hs = float(med_hs_val) if med_hs_val is not None else 0.0
+
+        sigma_hs_val = factors.get('sigma_hs')
+        sigma_hs = float(sigma_hs_val) if sigma_hs_val is not None else 1.0
+
+        med_ps_val = factors.get('med_ps')
+        med_ps = float(med_ps_val) if med_ps_val is not None else 0.0
+
+        sigma_ps_val = factors.get('sigma_ps')
+        sigma_ps = float(sigma_ps_val) if sigma_ps_val is not None else 1.0
+
+        med_md_val = factors.get('med_md')
+        med_md = float(med_md_val) if med_md_val is not None else 0.0
+
+        sigma_md_val = factors.get('sigma_md')
+        sigma_md = float(sigma_md_val) if sigma_md_val is not None else 1.0
         # Ensure loaded sigmas are not zero
         sigma_hs = max(sigma_hs, 1.0)
         sigma_ps = max(sigma_ps, 1.0)

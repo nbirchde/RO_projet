@@ -7,8 +7,9 @@ import time # For seeding SA runs uniquely
 import multiprocessing # Added for freeze_support
 
 # Import necessary functions from your project
-from src.sa_solver import get_empirical_normalization_factors, solve_sa, solve_sa_parallel
+from src.sa_solver import solve_sa, solve_sa_parallel
 from src.metrics import get_all_fairness_metrics # To get theoretically normalized metrics for final reporting and Pareto plotting
+from src.normalization_manager import get_or_calculate_normalization_factors # Import the correct function
 
 # --- Logging Configuration ---
 # Configure logging to show info level messages
@@ -16,8 +17,8 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 log = logging.getLogger(__name__)
 
 # --- Configuration ---
-N_PLAYERS = 200
-ITERATIONS = 50000  # Iterations for each SA run
+N_PLAYERS = 100
+ITERATIONS = 100000  # Iterations for each SA run
 RUNS_PER_COMBINATION = 6 # Number of parallel SA chains for each (alpha, beta)
 ALPHA_VALUES = np.arange(0.5, 1.51, 0.1) # 0.5 to 1.5 inclusive, step 0.1
 BETA_VALUES = np.arange(0.5, 1.51, 0.1)  # 0.5 to 1.5 inclusive, step 0.1
@@ -42,9 +43,9 @@ if __name__ == '__main__':
     log.info("-" * 30)
 
     # 1. Calculate Empirical Normalization Factors (once)
-    log.info(f"Calculating empirical normalization factors using {NUM_EMPIRICAL_SAMPLES} samples with seed {EMPIRICAL_FACTORS_SEED} for n={N_PLAYERS}...")
-    # The get_empirical_normalization_factors function in sa_solver already logs its progress.
-    med_hs, sigma_hs, med_ps, sigma_ps, med_md, sigma_md = get_empirical_normalization_factors(
+    log.info(f"Calculating or loading empirical normalization factors using {NUM_EMPIRICAL_SAMPLES} samples with seed {EMPIRICAL_FACTORS_SEED} for n={N_PLAYERS}...")
+    # Use the correct function from normalization_manager
+    med_hs, sigma_hs, med_ps, sigma_ps, med_md, sigma_md = get_or_calculate_normalization_factors(
         N_PLAYERS, num_samples=NUM_EMPIRICAL_SAMPLES, seed=EMPIRICAL_FACTORS_SEED
     )
     # Log the obtained factors from this script as well for clarity
@@ -83,21 +84,21 @@ if __name__ == '__main__':
                 if RUNS_PER_COMBINATION > 1:
                     # solve_sa_parallel returns: best_schedule, best_score (empirical), best_metrics (raw)
                     best_schedule_list, empirical_obj_score, raw_metrics = solve_sa_parallel(
-                        n=N_PLAYERS, 
-                        iterations=ITERATIONS, 
-                        runs=RUNS_PER_COMBINATION, 
-                        seed=current_sa_run_seed, 
+                        n=N_PLAYERS,
+                        iterations=ITERATIONS,
+                        runs=RUNS_PER_COMBINATION,
+                        seed=current_sa_run_seed,
                         **sa_kwargs
                     )
                 else:
                     # solve_sa returns: best_schedule, best_score (empirical), best_metrics (raw)
                     best_schedule_list, empirical_obj_score, raw_metrics = solve_sa(
-                        n=N_PLAYERS, 
-                        iterations=ITERATIONS, 
-                        seed=current_sa_run_seed, 
+                        n=N_PLAYERS,
+                        iterations=ITERATIONS,
+                        seed=current_sa_run_seed,
                         **sa_kwargs
                     )
-                
+
                 current_sa_run_seed += RUNS_PER_COMBINATION # Increment seed for next (alpha,beta) pair
 
                 if not best_schedule_list:

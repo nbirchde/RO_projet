@@ -5,8 +5,8 @@ import os
 import numpy as np
 
 # --- Configuration ---
-INPUT_CSV = "calibration_results_n200_empirical_norm_v2_median_subtracted.csv" # Updated input file
-OUTPUT_DIR = "calibration_plots_n200_empirical_norm_v2_median_subtracted"      # Updated output directory
+INPUT_CSV = "calibration_results_n100_empirical_norm_v2_median_subtracted.csv" # Updated input file
+OUTPUT_DIR = "calibration_plots_n100_empirical_norm_v2_median_subtracted"      # Updated output directory
 PARETO_PLOT_3D_FILE_HTML = os.path.join(OUTPUT_DIR, "pareto_3d_interactive_n200_emp_norm_v2.html")
 PARETO_PLOT_3D_FILE_PNG = os.path.join(OUTPUT_DIR, "pareto_3d_static_n200_emp_norm_v2.png")
 PARETO_PLOT_HS_PS_FILE_HTML = os.path.join(OUTPUT_DIR, "pareto_2d_hs_vs_ps_n200_emp_norm_v2.html")
