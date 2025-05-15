@@ -1,87 +1,73 @@
-# Fair Round-Robin Tournament Scheduling
+# Ordonnancement Équitable de Tournois Round-Robin
 
-This project explores different methods for generating fair round-robin tournament schedules, minimizing a weighted combination of fairness metrics using empirical normalization.
+Ce projet propose différentes méthodes pour générer des calendriers de tournois round-robin équitables, en minimisant une combinaison pondérée de métriques d'équité normalisées analytiquement. Le projet gère désormais les nombres de joueurs pairs et impairs (en ajoutant un joueur fictif pour les cas impairs).
 
-## Solvers
+## Exécution des Solveurs
 
-The project includes the following solvers:
+Assurez-vous d'être dans le répertoire racine du projet (`/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet`). Utilisez `python3 -m` pour exécuter les modules.
 
-### Exact MILP Solver
+### Solveur Exact (MILP)
 
-Uses a Mixed-Integer Linear Program (MILP) to find optimal solutions for smaller instances.
+Utilise un programme linéaire en nombres entiers mixtes (MILP) pour trouver des solutions optimales pour des instances de petite taille.
 
-To run the exact solver:
-
-```bash
-python3 src/exact_model.py [n_players] [alpha] [beta] [time_limit]
-```
-
-Parameters:
-- `n_players` (int, required): Number of players (must be even).
-- `alpha` (float, optional): Weight for the Penalty Sequence objective term. Defaults to the value in `src/config.py`.
-- `beta` (float, optional): Weight for the Max Deviation objective term. Defaults to the value in `src/config.py`.
-- `time_limit` (int, optional): Time limit for the solver in seconds. Defaults to None (no limit).
-
-Example:
-```bash
-python3 src/exact_model.py 6 0.9 1.3 60
-```
-
-### Simulated Annealing (Non-Optimized)
-
-A basic Simulated Annealing heuristic implementation.
-
-To run the non-optimized SA solver:
+Pour exécuter le solveur exact :
 
 ```bash
-python3 src/sa_solver_non_opti.py [n_players] [iterations] [alpha] [beta]
+python3 -m src.exact_model [n_players] [poids_hs] [poids_ps] [poids_md]
 ```
 
-Parameters:
-- `n_players` (int, required): Number of players (must be even).
-- `iterations` (int, optional): Number of SA iterations. Defaults to 10000.
-- `alpha` (float, optional): Weight for the Penalty Sequence objective term. Defaults to the value in `src/config.py`.
-- `beta` (float, optional): Weight for the Max Deviation objective term. Defaults to the value in `src/config.py`.
+Paramètres :
+- `n_players` (int, requis) : Nombre de joueurs.
+- `poids_hs` (float, optionnel) : Poids pour la métrique Home Strength. Par défaut, utilise la valeur dans `src/config.py`.
+- `poids_ps` (float, optionnel) : Poids pour la métrique Penalty Sequence. Par défaut, utilise la valeur dans `src/config.py`.
+- `poids_md` (float, optionnel) : Poids pour la métrique Max Deviation. Par défaut, utilise la valeur dans `src/config.py`.
 
-Example:
+Exemple :
 ```bash
-python3 src/sa_solver_non_opti.py 8 50000 0.9 1.3
+python3 -m src.exact_model 6 1.0 0.8 1.2
 ```
+Note : Le solveur exact ne modélise pas directement la Penalty Sequence dans son objectif, mais la métrique est calculée et normalisée après la résolution.
 
-### Simulated Annealing (Numba Optimized)
+### Recuit Simulé (Non Optimisé)
 
-A Numba-optimized version of the Simulated Annealing heuristic for better performance on larger instances. This solver also stores and loads the best-found schedule for a given `n` to potentially improve results across multiple runs.
+Une implémentation basique de l'heuristique de Recuit Simulé.
 
-To run the Numba-optimized SA solver:
-
-```bash
-python3 src/sa_solver.py [n_players] [iterations] [alpha] [beta] [runs]
-```
-
-Parameters:
-- `n_players` (int, required): Number of players (must be even).
-- `iterations` (int, optional): Number of SA iterations per run. Defaults to 100000.
-- `alpha` (float, optional): Weight for the Penalty Sequence objective term. Defaults to the value in `src/config.py`.
-- `beta` (float, optional): Weight for the Max Deviation objective term. Defaults to the value in `src/config.py`.
-- `runs` (int, optional): Number of parallel SA runs. Defaults to 1.
-
-Other SA parameters (initial temperature, cooling rate, seed, empirical sample size, log interval) use default values defined within the script (`src/sa_solver.py`).
-
-Example:
-```bash
-python3 src/sa_solver.py 10 100000 0.9 1.3 4
-```
-
-## Normalization Data
-
-Empirical normalization factors (medians and standard deviations) and the best-found schedules for each number of players (`n`) are stored in `normalization_data.json`. This file is automatically created and updated by the solvers.
-
-## LaTeX Report
-
-The scientific report is written in LaTeX. To compile the report:
-
-Navigate to the `final_report_files` directory and run:
+Pour exécuter le solveur SA non optimisé :
 
 ```bash
-latexmk -pdf -output-directory=final_report_files final_report_files/rapport_scientifique.tex
+python3 -m src.sa_solver_non_opti [n_players] [iterations] [poids_hs] [poids_ps] [poids_md]
 ```
+
+Paramètres :
+- `n_players` (int, requis) : Nombre de joueurs.
+- `iterations` (int, optionnel) : Nombre d'itérations SA. Par défaut : 10000.
+- `poids_hs` (float, optionnel) : Poids pour la métrique Home Strength. Par défaut, utilise la valeur dans `src/config.py`.
+- `poids_ps` (float, optionnel) : Poids pour la métrique Penalty Sequence. Par défaut, utilise la valeur dans `src/config.py`.
+- `poids_md` (float, optionnel) : Poids pour la métrique Max Deviation. Par défaut, utilise la valeur dans `src/config.py`.
+
+Exemple :
+```bash
+python3 -m src.sa_solver_non_opti 8 50000 1.0 0.8 1.2
+```
+
+### Recuit Simulé (Optimisé Numba)
+
+Une version optimisée avec Numba de l'heuristique de Recuit Simulé pour de meilleures performances. Ce solveur peut également sauvegarder et charger le meilleur calendrier trouvé pour un `n` donné.
+
+Pour exécuter le solveur SA optimisé :
+
+```bash
+python3 -m src.sa_solver [n_players] [iterations] [poids_hs] [poids_ps] [poids_md] [runs]
+```
+
+Paramètres :
+- `n_players` (int, requis) : Nombre de joueurs.
+- `iterations` (int, optionnel) : Nombre d'itérations SA par exécution. Par défaut : 100000.
+- `poids_hs` (float, optionnel) : Poids pour la métrique Home Strength. Par défaut, utilise la valeur dans `src/config.py`.
+- `poids_ps` (float, optionnel) : Poids pour la métrique Penalty Sequence. Par défaut, utilise la valeur dans `src/config.py`.
+- `poids_md` (float, optionnel) : Poids pour la métrique Max Deviation. Par défaut, utilise la valeur dans `src/config.py`.
+- `runs` (int, optionnel) : Nombre d'exécutions parallèles. Par défaut : 1.
+
+Exemple :
+```bash
+python3 -m src.sa_solver 10 100000 1.0 0.8 1.2 4
