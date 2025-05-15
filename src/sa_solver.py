@@ -85,7 +85,7 @@ def _update_pen_numba_packed(player, round_idx, old_player_status_at_round, new_
     set_status_packed(packed_seq_arr, player, round_idx, new_player_status_at_round)
     return current_pen_seq_val + pen_change
 
-@numba.njit(fastmath=True, cache=True) # Removed parallel=True
+@numba.njit(fastmath=True, cache=True) 
 def sa_loop(schedule_h_input, schedule_a_input, home_cnt_input, packed_seq_input,
             rnd_round_idx_arr, rnd_match_idx_arr,
             iterations, T0, cooling, alpha_pen_seq, beta_obj, ideal_home_games,
@@ -413,29 +413,6 @@ def compute_metrics(schedule, n):
                 max_dev = deviation
     
     return raw_home_strength, penalites_sequence, max_dev
-
-def neighbor(schedule, n):
-    new_sched = copy.deepcopy(schedule)
-    if n % 2 != 0:
-        raise ValueError("Neighbor generation requires even n for this schedule structure.")
-    num_rounds = n - 1
-    if num_rounds <= 0: return new_sched
-    try:
-        valid_round_indices = [r for r, rnd in enumerate(new_sched) if rnd]
-        if not valid_round_indices: return new_sched
-        rnd_idx = random.choice(valid_round_indices)
-        round_len = len(new_sched[rnd_idx])
-        if round_len == 0: return new_sched
-        match_idx = random.randrange(round_len)
-        home, away = new_sched[rnd_idx][match_idx]
-        new_sched[rnd_idx][match_idx] = (away, home)
-    except IndexError as e:
-        log.warning(f"IndexError during neighbor generation (schedule might be malformed?). Error: {e}")
-        return schedule
-    except Exception as e:
-         log.warning(f"Unexpected error during neighbor generation: {e}")
-         return schedule
-    return new_sched
 
 def solve_sa(n, iterations=10000, initial_temp=1.5, cooling_rate=0.97,
              alpha_pen_seq=None, beta_obj=None, seed=42,
