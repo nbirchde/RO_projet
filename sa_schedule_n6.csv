@@ -1,0 +1,31 @@
+Round,Match 1,Match 2,Match 3
+Round 1,6v1(H),5v2(H),3v4(H)
+Round 2,1v5(H),4v6(H),2v3(H)
+Round 3,4v1(H),5v3(H),6v2(H)
+Round 4,3v1(H),2v4(H),5v6(H)
+Round 5,1v2(H),6v3(H),4v5(H)
+
+Metric,Value
+Overall Analytical Normalized Score (Z-sum),-5.301840970613821
+"Overall Scaled Score ([0,1] sum)",1.5265037618593817
+Raw Home Strength,13.0
+Analytical Norm HS (Z-Score),-0.8783100656536798
+"Scaled HS ([0,1])",0.504391437406173
+Raw Penalty Sequence,4
+Analytical Norm PS (Z-Score),-3.2659863237109046
+"Scaled PS ([0,1])",0.5163241278968878
+Raw Max Deviation,0.5
+Analytical Norm MD (Z-Score),-1.508951538326181
+"Scaled MD ([0,1])",0.5075441851130822
+Home Games Player 1,2
+Home Games Player 2,2
+Home Games Player 3,2
+Home Games Player 4,3
+Home Games Player 5,3
+Home Games Player 6,3
+Sequence Player 1,AHAAH
+Sequence Player 2,AHAHA
+Sequence Player 3,HAAHA
+Sequence Player 4,AHHAH
+Sequence Player 5,HAHHA
+Sequence Player 6,HAHAH
