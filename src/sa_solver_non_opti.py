@@ -3,8 +3,8 @@
 Simulated Annealing (SA) heuristic for the fair round-robin scheduling problem.
 
 This script implements an SA algorithm to find high-quality, equitable
-round-robin schedules by minimizing a weighted sum of fairness metrics
-using empirical normalization.
+round-robin schedules by minimizing the same objective function used in the
+exact model: Z = Delta_HomeStrength + alpha_pen_seq * Pénalité_de_séquence + beta * Max_Deviation.
 
 Usage:
     python src/sa_solver_non_opti.py [n_players] [iterations] [alpha_pen_seq] [beta]
@@ -20,22 +20,52 @@ import os
 import random
 import math
 import copy
-import numpy as np
-import os # Add os import
+import numpy as np # For calculating standard deviation if needed later, using max deviation for now
+import time
 
-# Add the project root directory to sys.path
-current_dir_sa_non_opti = os.path.dirname(os.path.abspath(__file__))
-project_root_sa_non_opti = os.path.abspath(os.path.join(current_dir_sa_non_opti, os.pardir))
-if project_root_sa_non_opti not in sys.path:
-    sys.path.insert(0, project_root_sa_non_opti)
+# Add the project root directory to sys.path to enable importing modules from src
+# This allows running the script directly from the project root.
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.abspath(os.path.join(current_dir, os.pardir))
+sys.path.insert(0, project_root)
 
-# Import necessary functions for raw metric calculation
 from src.metrics import calculate_home_strength, calculate_raw_max_deviation, calculate_raw_total_penalty_sequence
-# Import necessary functions from normalization_manager
-from src.normalization_manager import calculate_normalized_score, calculate_analytical_factors # Updated import
-# Import schedule generator utility
-from src.schedule_utils import initial_schedule
-from src import config # Import the configuration
+from src.normalization_manager import calculate_normalized_score
+import src.config as config # Import the configuration
+
+def initial_schedule(n):
+    """
+    Generates an initial round-robin schedule using the circle method.
+
+    Assigns home/away arbitrarily in the first instance. Handles odd 'n'
+    by adding a dummy player (None) for bye rounds, although the main
+    solver logic assumes even 'n'.
+
+    Args:
+        n (int): Number of players.
+
+    Returns:
+        list: A list of rounds, where each round is a list of
+              (home_player, away_player) tuples (using 1-based indexing).
+    """
+    players = list(range(1, n + 1)) # Use 1-based indexing
+    half = n // 2
+    schedule = []
+    for r in range(n - 1): # Iterate through rounds needed for n players
+        round_pairs = []
+        for i in range(half):
+            p1 = players[i]
+            p2 = players[n - 1 - i] # if i = 0, n - 1 - i = 5 (last player)
+            round_pairs.append((p2, p1))       
+
+        schedule.append(round_pairs)
+          
+        # Rotate players for the next round (excluding the fixed player 1 (players[0]))
+        rotated_part = [players[n - 1]] + players[1:n - 1] #[2,3,4,5,6] -> [6,2,3,4,5]
+        players = [players[0]] + rotated_part #[1,6,2,3,4,5]
+
+    return schedule # example: [[(2,1), (3,4)], [(4,5), (6,3)], [(5,2), (1,6)], [(1,4), (2,3)], [(3,5), (6,1)]]
+
 
 def compute_metrics(schedule, n):
     """
@@ -52,228 +82,244 @@ def compute_metrics(schedule, n):
         n (int): The number of players.
 
     Returns:
-        tuple: (delta_strength, penalites_sequence, max_deviation)
+        tuple: (obj_hs, obj_ps, obj_md) normalized metrics
     """
-
-    raw_home_strength = calculate_home_strength(schedule, n)
+    
+    home_strength = calculate_home_strength(schedule, n)
     penalites_sequence = calculate_raw_total_penalty_sequence(schedule, n)
     max_dev = calculate_raw_max_deviation(schedule, n)
 
-    return raw_home_strength, penalites_sequence, max_dev
+    # Use the normalization manager to get normalized z-scores
+    # We only need the z-scores (obj_hs, obj_ps, obj_md), not the total score or scaled scores
+    _, obj_hs, obj_ps, obj_md, _, _, _, _ = calculate_normalized_score(
+        home_strength, penalites_sequence, max_dev, 
+        config.ALPHA, config.BETA, n
+    )
+    
+    return obj_hs, obj_ps, obj_md
 
-
-def neighbor(schedule, n):
+def calculate_norm_score(obj_hs, obj_ps, obj_md, alpha_pen_seq, beta_obj):
     """
-    Generates a neighboring schedule by flipping the home/away assignment
-    of a randomly selected match in a randomly selected round.
+    Calculate the normalized score based on the given z-score metrics and weights.
+
+    Args:
+        obj_hs (float): Normalized home strength z-score.
+        obj_ps (float): Normalized penalty sequence z-score.
+        obj_md (float): Normalized maximum deviation z-score.
+        alpha_pen_seq (float): Weight for the penalty sequence.
+        beta_obj (float): Weight for the maximum deviation.
+
+    Returns:
+        float: The weighted sum of z-scores.
+    """
+    # Simple weighted sum of z-scores (based on how calculate_normalized_score returns total_normalized_score)
+    return obj_hs + alpha_pen_seq * obj_ps + beta_obj * obj_md
+
+
+def neighbor(schedule, n, prob_flip=0.95, prob_swap_rounds=0, prob_swap_players=0.05):
+    """
+    Generates a neighboring schedule by either:
+    - flipping the home/away assignment of a randomly selected match.
+    - swapping two entire rounds (days) in the schedule.
+    - swapping two players throughout the entire schedule.
+
+    The choice of move is made based on the provided probabilities.
 
     Args:
         schedule (list): The current schedule (with 1-based indices).
-        n (int): The number of players (must be even for this implementation).
+        n (int): The even number of players.
 
     Returns:
-        list: A new schedule representing a neighbor of the input schedule (with 1-based indices).
+        list: A new schedule representing a neighbor of the input schedule.
 
-    Raises:
-        ValueError: If n is odd, as the standard schedule structure assumes even n.
-        IndexError: If the schedule is malformed (e.g., empty rounds).
     """
+    if n == 0 : return schedule # Handle case where n=0 (no players)
     new_sched = copy.deepcopy(schedule)
-    if n % 2 != 0:
-        # This simple neighbor assumes the structure derived from even n
-        raise ValueError("Neighbor generation requires even n for this schedule structure.")
-
     num_rounds = n - 1
-    if num_rounds <= 0: return new_sched # Handle n=0 or n=2 case
+    round_len = n//2
 
-    # Select a non-empty round and a match within it
-    try:
-        # Filter out potentially empty rounds if initial_schedule produced them for odd n
-        valid_round_indices = [r for r, rnd in enumerate(new_sched) if rnd]
-        if not valid_round_indices: return new_sched # No matches to flip
+    # Ensure the probabilities sum to 1
+    total_prob = prob_flip + prob_swap_rounds + prob_swap_players
+    if total_prob != 1:
+        prob_flip /= total_prob
+        prob_swap_rounds /= total_prob
+        prob_swap_players /= total_prob
 
-        rnd_idx = random.choice(valid_round_indices)
-        round_len = len(new_sched[rnd_idx])
-        if round_len == 0: return new_sched # Should not happen with filtering, but safe check
 
+
+    # Randomly choose a move type based on the given probabilities
+    move_type = None
+    rand_val = random.random()
+
+    if rand_val < prob_flip:
+        move_type = "flip_home_away"
+    elif rand_val < prob_flip + prob_swap_rounds:
+        move_type = "swap_rounds"
+    else:
+        move_type = "swap_players"
+
+
+    if move_type == "flip_home_away":
+        # Assumes schedule is not empty and rounds are not empty.
+        # And that n is the number of actual players (1 to n).
+        round_idx = random.randrange(num_rounds)
         match_idx = random.randrange(round_len)
+        home, away = new_sched[round_idx][match_idx]
+        new_sched[round_idx][match_idx] = (away, home)
+                
 
-        # Flip home/away
-        home, away = new_sched[rnd_idx][match_idx]
-        new_sched[rnd_idx][match_idx] = (away, home)
-    except IndexError as e:
-        print(f"Warning: IndexError during neighbor generation (schedule might be malformed?). Error: {e}")
-        # Return original schedule if error occurs
-        return schedule
-    except Exception as e:
-         print(f"Warning: Unexpected error during neighbor generation: {e}")
-         return schedule
+    elif move_type == "swap_rounds":
+        if num_rounds >= 2:
+            idx1, idx2 = random.sample(range(num_rounds), 2)
+            new_sched[idx1], new_sched[idx2] = new_sched[idx2], new_sched[idx1]
 
+    elif move_type == "swap_players":
+        player_to_swap1, player_to_swap2 = random.sample(range(1, n + 1), 2)
+
+        for round_idx in range(num_rounds):
+            for match_idx in range(round_len):
+                home, away = new_sched[round_idx][match_idx]
+                
+                new_home = home
+                new_away = away
+
+                if home == player_to_swap1:
+                    new_home = player_to_swap2
+                elif home == player_to_swap2:
+                    new_home = player_to_swap1
+                
+                if away == player_to_swap1:
+                    new_away = player_to_swap2
+                elif away == player_to_swap2:
+                    new_away = player_to_swap1
+                
+                if (new_home, new_away) != (home, away):
+                    new_sched[round_idx][match_idx] = (new_home, new_away)
+    
     return new_sched
 
 
-def solve_sa(n, iterations=10000, initial_temp=1.0, cooling_rate=0.95, alpha_pen_seq=None, beta_obj=None, seed=42):
+
+def solve_sa(n, iterations=10000, initial_temp=1.0, cooling_rate=0.95, alpha_pen_seq=None, beta_obj=None, seed=51):
     """
     Solves the fair round-robin problem using Simulated Annealing.
 
     Args:
-        n (int): Number of players (must be even).
+        n (int): Even number of players.
         iterations (int, optional): Number of SA iterations. Defaults to 10000.
         initial_temp (float, optional): Initial temperature. Defaults to 1.0.
         cooling_rate (float, optional): Temp. cooling rate. Defaults to 0.95.
         alpha_pen_seq (float, optional): Weight for Pénalité de séquence objective. Defaults to 1.0.
         beta_obj (float, optional): Weight for Max Deviation objective. Defaults to 1.0.
-        seed (int, optional): Random seed for reproducibility. Defaults to 42.
+        seed (int, optional): Random seed for reproducibility. Defaults to 51.
 
     Returns:
-        tuple: (best_schedule, best_norm_score, raw_metrics, analytical_metrics) where
-               raw_metrics is (raw_home_strength, raw_penalites_sequence, raw_max_deviation) and
-               analytical_metrics is (anal_norm_hs, anal_norm_ps, anal_norm_md).
-
-    Raises:
-        ValueError: If n is odd.
+        tuple: (best_schedule, best_score, final_metrics) where final_metrics
+               is a tuple (obj_hs, obj_ps, obj_md).
     """
+    random.seed(seed)
+
+    # Use default values from config if not specified
     if alpha_pen_seq is None:
         alpha_pen_seq = config.ALPHA
     if beta_obj is None:
         beta_obj = config.BETA
-    random.seed(seed)
-    if n % 2 != 0:
-        # The current neighbor function relies on the structure for even n
-        raise ValueError("SA solver currently requires an even number of players (n).")
 
+    # 1. Generate the initial solution
     current_sched = initial_schedule(n)
-    if not current_sched: # Handle case where initial schedule is empty (e.g., n=0)
-        # Return default values for failure case
-        return [], float('inf'), (float('inf'), float('inf'), float('inf')), (float('inf'), float('inf'), float('inf'))
 
-    # --- Normalization Setup ---
-    # Analytical factors are calculated within calculate_normalized_score
-
-    # --- Initialization ---
-    c_home_strength, c_penalites_sequence, c_max_dev = compute_metrics(current_sched, n)
-
-    # Calculate initial normalized score using the centralized function and get scaled scores
-    current_norm_score, current_anal_hs, current_anal_ps, current_anal_md, \
-    current_scaled_score, current_scaled_hs, current_scaled_ps, current_scaled_md = calculate_normalized_score(
-        c_home_strength, c_penalites_sequence, c_max_dev,
-        alpha_pen_seq, beta_obj, n # Pass n
-    )
-    current_unnorm_score = c_home_strength + alpha_pen_seq * c_penalites_sequence + beta_obj * c_max_dev # For reporting
-
+    # 2. Evaluate the initial solution
+    # Calculate normalized metrics (z-scores)
+    obj_c_home_strength, obj_c_pen_seq, obj_c_max_dev = compute_metrics(current_sched, n)
+    
+    # Calculate the normalized score (used for acceptance decisions)
+    current_norm_score = calculate_norm_score(obj_c_home_strength, obj_c_pen_seq, obj_c_max_dev, alpha_pen_seq, beta_obj)
+    
+    # 3. Initialize the best solution found
     best_sched = copy.deepcopy(current_sched)
     best_norm_score = current_norm_score
-    best_unnorm_score = current_unnorm_score # Keep track of best unnormalized score too
-    best_raw_metrics = (c_home_strength, c_penalites_sequence, c_max_dev)
-    best_analytical_metrics = (current_anal_hs, current_anal_ps, current_anal_md)
-    best_scaled_score = current_scaled_score # Keep track of best scaled score
-    best_scaled_metrics = (current_scaled_hs, current_scaled_ps, current_scaled_md)
+    best_metrics = (obj_c_home_strength, obj_c_pen_seq, obj_c_max_dev)
 
-
+    # 4. Initialize temperature
     T = initial_temp
 
-    print(f"Initial Score (Analytical Normalized): {current_norm_score:.4f} (Raw HS: {c_home_strength}, Raw PS: {c_penalites_sequence}, Raw MD: {c_max_dev:.2f})")
-    print(f"Initial Scaled Score: {current_scaled_score:.4f} (Scaled HS: {current_scaled_hs:.4f}, Scaled PS: {current_scaled_ps:.4f}, Scaled MD: {current_scaled_md:.4f})")
+    print(f"Initial Score (normalized): {current_norm_score:.2f} (HS: {obj_c_home_strength:.2f}, PS: {obj_c_pen_seq:.2f}, MD: {obj_c_max_dev:.2f})")
 
-
+    # 5. Main Simulated Annealing loop
     for it in range(iterations):
+        # a. Generate a neighbor
         candidate_sched = neighbor(current_sched, n)
-        cand_home_strength, cand_penalites_sequence, cand_max_dev = compute_metrics(candidate_sched, n)
+        
+        # b. Evaluate the neighbor
+        obj_cand_home_strength, obj_cand_pen_seq, obj_cand_max_dev = compute_metrics(candidate_sched, n)
+        candidate_norm_score = calculate_norm_score(obj_cand_home_strength, obj_cand_pen_seq, obj_cand_max_dev, alpha_pen_seq, beta_obj)
 
-        # Calculate candidate normalized score using the centralized function and get scaled scores
-        candidate_norm_score, cand_anal_hs, cand_anal_ps, cand_anal_md, \
-        candidate_scaled_score, cand_scaled_hs, cand_scaled_ps, cand_scaled_md = calculate_normalized_score(
-            cand_home_strength, cand_penalites_sequence, cand_max_dev,
-            alpha_pen_seq, beta_obj, n # Pass n
-        )
-        candidate_unnorm_score = cand_home_strength + alpha_pen_seq * cand_penalites_sequence + beta_obj * cand_max_dev # For reporting
-
-        # Acceptance criterion (using NORMALIZED scores - still using Z-scores for SA core logic)
+        # c. Decide whether to accept the neighbor (Metropolis criterion)
         delta_norm_score = candidate_norm_score - current_norm_score
-        if delta_norm_score < 0 or random.random() < math.exp(-delta_norm_score / T):
+        
+        if delta_norm_score < 0: # If neighbor is better, always accept
+            accept = True
+        else: # Otherwise, accept with a probability dependent on T and degradation
+            probability = math.exp(-delta_norm_score / T)
+            accept = random.random() < probability
+
+        if accept:
             current_sched = candidate_sched
             current_norm_score = candidate_norm_score
-            current_unnorm_score = candidate_unnorm_score # Update reported score
-            current_anal_hs, current_anal_ps, current_anal_md = cand_anal_hs, cand_anal_ps, cand_anal_md # Update analytical norms
-            current_scaled_score = candidate_scaled_score # Update scaled score
-            current_scaled_hs, current_scaled_ps, current_scaled_md = cand_scaled_hs, cand_scaled_ps, cand_scaled_md # Update scaled metrics
-
-
-            # Update best found solution (based on NORMALIZED score - still using Z-scores for SA core logic)
+            
+            # d. Update the best solution if necessary
             if current_norm_score < best_norm_score:
                 best_sched = copy.deepcopy(current_sched)
                 best_norm_score = current_norm_score
-                best_unnorm_score = candidate_unnorm_score # Store corresponding unnormalized score
-                best_raw_metrics = (cand_home_strength, cand_penalites_sequence, cand_max_dev)
-                best_analytical_metrics = (cand_anal_hs, cand_anal_ps, cand_anal_md)
-                best_scaled_score = candidate_scaled_score # Store best scaled score
-                best_scaled_metrics = (cand_scaled_hs, cand_scaled_ps, cand_scaled_md)
+                best_metrics = (obj_cand_home_strength, obj_cand_pen_seq, obj_cand_max_dev)
 
-
-        # Cool down temperature
+        # e. Cool the temperature
         T *= cooling_rate
         if T < 1e-5: # Prevent T from becoming too small
              T = 1e-5
 
+        # Periodic display
         if it % (iterations // 10) == 0:
-             # Report the analytical normalized scores and the overall normalized score
-             print(f"Iter {it}/{iterations}, Temp: {T:.4f}, Current Norm Score: {current_norm_score:.4f}, Best Norm Score: {best_norm_score:.4f}")
-             print(f"  Current Anal Norms (Z-Scores): (HS: {current_anal_hs:.4f}, PS: {current_anal_ps:.4f}, MD: {current_anal_md:.4f})")
-             print(f"  Current Scaled Score: {current_scaled_score:.4f} (Scaled HS: {current_scaled_hs:.4f}, Scaled PS: {current_scaled_ps:.4f}, Scaled MD: {current_scaled_md:.4f})")
+             print(f"Iter {it}/{iterations}, Temp: {T:.4f}, Current: {current_norm_score:.2f}, Best: {best_norm_score:.2f}")
 
-
-    final_raw_hs, final_raw_ps, final_raw_md = best_raw_metrics
-    final_anal_hs, final_anal_ps, final_anal_md = best_analytical_metrics
-    final_scaled_hs, final_scaled_ps, final_scaled_md = best_scaled_metrics
-
-
-    # Return the best schedule, the analytical normalized score, raw metrics, analytical metrics, scaled score, and scaled metrics
-    print(f"Final Best Score (Analytical Normalized): {best_norm_score:.4f} (Raw HS: {final_raw_hs}, Raw PS: {final_raw_ps}, Raw MD: {final_raw_md:.2f})")
-    print(f"Final Best Analytical Norms (Z-Scores): (HS: {final_anal_hs:.4f}, PS: {final_anal_ps:.4f}, MD: {final_anal_md:.4f})")
-    print(f"Final Best Scaled Score: {best_scaled_score:.4f} (Scaled HS: {final_scaled_hs:.4f}, Scaled PS: {final_scaled_ps:.4f}, Scaled MD: {final_scaled_md:.4f})")
-
-
-    return best_sched, best_norm_score, best_raw_metrics, best_analytical_metrics, best_scaled_score, best_scaled_metrics
+    final_home_strength, final_penalites_sequence, final_max_dev = best_metrics
+    print(f"Final Best Score (normalized): {best_norm_score:.2f} (HS: {final_home_strength:.2f}, PS: {final_penalites_sequence:.2f}, MD: {final_max_dev:.2f})")
+    
+    return best_sched, best_norm_score, best_metrics
 
 
 def main():
+    start_time = time.time()
+
     n_arg = int(sys.argv[1]) if len(sys.argv) > 1 else 6
+    if n_arg % 2 != 0:
+        raise ValueError(f"Number of players (n_arg={n_arg}) must be even for this solver.")
+    
     iters_arg = int(sys.argv[2]) if len(sys.argv) > 2 else 10000
     alpha_pen_seq_arg = float(sys.argv[3]) if len(sys.argv) > 3 else config.ALPHA
     beta_arg = float(sys.argv[4]) if len(sys.argv) > 4 else config.BETA
 
-    if n_arg % 2 != 0:
-        print(f"Error: Number of players (n={n_arg}) must be even.")
-        sys.exit(1)
 
-    print(f"Running SA (Non-Optimized) for n={n_arg}, iterations={iters_arg}, alpha_pen_seq={alpha_pen_seq_arg}, beta={beta_arg}")
+    print(f"Running SA for n={n_arg}, iterations={iters_arg}, alpha_pen_seq={alpha_pen_seq_arg}, beta={beta_arg}")
 
-    # solve_sa now returns best_schedule, best_norm_score, raw_metrics, analytical_metrics, scaled_score, scaled_metrics
-    best_schedule, best_norm_score, raw_metrics, analytical_metrics, scaled_score, scaled_metrics = solve_sa(
+    best_schedule, best_score, (final_home_strength, final_penalites_sequence, final_max_dev) = solve_sa(
         n_arg,
         iterations=iters_arg,
         alpha_pen_seq=alpha_pen_seq_arg, # Pass explicitly
         beta_obj=beta_arg # Pass explicitly
     )
 
-    # Unpack raw, analytical, and scaled metrics
-    final_raw_hs, final_raw_ps, final_raw_md = raw_metrics
-    final_anal_hs, final_anal_ps, final_anal_md = analytical_metrics
-    final_scaled_hs, final_scaled_ps, final_scaled_md = scaled_metrics
-
-
-    # Report the analytical normalized score and detailed metrics
-    print(f"\n--- Best SA Schedule (Analytical Normalized Score: {best_norm_score:.4f}) ---")
-    print(f"Raw Metrics: HomeStrength={final_raw_hs}, Total Pénalités Séquence={final_raw_ps}, Max Deviation={final_raw_md:.2f}")
-    print(f"Analytical Normalized Metrics (Z-Scores): HS={final_anal_hs:.4f}, PS={final_anal_ps:.4f}, MD={final_anal_md:.4f}")
-    print(f"Scaled Metrics ([0,1]): HS={final_scaled_hs:.4f}, PS={final_scaled_ps:.4f}, MD={final_scaled_md:.4f}")
-    print(f"Overall Scaled Score: {scaled_score:.4f}")
-
-
+    # Report the normalized score in the final summary
+    print(f"\n--- Best SA Schedule (Score: {best_score:.2f}) ---")
+    print(f"Metrics: HomeStrength={final_home_strength:.4f}, Total Pénalités Séquence={final_penalites_sequence:.4f}, Max Deviation={final_max_dev:.4f}")
+    
+    # Uncomment this to display the full schedule
+    print("\nFinal Schedule:")
     for r, rnd in enumerate(best_schedule):
         # Format matches for readability (using 1-based indices)
-        match_strs = [f"{h}v{a}(H)" for h, a in rnd]
+        match_strs = [f"{h}-{a}" for h, a in rnd]
         print(f"Round {r+1}: {', '.join(match_strs)}") # Round numbers are naturally 1-based for display
-
+    
+    print("\nTime used: {:.2f} seconds".format(time.time() - start_time))
 if __name__ == '__main__':
     main()
