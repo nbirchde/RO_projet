@@ -5,20 +5,20 @@ import os
 import numpy as np
 
 # --- Configuration ---
-INPUT_CSV = "calibration_results_n100_empirical_norm_v2_median_subtracted.csv" # Updated input file
-OUTPUT_DIR = "calibration_plots_n100_empirical_norm_v2_median_subtracted"      # Updated output directory
-PARETO_PLOT_3D_FILE_HTML = os.path.join(OUTPUT_DIR, "pareto_3d_interactive_n200_emp_norm_v2.html")
-PARETO_PLOT_3D_FILE_PNG = os.path.join(OUTPUT_DIR, "pareto_3d_static_n200_emp_norm_v2.png")
-PARETO_PLOT_HS_PS_FILE_HTML = os.path.join(OUTPUT_DIR, "pareto_2d_hs_vs_ps_n200_emp_norm_v2.html")
-PARETO_PLOT_HS_PS_FILE_PNG = os.path.join(OUTPUT_DIR, "pareto_2d_hs_vs_ps_n200_emp_norm_v2.png")
-PARETO_PLOT_HS_MD_FILE_HTML = os.path.join(OUTPUT_DIR, "pareto_2d_hs_vs_md_n200_emp_norm_v2.html")
-PARETO_PLOT_HS_MD_FILE_PNG = os.path.join(OUTPUT_DIR, "pareto_2d_hs_vs_md_n200_emp_norm_v2.png")
-PARETO_PLOT_PS_MD_FILE_HTML = os.path.join(OUTPUT_DIR, "pareto_2d_ps_vs_md_n200_emp_norm_v2.html")
-PARETO_PLOT_PS_MD_FILE_PNG = os.path.join(OUTPUT_DIR, "pareto_2d_ps_vs_md_n200_emp_norm_v2.png")
+INPUT_CSV = "calibration_results_n100_analytical_norm.csv" # Updated input file for analytical normalization
+OUTPUT_DIR = "calibration_plots_n100_analytical_norm"      # Updated output directory for analytical normalization
+PARETO_PLOT_3D_FILE_HTML = os.path.join(OUTPUT_DIR, "pareto_3d_interactive_n100_anal_norm.html")
+PARETO_PLOT_3D_FILE_PNG = os.path.join(OUTPUT_DIR, "pareto_3d_static_n100_anal_norm.png")
+PARETO_PLOT_HS_PS_FILE_HTML = os.path.join(OUTPUT_DIR, "pareto_2d_hs_vs_ps_n100_anal_norm.html")
+PARETO_PLOT_HS_PS_FILE_PNG = os.path.join(OUTPUT_DIR, "pareto_2d_hs_vs_ps_n100_anal_norm.png")
+PARETO_PLOT_HS_MD_FILE_HTML = os.path.join(OUTPUT_DIR, "pareto_2d_hs_vs_md_n100_anal_norm.html")
+PARETO_PLOT_HS_MD_FILE_PNG = os.path.join(OUTPUT_DIR, "pareto_2d_hs_vs_md_n100_anal_norm.png")
+PARETO_PLOT_PS_MD_FILE_HTML = os.path.join(OUTPUT_DIR, "pareto_2d_ps_vs_md_n100_anal_norm.html")
+PARETO_PLOT_PS_MD_FILE_PNG = os.path.join(OUTPUT_DIR, "pareto_2d_ps_vs_md_n100_anal_norm.png")
 
 
-# Objectives to minimize (using the median-subtracted empirical normalized scores)
-OBJECTIVES = ['emp_norm_hs', 'emp_norm_ps', 'emp_norm_md']
+# Objectives to minimize (using the analytical normalized scores)
+OBJECTIVES = ['anal_norm_hs', 'anal_norm_ps', 'anal_norm_md']
 # --- End Configuration ---
 
 # def is_pareto_efficient(costs, return_mask=True):
@@ -98,17 +98,17 @@ if __name__ == "__main__":
 
     # Non-Pareto points
     fig3d.add_trace(go.Scatter3d(
-        x=df[~df['is_pareto']]['emp_norm_hs'],
-        y=df[~df['is_pareto']]['emp_norm_ps'],
-        z=df[~df['is_pareto']]['emp_norm_md'],
+        x=df[~df['is_pareto']]['anal_norm_hs'],
+        y=df[~df['is_pareto']]['anal_norm_ps'],
+        z=df[~df['is_pareto']]['anal_norm_md'],
         mode='markers',
         marker=dict(size=5, color='blue', opacity=0.5),
         name='Dominated Solutions',
-        customdata=df[~df['is_pareto']][['alpha', 'beta', 'total_norm_score', 'raw_hs', 'raw_ps', 'raw_md']],
+        customdata=df[~df['is_pareto']][['alpha', 'beta', 'total_analytical_score', 'raw_hs', 'raw_ps', 'raw_md']],
         hovertemplate='<b>Dominated</b><br>' +
-                      'EmpNorm HS: %{x:.4f}<br>' +
-                      'EmpNorm PS: %{y:.4f}<br>' +
-                      'EmpNorm MD: %{z:.4f}<br>' +
+                      'AnalNorm HS: %{x:.4f}<br>' +
+                      'AnalNorm PS: %{y:.4f}<br>' +
+                      'AnalNorm MD: %{z:.4f}<br>' +
                       'Alpha: %{customdata[0]:.2f}<br>' +
                       'Beta: %{customdata[1]:.2f}<br>' +
                       'Total Score (SA obj): %{customdata[2]:.4f}<br>' +
@@ -119,17 +119,17 @@ if __name__ == "__main__":
 
     # Pareto points
     fig3d.add_trace(go.Scatter3d(
-        x=pareto_df['emp_norm_hs'],
-        y=pareto_df['emp_norm_ps'],
-        z=pareto_df['emp_norm_md'],
+        x=pareto_df['anal_norm_hs'],
+        y=pareto_df['anal_norm_ps'],
+        z=pareto_df['anal_norm_md'],
         mode='markers',
         marker=dict(size=7, color='red', symbol='diamond'),
         name='Pareto Frontier',
-        customdata=pareto_df[['alpha', 'beta', 'total_norm_score', 'raw_hs', 'raw_ps', 'raw_md']],
+        customdata=pareto_df[['alpha', 'beta', 'total_analytical_score', 'raw_hs', 'raw_ps', 'raw_md']],
         hovertemplate='<b>Pareto Optimal</b><br>' +
-                      'EmpNorm HS: %{x:.4f}<br>' +
-                      'EmpNorm PS: %{y:.4f}<br>' +
-                      'EmpNorm MD: %{z:.4f}<br>' +
+                      'AnalNorm HS: %{x:.4f}<br>' +
+                      'AnalNorm PS: %{y:.4f}<br>' +
+                      'AnalNorm MD: %{z:.4f}<br>' +
                       'Alpha: %{customdata[0]:.2f}<br>' +
                       'Beta: %{customdata[1]:.2f}<br>' +
                       'Total Score (SA obj): %{customdata[2]:.4f}<br>' +
@@ -139,11 +139,11 @@ if __name__ == "__main__":
     ))
 
     fig3d.update_layout(
-        title='3D Pareto Frontier for Empirically Normalized Metrics (Median Subtracted)',
+        title='3D Pareto Frontier for Analytically Normalized Metrics (Z-Scores)',
         scene=dict(
-            xaxis_title='Emp. Norm HS ((raw-med)/σ)',
-            yaxis_title='Emp. Norm PS ((raw-med)/σ)',
-            zaxis_title='Emp. Norm MD ((raw-med)/σ)'
+            xaxis_title='Anal. Norm HS ((raw - μ)/σ)',
+            yaxis_title='Anal. Norm PS ((raw - μ)/σ)',
+            zaxis_title='Anal. Norm MD ((raw - μ)/σ)'
         ),
         margin=dict(l=0, r=0, b=0, t=40)
     )
@@ -165,7 +165,7 @@ if __name__ == "__main__":
             mode='markers',
             marker=dict(size=8, color='blue', opacity=0.5),
             name='Dominated Solutions',
-            customdata=df_all[~df_all['is_pareto']][['alpha', 'beta', 'total_norm_score'] + OBJECTIVES + ['raw_hs', 'raw_ps', 'raw_md']],
+            customdata=df_all[~df_all['is_pareto']][['alpha', 'beta', 'total_analytical_score'] + OBJECTIVES + ['raw_hs', 'raw_ps', 'raw_md']],
             hovertemplate=f'<b>Dominated</b><br>{x_col}: %{{x:.4f}}<br>{y_col}: %{{y:.4f}}<br>' +
                           'Alpha: %{customdata[0]:.2f}<br>Beta: %{customdata[1]:.2f}<br>' +
                           'Total Score (SA obj): %{customdata[2]:.4f}<br>' +
@@ -179,7 +179,7 @@ if __name__ == "__main__":
             mode='markers',
             marker=dict(size=10, color='red', symbol='diamond'),
             name='Pareto Frontier Points',
-            customdata=df_pareto[['alpha', 'beta', 'total_norm_score'] + OBJECTIVES + ['raw_hs', 'raw_ps', 'raw_md']],
+            customdata=df_pareto[['alpha', 'beta', 'total_analytical_score'] + OBJECTIVES + ['raw_hs', 'raw_ps', 'raw_md']],
             hovertemplate=f'<b>Pareto Optimal</b><br>{x_col}: %{{x:.4f}}<br>{y_col}: %{{y:.4f}}<br>' +
                           'Alpha: %{customdata[0]:.2f}<br>Beta: %{customdata[1]:.2f}<br>' +
                           'Total Score (SA obj): %{customdata[2]:.4f}<br>' +
@@ -188,8 +188,8 @@ if __name__ == "__main__":
         ))
         fig2d.update_layout(
             title=title,
-            xaxis_title=f'{x_col} ((raw-med)/σ)',
-            yaxis_title=f'{y_col} ((raw-med)/σ)',
+            xaxis_title=f'{x_col} ((raw - μ)/σ)',
+            yaxis_title=f'{y_col} ((raw - μ)/σ)',
             legend_title_text='Solution Type'
         )
         fig2d.write_html(filename_html)
@@ -202,33 +202,33 @@ if __name__ == "__main__":
 
 
     # HS vs PS
-    create_2d_plot(df, pareto_df, 'emp_norm_hs', 'emp_norm_ps',
-                   '2D Pareto: Emp. Norm HS vs PS (Median Subtracted)',
+    create_2d_plot(df, pareto_df, 'anal_norm_hs', 'anal_norm_ps',
+                   '2D Pareto: Anal. Norm HS vs PS (Z-Scores)',
                    PARETO_PLOT_HS_PS_FILE_HTML, PARETO_PLOT_HS_PS_FILE_PNG)
 
     # HS vs MD
-    create_2d_plot(df, pareto_df, 'emp_norm_hs', 'emp_norm_md',
-                   '2D Pareto: Emp. Norm HS vs MD (Median Subtracted)',
+    create_2d_plot(df, pareto_df, 'anal_norm_hs', 'anal_norm_md',
+                   '2D Pareto: Anal. Norm HS vs MD (Z-Scores)',
                    PARETO_PLOT_HS_MD_FILE_HTML, PARETO_PLOT_HS_MD_FILE_PNG)
 
     # PS vs MD
-    create_2d_plot(df, pareto_df, 'emp_norm_ps', 'emp_norm_md',
-                   '2D Pareto: Emp. Norm PS vs MD (Median Subtracted)',
+    create_2d_plot(df, pareto_df, 'anal_norm_ps', 'anal_norm_md',
+                   '2D Pareto: Anal. Norm PS vs MD (Z-Scores)',
                    PARETO_PLOT_PS_MD_FILE_HTML, PARETO_PLOT_PS_MD_FILE_PNG)
 
     print("All plots generated.")
 
     # Suggest some Pareto optimal (alpha, beta) combinations
     if not pareto_df.empty:
-        print("\\n--- Suggested Pareto Optimal (alpha, beta) combinations (using Empirically Normalized Metrics) ---")
+        print("\\n--- Suggested Pareto Optimal (alpha, beta) combinations (using Analytically Normalized Metrics) ---")
         # Sort by a composite score or individual objectives to give varied suggestions
         # Example: sort by sum of normalized objectives (lower is better)
-        pareto_df['sum_emp_norm_objectives'] = pareto_df[OBJECTIVES].sum(axis=1) # Use updated OBJECTIVES
-        suggestions = pareto_df.sort_values(by='sum_emp_norm_objectives').head(5)
+        pareto_df['sum_anal_norm_objectives'] = pareto_df[OBJECTIVES].sum(axis=1) # Use updated OBJECTIVES
+        suggestions = pareto_df.sort_values(by='sum_anal_norm_objectives').head(5)
         for _, row in suggestions.iterrows():
             print(f"Alpha: {row['alpha']:.2f}, Beta: {row['beta']:.2f} -> "
-                  f"EmpNorm_HS: {row['emp_norm_hs']:.4f}, EmpNorm_PS: {row['emp_norm_ps']:.4f}, EmpNorm_MD: {row['emp_norm_md']:.4f} "
-                  f"(Sum EmpNorm: {row['sum_emp_norm_objectives']:.4f}) | "
+                  f"AnalNorm_HS: {row['anal_norm_hs']:.4f}, AnalNorm_PS: {row['anal_norm_ps']:.4f}, AnalNorm_MD: {row['anal_norm_md']:.4f} "
+                  f"(Sum AnalNorm: {row['sum_anal_norm_objectives']:.4f}) | "
                   f"Raw HS: {row['raw_hs']:.0f}, Raw PS: {row['raw_ps']:.0f}, Raw MD: {row['raw_md']:.2f}")
     else:
         print("\\nNo Pareto optimal points found to suggest combinations.")

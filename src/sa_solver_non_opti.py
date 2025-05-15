@@ -32,7 +32,7 @@ if project_root_sa_non_opti not in sys.path:
 # Import necessary functions for raw metric calculation
 from src.metrics import calculate_home_strength, calculate_raw_max_deviation, calculate_raw_total_penalty_sequence
 # Import necessary functions from normalization_manager
-from src.normalization_manager import get_or_calculate_normalization_factors, calculate_normalized_score
+from src.normalization_manager import calculate_normalized_score, calculate_analytical_factors # Updated import
 # Import schedule generator utility
 from src.schedule_utils import initial_schedule
 from src import config # Import the configuration
@@ -126,8 +126,9 @@ def solve_sa(n, iterations=10000, initial_temp=1.0, cooling_rate=0.95, alpha_pen
         seed (int, optional): Random seed for reproducibility. Defaults to 42.
 
     Returns:
-        tuple: (best_schedule, best_score, final_metrics) where final_metrics
-               is a tuple (delta_strength, penalites_sequence, max_deviation).
+        tuple: (best_schedule, best_norm_score, raw_metrics, analytical_metrics) where
+               raw_metrics is (raw_home_strength, raw_penalites_sequence, raw_max_deviation) and
+               analytical_metrics is (anal_norm_hs, anal_norm_ps, anal_norm_md).
 
     Raises:
         ValueError: If n is odd.
@@ -143,41 +144,41 @@ def solve_sa(n, iterations=10000, initial_temp=1.0, cooling_rate=0.95, alpha_pen
 
     current_sched = initial_schedule(n)
     if not current_sched: # Handle case where initial schedule is empty (e.g., n=0)
-        return [], 0, (0, 0, 0)
+        # Return default values for failure case
+        return [], float('inf'), (float('inf'), float('inf'), float('inf')), (float('inf'), float('inf'), float('inf'))
 
     # --- Normalization Setup ---
-    # Get empirical normalization factors
-    med_hs, sigma_hs, med_ps, sigma_ps, med_md, sigma_md = get_or_calculate_normalization_factors(n)
+    # Analytical factors are calculated within calculate_normalized_score
 
     # --- Initialization ---
     c_home_strength, c_penalites_sequence, c_max_dev = compute_metrics(current_sched, n)
 
     # Calculate initial normalized score using the centralized function
-    current_norm_score = calculate_normalized_score(
+    current_norm_score, current_anal_hs, current_anal_ps, current_anal_md = calculate_normalized_score(
         c_home_strength, c_penalites_sequence, c_max_dev,
-        alpha_pen_seq, beta_obj,
-        med_hs, sigma_hs, med_ps, sigma_ps, med_md, sigma_md
+        alpha_pen_seq, beta_obj, n # Pass n
     )
     current_unnorm_score = c_home_strength + alpha_pen_seq * c_penalites_sequence + beta_obj * c_max_dev # For reporting
 
     best_sched = copy.deepcopy(current_sched)
     best_norm_score = current_norm_score
     best_unnorm_score = current_unnorm_score # Keep track of best unnormalized score too
-    best_metrics = (c_home_strength, c_penalites_sequence, c_max_dev)
+    best_raw_metrics = (c_home_strength, c_penalites_sequence, c_max_dev)
+    best_analytical_metrics = (current_anal_hs, current_anal_ps, current_anal_md)
+
 
     T = initial_temp
 
-    print(f"Initial Score (Unnormalized): {current_unnorm_score:.2f} (HomeStrength: {c_home_strength}, PénSeq: {c_penalites_sequence}, MaxDev: {c_max_dev:.2f})")
+    print(f"Initial Score (Analytical Normalized): {current_norm_score:.4f} (Raw HS: {c_home_strength}, Raw PS: {c_penalites_sequence}, Raw MD: {c_max_dev:.2f})")
 
     for it in range(iterations):
         candidate_sched = neighbor(current_sched, n)
         cand_home_strength, cand_penalites_sequence, cand_max_dev = compute_metrics(candidate_sched, n)
 
         # Calculate candidate normalized score using the centralized function
-        candidate_norm_score = calculate_normalized_score(
+        candidate_norm_score, cand_anal_hs, cand_anal_ps, cand_anal_md = calculate_normalized_score(
             cand_home_strength, cand_penalites_sequence, cand_max_dev,
-            alpha_pen_seq, beta_obj,
-            med_hs, sigma_hs, med_ps, sigma_ps, med_md, sigma_md
+            alpha_pen_seq, beta_obj, n # Pass n
         )
         candidate_unnorm_score = cand_home_strength + alpha_pen_seq * cand_penalites_sequence + beta_obj * cand_max_dev # For reporting
 
@@ -187,12 +188,16 @@ def solve_sa(n, iterations=10000, initial_temp=1.0, cooling_rate=0.95, alpha_pen
             current_sched = candidate_sched
             current_norm_score = candidate_norm_score
             current_unnorm_score = candidate_unnorm_score # Update reported score
+            current_anal_hs, current_anal_ps, current_anal_md = cand_anal_hs, cand_anal_ps, cand_anal_md # Update analytical norms
+
             # Update best found solution (based on NORMALIZED score)
             if current_norm_score < best_norm_score:
                 best_sched = copy.deepcopy(current_sched)
                 best_norm_score = current_norm_score
                 best_unnorm_score = candidate_unnorm_score # Store corresponding unnormalized score
-                best_metrics = (cand_home_strength, cand_penalites_sequence, cand_max_dev)
+                best_raw_metrics = (cand_home_strength, cand_penalites_sequence, cand_max_dev)
+                best_analytical_metrics = (cand_anal_hs, cand_anal_ps, cand_anal_md)
+
 
         # Cool down temperature
         T *= cooling_rate
@@ -200,14 +205,19 @@ def solve_sa(n, iterations=10000, initial_temp=1.0, cooling_rate=0.95, alpha_pen
              T = 1e-5
 
         if it % (iterations // 10) == 0:
-             # Report the unnormalized scores for better user understanding
-             print(f"Iter {it}/{iterations}, Temp: {T:.4f}, Current Score: {current_unnorm_score:.2f}, Best Score: {best_unnorm_score:.2f}")
+             # Report the analytical normalized scores and the overall normalized score
+             print(f"Iter {it}/{iterations}, Temp: {T:.4f}, Current Norm Score: {current_norm_score:.4f}, Best Norm Score: {best_norm_score:.4f}")
+             print(f"  Current Anal Norms: (HS: {current_anal_hs:.4f}, PS: {current_anal_ps:.4f}, MD: {current_anal_md:.4f})")
 
 
-    final_home_strength, final_penalites_sequence, final_max_dev = best_metrics
-    # Return the best unnormalized score and corresponding schedule/metrics
-    print(f"Final Best Score (Unnormalized): {best_unnorm_score:.2f} (HomeStrength: {final_home_strength}, PénSeq: {final_penalites_sequence}, MaxDev: {final_max_dev:.2f})")
-    return best_sched, best_unnorm_score, best_metrics
+    final_raw_hs, final_raw_ps, final_raw_md = best_raw_metrics
+    final_anal_hs, final_anal_ps, final_anal_md = best_analytical_metrics
+
+    # Return the best schedule, the analytical normalized score, raw metrics, and analytical metrics
+    print(f"Final Best Score (Analytical Normalized): {best_norm_score:.4f} (Raw HS: {final_raw_hs}, Raw PS: {final_raw_ps}, Raw MD: {final_raw_md:.2f})")
+    print(f"Final Best Analytical Norms: (HS: {final_anal_hs:.4f}, PS: {final_anal_ps:.4f}, MD: {final_anal_md:.4f})")
+
+    return best_sched, best_norm_score, best_raw_metrics, best_analytical_metrics
 
 
 def main():
@@ -220,18 +230,25 @@ def main():
         print(f"Error: Number of players (n={n_arg}) must be even.")
         sys.exit(1)
 
-    print(f"Running SA for n={n_arg}, iterations={iters_arg}, alpha_pen_seq={alpha_pen_seq_arg}, beta={beta_arg}")
+    print(f"Running SA (Non-Optimized) for n={n_arg}, iterations={iters_arg}, alpha_pen_seq={alpha_pen_seq_arg}, beta={beta_arg}")
 
-    best_schedule, best_score, (final_home_strength, final_penalites_sequence, final_max_dev) = solve_sa(
+    # solve_sa now returns best_schedule, best_norm_score, raw_metrics, analytical_metrics
+    best_schedule, best_norm_score, raw_metrics, analytical_metrics = solve_sa(
         n_arg,
         iterations=iters_arg,
         alpha_pen_seq=alpha_pen_seq_arg, # Pass explicitly
         beta_obj=beta_arg # Pass explicitly
     )
 
-    # Report the unnormalized score in the final summary
-    print(f"\n--- Best SA Schedule (Score: {best_score:.2f}) ---")
-    print(f"Metrics: HomeStrength={final_home_strength}, Total Pénalités Séquence={final_penalites_sequence}, Max Deviation={final_max_dev:.2f}")
+    # Unpack raw and analytical metrics
+    final_raw_hs, final_raw_ps, final_raw_md = raw_metrics
+    final_anal_hs, final_anal_ps, final_anal_md = analytical_metrics
+
+    # Report the analytical normalized score and detailed metrics
+    print(f"\n--- Best SA Schedule (Analytical Normalized Score: {best_norm_score:.4f}) ---")
+    print(f"Raw Metrics: HomeStrength={final_raw_hs}, Total Pénalités Séquence={final_raw_ps}, Max Deviation={final_raw_md:.2f}")
+    print(f"Analytical Normalized Metrics (Z-Scores): HS={final_anal_hs:.4f}, PS={final_anal_ps:.4f}, MD={final_anal_md:.4f}")
+
     for r, rnd in enumerate(best_schedule):
         # Format matches for readability (using 1-based indices)
         match_strs = [f"{h}v{a}(H)" for h, a in rnd]

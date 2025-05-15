@@ -24,8 +24,34 @@ if project_root_sa not in sys.path:
 from src import config # Explicit relative import
 # Import necessary functions from metrics.py for raw metric calculation
 from src.metrics import calculate_home_strength, get_all_fairness_metrics, calculate_raw_total_penalty_sequence, calculate_raw_max_deviation
+#!/usr/bin/env python3
+"""
+Simulated Annealing (SA) heuristic for the fair round-robin scheduling problem.
+"""
+
+import sys
+import random
+import math
+import copy
+import numpy as np
+import concurrent.futures as cf
+import multiprocessing as mp
+import time
+import logging # Ensure logging is imported
+import numba # Ensure numba is imported
+import os # Ensure os is imported
+
+# Add the project root directory to sys.path
+current_dir_sa = os.path.dirname(os.path.abspath(__file__))
+project_root_sa = os.path.abspath(os.path.join(current_dir_sa, os.pardir))
+if project_root_sa not in sys.path:
+    sys.path.insert(0, project_root_sa)
+
+from src import config # Explicit relative import
+# Import necessary functions from metrics.py for raw metric calculation
+from src.metrics import calculate_home_strength, get_all_fairness_metrics, calculate_raw_total_penalty_sequence, calculate_raw_max_deviation
 # Import necessary functions from normalization_manager
-from src.normalization_manager import get_or_calculate_normalization_factors, calculate_normalized_score, get_best_schedule, save_best_schedule
+from src.normalization_manager import calculate_normalized_score, calculate_analytical_factors # Updated import
 # Import schedule generator utility
 from src.schedule_utils import initial_schedule
 
@@ -37,17 +63,7 @@ log = logging.getLogger(__name__)
 
 PENALTY_LUT = np.array([1, 0, 0, 1], dtype=np.int8)
 
-@numba.njit(fastmath=True, cache=True)
-def calculate_normalized_score_numba(home_strength, penalites_sequence, max_dev, alpha_pen_seq, beta_obj,
-                               med_hs, sigma_hs, med_ps, sigma_ps, med_md, sigma_md):
-    """Calculates the combined normalized score using empirical factors (Numba jitted)."""
-    # Ensure sigmas are not zero to prevent division by zero.
-    # get_or_calculate_normalization_factors ensures sigmas are >= 1.0
-    
-    obj_hs = (home_strength - med_hs) / sigma_hs
-    obj_ps = (penalites_sequence - med_ps) / sigma_ps
-    obj_md = (max_dev - med_md) / sigma_md
-    return obj_hs + alpha_pen_seq * obj_ps + beta_obj * obj_md
+# Removed calculate_normalized_score_numba as it's no longer needed
 
 @numba.njit(fastmath=True, cache=True)
 def calculate_unnormalized_score_numba(home_strength, penalites_sequence, max_dev, alpha_pen_seq, beta_obj):
@@ -74,12 +90,13 @@ def _update_pen_numba_packed(player, round_idx, old_player_status_at_round, new_
 def sa_loop(schedule_h_input, schedule_a_input, home_cnt_input, packed_seq_input,
             rnd_round_idx_arr, rnd_match_idx_arr,
             iterations, T0, cooling, alpha_pen_seq, beta_obj, ideal_home_games,
-            med_hs, sigma_hs, med_ps, sigma_ps, med_md, sigma_md,
+            n, # Pass n
+            mu_hs, sigma_hs, mu_ps, sigma_ps, mu_md, sigma_md, # Pass analytical factors
             seed, log_interval):
     np.random.seed(seed)
     rounds = schedule_h_input.shape[0]
     matches_per_round = schedule_h_input.shape[1]
-    n = home_cnt_input.shape[0] - 1
+    # n is now passed as a parameter
     schedule_h = schedule_h_input.copy()
     schedule_a = schedule_a_input.copy()
     home_cnt = home_cnt_input.copy()
@@ -113,9 +130,12 @@ def sa_loop(schedule_h_input, schedule_a_input, home_cnt_input, packed_seq_input
             deviation = abs(home_cnt[i] - ideal_home_games)
             if deviation > current_max_dev: current_max_dev = deviation
 
-    current_norm_score = calculate_normalized_score_numba(current_home_strength, current_pen_seq, current_max_dev,
-                                                    alpha_pen_seq, beta_obj,
-                                                    med_hs, sigma_hs, med_ps, sigma_ps, med_md, sigma_md)
+    # Calculate initial normalized score using passed analytical factors
+    obj_hs_init = (current_home_strength - mu_hs) / sigma_hs
+    obj_ps_init = (current_pen_seq - mu_ps) / sigma_ps
+    obj_md_init = (current_max_dev - mu_md) / sigma_md
+    current_norm_score = obj_hs_init + alpha_pen_seq * obj_ps_init + beta_obj * obj_md_init
+
     current_unnorm_score = calculate_unnormalized_score_numba(current_home_strength, current_pen_seq, current_max_dev,
                                                       alpha_pen_seq, beta_obj)
 
@@ -164,9 +184,12 @@ def sa_loop(schedule_h_input, schedule_a_input, home_cnt_input, packed_seq_input
         schedule_h[rnd_idx, match_idx] = a # New home player
         schedule_a[rnd_idx, match_idx] = h # New away player
         
-        candidate_norm_score = calculate_normalized_score_numba(current_home_strength, current_pen_seq, current_max_dev,
-                                                          alpha_pen_seq, beta_obj,
-                                                          med_hs, sigma_hs, med_ps, sigma_ps, med_md, sigma_md)
+        # Calculate candidate normalized score using passed analytical factors
+        obj_hs_cand = (current_home_strength - mu_hs) / sigma_hs
+        obj_ps_cand = (current_pen_seq - mu_ps) / sigma_ps
+        obj_md_cand = (current_max_dev - mu_md) / sigma_md
+        candidate_norm_score = obj_hs_cand + alpha_pen_seq * obj_ps_cand + beta_obj * obj_md_cand
+
         delta_norm_score = candidate_norm_score - current_norm_score
         accept = delta_norm_score < 0 or np.random.random() < math.exp(-delta_norm_score / T)
         
@@ -192,9 +215,10 @@ def sa_loop(schedule_h_input, schedule_a_input, home_cnt_input, packed_seq_input
             
         T *= cooling
         if log_interval > 0 and it % log_interval == 0:
-            z_hs = (current_home_strength - med_hs) / sigma_hs
-            z_ps = (current_pen_seq - med_ps) / sigma_ps
-            z_md = (current_max_dev - med_md) / sigma_md
+            # Use passed analytical factors for logging z-scores
+            z_hs = (current_home_strength - mu_hs) / sigma_hs
+            z_ps = (current_pen_seq - mu_ps) / sigma_ps
+            z_md = (current_max_dev - mu_md) / sigma_md
             
             print("SA_LOOP_PROGRESS: Iter:", it,
                   "Temp:", T,
@@ -245,9 +269,12 @@ def sa_loop(schedule_h_input, schedule_a_input, home_cnt_input, packed_seq_input
             deviation = abs(replayed_home_cnt[i] - ideal_home_games)
             if deviation > replayed_current_max_dev: replayed_current_max_dev = deviation
 
-    replayed_current_norm_score = calculate_normalized_score_numba(replayed_current_home_strength, replayed_current_pen_seq, replayed_current_max_dev,
-                                                             alpha_pen_seq, beta_obj,
-                                                             med_hs, sigma_hs, med_ps, sigma_ps, med_md, sigma_md)
+    # Calculate initial normalized score for replay using passed analytical factors
+    obj_hs_init_rep = (replayed_current_home_strength - mu_hs) / sigma_hs
+    obj_ps_init_rep = (replayed_current_pen_seq - mu_ps) / sigma_ps
+    obj_md_init_rep = (replayed_current_max_dev - mu_md) / sigma_md
+    replayed_current_norm_score = obj_hs_init_rep + alpha_pen_seq * obj_ps_init_rep + beta_obj * obj_md_init_rep
+
     replayed_T = initial_T0_for_replay
 
     for k_it in range(best_found_iteration + 1):
@@ -292,9 +319,12 @@ def sa_loop(schedule_h_input, schedule_a_input, home_cnt_input, packed_seq_input
         replayed_schedule_h[r_idx, m_idx] = a_replay
         replayed_schedule_a[r_idx, m_idx] = h_replay
         
-        candidate_norm_score_replay = calculate_normalized_score_numba(replayed_current_home_strength, replayed_current_pen_seq, replayed_current_max_dev,
-                                                                 alpha_pen_seq, beta_obj,
-                                                                 med_hs, sigma_hs, med_ps, sigma_ps, med_md, sigma_md)
+        # Calculate candidate normalized score for replay using passed analytical factors
+        obj_hs_cand_rep = (replayed_current_home_strength - mu_hs) / sigma_hs
+        obj_ps_cand_rep = (replayed_current_pen_seq - mu_ps) / sigma_ps
+        obj_md_cand_rep = (replayed_current_max_dev - mu_md) / sigma_md
+        candidate_norm_score_replay = obj_hs_cand_rep + alpha_pen_seq * obj_ps_cand_rep + beta_obj * obj_md_cand_rep
+
         delta_norm_score_replay = candidate_norm_score_replay - replayed_current_norm_score
         accept_replay = delta_norm_score_replay < 0 or np.random.random() < math.exp(-delta_norm_score_replay / replayed_T)
         
@@ -321,7 +351,7 @@ def _sa_worker(args):
     n_arg, iterations_arg, seed_arg, num_threads_for_this_worker_arg, kwargs_arg = args
     numba.set_num_threads(num_threads_for_this_worker_arg)
     # Extract expected arguments from kwargs_arg and pass them to solve_sa
-    # solve_sa will load normalization factors internally using get_or_calculate_normalization_factors
+    # solve_sa will calculate analytical factors internally
     return solve_sa(
         n_arg,
         iterations=iterations_arg,
@@ -410,7 +440,7 @@ def neighbor(schedule, n):
 
 def solve_sa(n, iterations=10000, initial_temp=1.5, cooling_rate=0.97,
              alpha_pen_seq=None, beta_obj=None, seed=42,
-             log_interval_sa_loop=0, num_empirical_samples=200): # Removed load_best_schedule parameter
+             log_interval_sa_loop=0): # Removed num_empirical_samples and load_best_schedule
     if alpha_pen_seq is None:
         alpha_pen_seq = config.ALPHA
     if beta_obj is None:
@@ -422,28 +452,24 @@ def solve_sa(n, iterations=10000, initial_temp=1.5, cooling_rate=0.97,
     if n % 2 != 0:
         log.info(f"Odd n={n} detected. Initial schedule generation will use n+1 internally via initial_schedule function.")
 
-    # Get empirical normalization factors from the manager
-    # These are needed for the objective function calculation
-    med_hs, sigma_hs, med_ps, sigma_ps, med_md, sigma_md = get_or_calculate_normalization_factors(
-        n,
-        schedule_generator=initial_schedule,
-        num_samples=num_empirical_samples,
-        seed=seed + 1 if seed is not None else 43 # Use a different seed for factor calculation
-    )
+    # Calculate analytical normalization factors once per SA run
+    (mu_hs, sigma_hs), (mu_ps, sigma_ps), (mu_md, sigma_md) = calculate_analytical_factors(n)
 
     # Always generate a new random initial schedule
     log.info(f"Generating initial random schedule for n={n}.")
     current_sched_list = initial_schedule(n) # Uses random, so seed set above matters
     if not current_sched_list:
         log.warning("Initial schedule is empty.")
-        return [], 0, (0, 0, 0)
+        # Return raw metrics and analytical metrics as 0 or inf for failure case
+        return [], float('inf'), (float('inf'), float('inf'), float('inf')), (float('inf'), float('inf'), float('inf'))
 
     # Calculate initial metrics and scores for the random schedule
     c_home_strength, c_penalites_sequence, c_max_dev = compute_metrics(current_sched_list, n)
-    current_norm_score = calculate_normalized_score(
+    
+    # Calculate initial normalized score using analytical factors
+    initial_norm_score, initial_anal_hs, initial_anal_ps, initial_anal_md = calculate_normalized_score(
         c_home_strength, c_penalites_sequence, c_max_dev,
-        alpha_pen_seq, beta_obj,
-        med_hs, sigma_hs, med_ps, sigma_ps, med_md, sigma_md
+        alpha_pen_seq, beta_obj, n # Pass n
     )
     current_unnorm_score = c_home_strength + alpha_pen_seq * c_penalites_sequence + beta_obj * c_max_dev # Calculate unnormalized for reporting
 
@@ -461,7 +487,8 @@ def solve_sa(n, iterations=10000, initial_temp=1.5, cooling_rate=0.97,
         rnd_match_idx_arr = np.random.randint(0, matches_per_round, size=iterations, dtype=np.int64)
     else:
         log.warning("No rounds or matches to process for random index generation.")
-        return [], 0, (0, 0, 0)
+        # Return raw metrics and analytical metrics as 0 or inf for failure case
+        return [], float('inf'), (float('inf'), float('inf'), float('inf')), (float('inf'), float('inf'), float('inf'))
 
     start_time = time.time()
     T_min = 1e-6
@@ -471,14 +498,15 @@ def solve_sa(n, iterations=10000, initial_temp=1.5, cooling_rate=0.97,
     elif iterations == 0 and initial_temp > 0 :
         effective_cooling_rate = 1.0
     log.info(f"Starting SA loop with {iterations} iterations. Initial Temp: {initial_temp:.2e}, Cooling Rate (effective): {effective_cooling_rate:.6f}. Log interval: {log_interval_sa_loop if log_interval_sa_loop > 0 else 'disabled'}")
-    log.info(f"Using empirical factors for objective: med_hs={med_hs:.2f}, sigma_hs={sigma_hs:.2f}, med_ps={med_ps:.2f}, sigma_ps={sigma_ps:.2f}, med_md={med_md:.2f}, sigma_md={sigma_md:.2f}")
+    log.info(f"Using analytical factors for objective: mu_hs={mu_hs:.4f}, sigma_hs={sigma_hs:.4f}, mu_ps={mu_ps:.4f}, sigma_ps={sigma_ps:.4f}, mu_md={mu_md:.4f}, sigma_md={sigma_md:.4f}")
 
     best_schedule_h_arr, best_schedule_a_arr, final_best_packed_seq, \
     best_unnorm_score_found, best_home_strength, best_pen_seq, best_max_dev = sa_loop(
         initial_schedule_h, initial_schedule_a, initial_home_cnt, initial_packed_seq_arr,
         rnd_round_idx_arr, rnd_match_idx_arr,
         iterations, initial_temp, effective_cooling_rate, alpha_pen_seq, beta_obj, ideal_home_games,
-        med_hs, sigma_hs, med_ps, sigma_ps, med_md, sigma_md,
+        n, # Pass n
+        mu_hs, sigma_hs, mu_ps, sigma_ps, mu_md, sigma_md, # Pass analytical factors
         seed,
         log_interval_sa_loop
     )
@@ -493,41 +521,40 @@ def solve_sa(n, iterations=10000, initial_temp=1.5, cooling_rate=0.97,
             round_list.append((best_schedule_h_arr[r, m_idx], best_schedule_a_arr[r, m_idx]))
         best_sched_list.append(round_list)
 
-    # Calculate the normalized score of the best found schedule
-    best_norm_score_calculated = calculate_normalized_score(
+    # Calculate the analytical normalized metrics of the best found schedule
+    best_norm_score_calculated, best_anal_hs, best_anal_ps, best_anal_md = calculate_normalized_score(
         best_home_strength, best_pen_seq, best_max_dev,
-        alpha_pen_seq, beta_obj,
-        med_hs, sigma_hs, med_ps, sigma_ps, med_md, sigma_md
+        alpha_pen_seq, beta_obj, n # Pass n
     )
 
-    # Removed logic to save the best schedule
+    best_raw_metrics = (best_home_strength, best_pen_seq, best_max_dev)
+    best_analytical_metrics = (best_anal_hs, best_anal_ps, best_anal_md)
 
-    best_metrics = (best_home_strength, best_pen_seq, best_max_dev)
-    log.info(f"Final Best Score (Unnormalized): {best_unnorm_score_found:.2f} (HomeStrength: {best_home_strength}, PénSeq: {best_pen_seq}, MaxDev: {best_max_dev:.2f})")
-    return best_sched_list, best_unnorm_score_found, best_metrics # Return the best found unnormalized score and metrics
+    log.info(f"Final Best Score (Analytical Normalized): {best_norm_score_calculated:.4f} (Raw HS: {best_home_strength}, Raw PS: {best_pen_seq}, Raw MD: {best_max_dev:.2f})")
+    log.info(f"Final Best Analytical Norms: (HS: {best_anal_hs:.4f}, PS: {best_anal_ps:.4f}, MD: {best_anal_md:.4f})")
+
+    # Return the best schedule, the analytical normalized score, raw metrics, and analytical metrics
+    return best_sched_list, best_norm_score_calculated, best_raw_metrics, best_analytical_metrics
 
 def solve_sa_parallel(n, iterations, runs=4, seed=42, executor=None, **kwargs):
     num_threads_per_worker = max(1, (os.cpu_count() or 1) // runs)
     log.info(f"Parallel SA: Target {runs} chains, {os.cpu_count() or 'N/A'} CPU cores detected. Assigning {num_threads_per_worker} Numba threads per worker.")
 
-    # Get empirical normalization factors once for score comparison
-    med_hs, sigma_hs, med_ps, sigma_ps, med_md, sigma_md = get_or_calculate_normalization_factors(n)
-
-    # Removed logic to load the initial best schedule
+    # Removed logic to get empirical normalization factors
 
     seeds = [seed + i for i in range(runs)]
-    # Pass empirical factors and other kwargs to the worker
-    worker_kwargs = {**kwargs, 'med_hs': med_hs, 'sigma_hs': sigma_hs,
-                     'med_ps': med_ps, 'sigma_ps': sigma_ps, 'med_md': med_md, 'sigma_md': sigma_md}
+    # Pass n and other kwargs to the worker
+    worker_kwargs = {**kwargs, 'n_players': n} # Pass n
     args_list = [(n, iterations, s, num_threads_per_worker, worker_kwargs) for s in seeds]
     results_list = []
 
     if executor:
+        # The worker now returns (best_sched_list, best_norm_score, raw_metrics, analytical_metrics)
         future_to_seed = {executor.submit(_sa_worker, arg): arg[2] for arg in args_list}
         for future in cf.as_completed(future_to_seed):
             s = future_to_seed[future]
             try:
-                result = future.result() # result is (best_sched_list, best_unnorm_score, best_metrics)
+                result = future.result() 
                 results_list.append(result)
             except Exception as exc:
                 log.exception(f"Seed {s} in parallel SA run generated an exception.")
@@ -535,44 +562,35 @@ def solve_sa_parallel(n, iterations, runs=4, seed=42, executor=None, **kwargs):
         log.info(f"No shared executor provided to solve_sa_parallel, creating a new one with max_workers={runs}.")
         with cf.ProcessPoolExecutor(max_workers=runs, mp_context=mp.get_context("spawn")) as exe:
             # Use list() to force execution and get results
+            # The worker now returns (best_sched_list, best_norm_score, raw_metrics, analytical_metrics)
             results_list = list(exe.map(_sa_worker, args_list))
 
     if not results_list:
         log.error("All parallel SA runs failed to produce results.")
         # If no runs succeeded, return default empty
-        return [], float('inf'), (float('inf'), float('inf'), float('inf')) # Adjusted tuple size
+        # Return best_schedule, best_norm_score, raw_metrics, analytical_metrics
+        return [], float('inf'), (float('inf'), float('inf'), float('inf')), (float('inf'), float('inf'), float('inf'))
 
-    # Find the best result among all parallel runs
-    # The key for min should be the normalized score, which is not directly returned by _sa_worker
-    # _sa_worker returns (best_sched_list, best_unnorm_score, best_metrics)
-    # We need to calculate the normalized score for each result to find the overall best.
-    # This requires the empirical factors again.
-    med_hs, sigma_hs, med_ps, sigma_ps, med_md, sigma_md = get_or_calculate_normalization_factors(n)
-
+    # Find the best result among all parallel runs based on the analytical normalized score
     best_result_from_runs = None
     best_norm_score_from_runs = float('inf')
 
-    for sched_list, unnorm_score, metrics_tuple in results_list:
-        raw_hs, raw_ps, raw_md = metrics_tuple
-        norm_score = calculate_normalized_score(
-            raw_hs, raw_ps, raw_md,
-            kwargs.get('alpha_pen_seq', config.ALPHA), kwargs.get('beta_obj', config.BETA),
-            med_hs, sigma_hs, med_ps, sigma_ps, med_md, sigma_md
-        )
+    # results_list contains tuples: (best_sched_list, best_norm_score, raw_metrics, analytical_metrics)
+    for result in results_list:
+        # The second element is the analytical normalized score
+        norm_score = result[1] 
         if norm_score < best_norm_score_from_runs:
             best_norm_score_from_runs = norm_score
-            best_result_from_runs = (sched_list, unnorm_score, metrics_tuple)
+            best_result_from_runs = result # Store the entire result tuple
 
-    # Removed logic to compare with and save overall best schedule
-
-    overall_best_schedule_list, overall_best_unnorm_score, overall_best_metrics = best_result_from_runs
-
-    return overall_best_schedule_list, overall_best_unnorm_score, overall_best_metrics # Return the best found from this batch
+    # overall_best_schedule_list, overall_best_norm_score, overall_best_raw_metrics, overall_best_analytical_metrics = best_result_from_runs
+    # Return the components of the best result tuple
+    return best_result_from_runs[0], best_result_from_runs[1], best_result_from_runs[2], best_result_from_runs[3]
 
 # TODO: Tabu Search parts (_calculate_metrics_for_tabu, generate_top_k_flips_tabu, tabu_search_solver)
 # currently use theoretical max approximations for their normalization if they perform any.
-# If Tabu search is to be used with the new empirical normalization philosophy for its objective/evaluation,
-# these functions will need similar updates to accept and use empirical sigmas (and potentially medians).
+# If Tabu search is to be used with the new analytical normalization philosophy for its objective/evaluation,
+# these functions will need similar updates to accept and use analytical mu and sigma.
 # For now, these functions remain unchanged and will use their original normalization logic if called.
 import argparse
 
@@ -592,7 +610,7 @@ def main():
 
     # Note: Reverting to sys.argv makes handling optional arguments and their order more rigid.
     # I will only include the most essential arguments (n, iterations, alpha, beta, runs)
-    # and let the solve_sa function use its defaults for the SA parameters and empirical samples.
+    # and let the solve_sa function use its defaults for the SA parameters.
 
     if n_arg % 2 != 0:
         log.error(f"Error: Number of players (n={n_arg}) must be even.")
@@ -603,19 +621,25 @@ def main():
     sa_kwargs = {
         'alpha_pen_seq': alpha_pen_seq_arg,
         'beta_obj': beta_arg,
-        # Use defaults from solve_sa for seed, initial_temp, cooling_rate, log_interval, num_empirical_samples
+        # Use defaults from solve_sa for seed, initial_temp, cooling_rate, log_interval
     }
 
     if runs_arg > 1:
-        best_schedule, best_score, metrics_tuple = solve_sa_parallel(
+        # solve_sa_parallel now returns best_schedule, best_norm_score, raw_metrics, analytical_metrics
+        best_schedule, best_norm_score, raw_metrics, analytical_metrics = solve_sa_parallel(
             n_arg, runs=runs_arg, iterations=iters_arg, **sa_kwargs
         )
     else:
-        best_schedule, best_score, metrics_tuple = solve_sa(
+        # solve_sa now returns best_schedule, best_norm_score, raw_metrics, analytical_metrics
+        best_schedule, best_norm_score, raw_metrics, analytical_metrics = solve_sa(
             n_arg, iterations=iters_arg, **sa_kwargs
         )
-    final_home_strength, final_penalites_sequence, final_max_dev = metrics_tuple # These are from the solver's internal best state
-    log.info(f"\n--- Best SA Schedule (Overall Score from Solver: {best_score:.2f}) ---")
+    
+    # Unpack raw and analytical metrics
+    final_raw_hs, final_raw_ps, final_raw_md = raw_metrics
+    final_anal_hs, final_anal_ps, final_anal_md = analytical_metrics
+
+    log.info(f"\n--- Best SA Schedule (Overall Analytical Normalized Score: {best_norm_score:.4f}) ---")
 
     # Get all metrics using the new function from the final best_schedule
     # This ensures all calculations are consistent and includes home games per player
@@ -628,14 +652,17 @@ def main():
     log.info("\n  Home Strength:")
     raw_hs_val = all_metrics.get('raw_home_strength', 'N/A')
     log.info(f"    Raw: {raw_hs_val:.4f}" if isinstance(raw_hs_val, float) else f"    Raw: {raw_hs_val}")
+    log.info(f"    Analytical Norm (Z-Score): {final_anal_hs:.4f}")
 
     log.info("\n  Total Penalty Sequence (Breaks):")
     raw_tps_val = all_metrics.get('raw_total_penalty_sequence', 'N/A')
     log.info(f"    Raw: {raw_tps_val}" if isinstance(raw_tps_val, int) else f"    Raw: {raw_tps_val}")
+    log.info(f"    Analytical Norm (Z-Score): {final_anal_ps:.4f}")
 
     log.info("\n  Max Deviation (from ideal home games):")
     raw_md_val = all_metrics.get('raw_max_deviation', 'N/A')
     log.info(f"    Raw: {raw_md_val:.4f}" if isinstance(raw_md_val, float) else f"    Raw: {raw_md_val}")
+    log.info(f"    Analytical Norm (Z-Score): {final_anal_md:.4f}")
 
     log.info("\n  Home Games Per Player (Player ID: Count):")
     home_games = all_metrics.get('home_games_per_player', [])
@@ -682,10 +709,14 @@ def main():
 
             # Write Metrics
             writer.writerow(["Metric", "Value"])
-            writer.writerow(["Overall Score", best_score])
-            writer.writerow(["Home Strength", all_metrics.get('raw_home_strength', 'N/A')])
-            writer.writerow(["Penalty Sequence", all_metrics.get('raw_total_penalty_sequence', 'N/A')])
-            writer.writerow(["Max Deviation", all_metrics.get('raw_max_deviation', 'N/A')])
+            writer.writerow(["Overall Analytical Normalized Score", best_norm_score])
+            writer.writerow(["Raw Home Strength", final_raw_hs])
+            writer.writerow(["Analytical Norm HS (Z-Score)", final_anal_hs])
+            writer.writerow(["Raw Penalty Sequence", final_raw_ps])
+            writer.writerow(["Analytical Norm PS (Z-Score)", final_anal_ps])
+            writer.writerow(["Raw Max Deviation", final_raw_md])
+            writer.writerow(["Analytical Norm MD (Z-Score)", final_anal_md])
+
 
             home_games = all_metrics.get('home_games_per_player', [])
             if home_games:
@@ -703,24 +734,7 @@ def main():
         log.error(f"Error writing CSV file {csv_filename}: {e}")
 
     # Remove verification step using original normalization
-    # log.info("\\n--- Verification Against Original Normalization Thresholds ---")
-    # hs_norm_orig = all_metrics.get('normalized_home_strength', float('inf'))
-    # ps_norm_orig = all_metrics.get('normalized_total_penalty_sequence', float('inf'))
-    # md_norm_orig = all_metrics.get('normalized_max_deviation', float('inf'))
 
-    # hs_ok = hs_norm_orig <= 0.10
-    # ps_ok = ps_norm_orig <= 0.20
-    # md_ok = md_norm_orig <= 0.20
-
-    # log.info(f"  Normalized HS (Original): {hs_norm_orig:.4f} (Target: <= 0.10) - Met: {hs_ok}")
-    # log.info(f"  Normalized PS (Original): {ps_norm_orig:.4f} (Target: <= 0.20) - Met: {ps_ok}")
-    # log.info(f"  Normalized MD (Original): {md_norm_orig:.4f} (Target: <= 0.20) - Met: {md_ok}")
-
-    # if hs_ok and ps_ok and md_ok:
-    #     log.info("  VERIFICATION PASSED: All criteria met.")
-    # else:
-    #     log.info("  VERIFICATION FAILED: One or more criteria not met.")
-    # log.info("---------------------------------")
 
     # log.info("\\n--- Schedule Details ---") # Removed schedule printing
     # for r, rnd in enumerate(best_schedule):
