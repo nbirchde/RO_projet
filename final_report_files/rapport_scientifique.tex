@@ -245,7 +245,7 @@ Les formules analytiques utilisées pour calculer $\mu$ et $\sigma$ pour chaque 
         \sigma_{MD} &\approx \frac{\sqrt{n-1}}{2} \cdot \frac{\pi}{\sqrt{12 \ln n}}
     \end{align*}
     Ces formules proviennent de l’approximation classique du maximum de $n$ variables Gaussiennes centrées-réduites, adaptées ici au cas binomial avec $\mu = \frac{n-1}{2}$ et $\sigma = \frac{\sqrt{n-1}}{2}$. L’utilisation de ces expressions permet une mise à l’échelle cohérente des valeurs typiques de MaxDeviation sur tout $n$.
-\\end{itemize}
+\end{itemize}
 
 \subsubsection*{Dérivation des facteurs analytiques}
 
@@ -301,9 +301,14 @@ Il est instructif de comparer les écarts relatifs entre la valeur maximale poss
     \item \textbf{HomeStrength :} $\mu_{HS} = \frac{n(n-1)(n+1)}{12}$, $S_{max} = \frac{n(n-1)(n+1)}{6}$. Donc $S_{max} = 2 \cdot \mu_{HS}$, et ce ratio est constant quel que soit $n$.
     \item \textbf{Penalty Sequence :} $\mu_{PS} = \frac{n(n-2)}{2}$, $PS_{max} = n(n-2)$ donc même ratio 2.
     \item \textbf{MaxDeviation :} $\mu_{MD} \approx \frac{\sqrt{n-1}}{2} \cdot \sqrt{2 \ln n}$, $MD_{max} = \frac{n-1}{2}$ donc le ratio est :
-    \[
-    \frac{MD_{max}}{\mu_{MD}} \approx \frac{\sqrt{n-1}}{\sqrt{2 \ln n}} \quad \Rightarrow \quad \text{ce ratio diverge avec } n.
-    \]
+   \[
+    \frac{MD_{max}}{\mu_{MD}}
+    \;=\;
+    \frac{\tfrac{n-1}{2}}{\tfrac{\sqrt{n-1}}{2}\sqrt{2\ln n}}
+    \;=\;
+    \sqrt{\frac{n-1}{2\ln n}},
+\]
+ce ratio croît comme $\sqrt{n/\ln n}$ et diverge lentement avec $n$.
 \end{itemize}
 
 Cela signifie que la normalisation par le maximum devient de plus en plus biaisée à mesure que $n$ augmente, surtout pour MaxDeviation. La normalisation analytique permet de corriger ce biais de manière rigoureuse.
@@ -334,9 +339,7 @@ En conclusion, l'exploration systématique de l'espace des poids $(\alpha, \beta
 \label{sec:benchmarking}
 
 \subsection{Protocole expérimental}
-Chaque algorithme est lancé 10 fois avec une limite de temps stricte de \textbf{60 secondes}.  
-Les meilleures solutions trouvées lors de chaque exécution sont évaluées via les trois métriques normalisées analytiquement.
-
+Chaque algorithme est lancé \textbf{une seule fois} avec une limite de temps stricte de \textbf{60 secondes}.
 \subsection{Résultats chiffrés}
 
 % Chemin vers le CSV à ajuster si besoin
@@ -358,6 +361,7 @@ Les meilleures solutions trouvées lors de chaque exécution sont évaluées via
     \label{fig:raw_metrics_evolution}
 \end{figure}
 
-On constate que la variante \textit{Opti} domine systématiquement la version \textit{Non‑Opti} sur les trois métriques, avec un avantage qui s’amplifie lorsque la taille du tournoi augmente. Les tendances théoriques $O(n^{3})$ pour HS, $O(n^{2})$ pour PS et $O(\sqrt{\ln n})$ pour MD se vérifient empiriquement.
+Dans la plage de tailles testées, la version \textit{Opti} obtient systématiquement de meilleurs scores que la version \textit{Non‑Opti}.  
+
 
 \end{document}
