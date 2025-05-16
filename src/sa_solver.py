@@ -1,4 +1,3 @@
-
 import sys
 import random
 import math
@@ -10,6 +9,7 @@ import time
 import logging
 import numba
 import os
+import argparse # Import argparse
 
 current_dir_sa = os.path.dirname(os.path.abspath(__file__))
 project_root_sa = os.path.abspath(os.path.join(current_dir_sa, os.pardir))
@@ -53,14 +53,14 @@ def _update_pen_numba_packed(player, round_idx, old_player_status_at_round, new_
     set_status_packed(packed_seq_arr, player, round_idx, new_player_status_at_round)
     return current_pen_seq_val + pen_change
 
-@numba.njit(fastmath=True, cache=True) 
+@numba.njit(fastmath=True, cache=True)
 def sa_loop(schedule_h_input, schedule_a_input, home_cnt_input, packed_seq_input,
-            rnd_round_idx_arr, rnd_match_idx_arr,
             iterations, T0, cooling, alpha_pen_seq, beta_obj, ideal_home_games,
-            n, # Pass n
-            mu_hs, sigma_hs, mu_ps, sigma_ps, mu_md, sigma_md, # Pass analytical factors
+            n,
+            mu_hs, sigma_hs, mu_ps, sigma_ps, mu_md, sigma_md,
             seed, log_interval):
     np.random.seed(seed)
+
     rounds = schedule_h_input.shape[0]
     matches_per_round = schedule_h_input.shape[1]
     # n is now passed as a parameter
@@ -73,7 +73,7 @@ def sa_loop(schedule_h_input, schedule_a_input, home_cnt_input, packed_seq_input
     initial_home_cnt_snapshot = home_cnt_input.copy()
     initial_packed_seq_snapshot = packed_seq_input.copy()
     initial_T0_for_replay = T0
-    
+
     # Initial HomeStrength calculation: sum max(0, away_rank - home_rank)
     current_home_strength = np.float64(0)
     for r_loop_init in range(rounds):
@@ -114,9 +114,16 @@ def sa_loop(schedule_h_input, schedule_a_input, home_cnt_input, packed_seq_input
     best_found_iteration = -1
     T = T0
 
+    # random indices will be generated on-the-fly
+
+    # keep a copy of best schedule
+    best_schedule_h_saved = schedule_h.copy()
+    best_schedule_a_saved = schedule_a.copy()
+    best_packed_seq_saved = packed_seq.copy()
+
     for it in range(iterations):
-        rnd_idx = rnd_round_idx_arr[it]
-        match_idx = rnd_match_idx_arr[it]
+        rnd_idx = np.random.randint(0, rounds)
+        match_idx = np.random.randint(0, matches_per_round)
         h = schedule_h[rnd_idx, match_idx] # Original home player
         a = schedule_a[rnd_idx, match_idx] # Original away player
 
@@ -197,6 +204,9 @@ def sa_loop(schedule_h_input, schedule_a_input, home_cnt_input, packed_seq_input
                 actual_best_pen_seq = current_pen_seq
                 actual_best_max_dev = current_max_dev
                 best_found_iteration = it
+                best_schedule_h_saved = schedule_h.copy()
+                best_schedule_a_saved = schedule_a.copy()
+                best_packed_seq_saved = packed_seq.copy()
         else: # Revert changes
             schedule_h[rnd_idx, match_idx] = h
             schedule_a[rnd_idx, match_idx] = a
@@ -234,150 +244,22 @@ def sa_loop(schedule_h_input, schedule_a_input, home_cnt_input, packed_seq_input
                   ", z_PS:", z_ps,
                   ", z_MD:", z_md)
 
-    if best_found_iteration == -1: # No better solution found than initial
-        return initial_schedule_h_snapshot, initial_schedule_a_snapshot, initial_packed_seq_snapshot, \
-               actual_best_unnorm_score, actual_best_home_strength, actual_best_pen_seq, actual_best_max_dev
-    if best_found_iteration == iterations - 1: # Best was the last one
-         return schedule_h, schedule_a, packed_seq, \
-                actual_best_unnorm_score, actual_best_home_strength, actual_best_pen_seq, actual_best_max_dev
-
-    # Replay to get the best found state if it wasn't the last one
-    np.random.seed(seed)
-    replayed_schedule_h = initial_schedule_h_snapshot.copy()
-    replayed_schedule_a = initial_schedule_a_snapshot.copy()
-    replayed_home_cnt = initial_home_cnt_snapshot.copy()
-    replayed_packed_seq = initial_packed_seq_snapshot.copy()
-
-    # Replay initial HomeStrength calculation: sum max(0, away_rank - home_rank)
-    replayed_current_home_strength = np.float64(0)
-    for r_loop_rep in range(rounds):
-        for m_loop_rep in range(matches_per_round):
-            home_player_rep = replayed_schedule_h[r_loop_rep, m_loop_rep]
-            away_player_rep = replayed_schedule_a[r_loop_rep, m_loop_rep]
-            replayed_current_home_strength += max(0, away_player_rep - home_player_rep)
-
-    replayed_current_pen_seq = np.int64(0)
-    if rounds > 1 and n > 0:
-        for player_idx_loop in range(1, n + 1): # Iterate only through real players 1..n
-            for r_loop in range(rounds - 1):
-                status_curr = get_status_packed(replayed_packed_seq, player_idx_loop, r_loop)
-                status_next = get_status_packed(replayed_packed_seq, player_idx_loop, r_loop + 1)
-                lut_idx = (status_curr << 1) | status_next
-                replayed_current_pen_seq += np.int64(PENALTY_LUT[lut_idx])
-
-    replayed_current_max_dev = 0.0
-    if ideal_home_games >= 0 and n > 0:
-        for i in range(1, n + 1): # Iterate only through real players 1..n
-            deviation = abs(replayed_home_cnt[i] - ideal_home_games)
-            if deviation > replayed_current_max_dev: replayed_current_max_dev = deviation
-
-    # Calculate initial normalized score for replay using passed analytical factors
-    obj_hs_init_rep = (replayed_current_home_strength - mu_hs) / sigma_hs
-    obj_ps_init_rep = (replayed_current_pen_seq - mu_ps) / sigma_ps
-    obj_md_init_rep = (replayed_current_max_dev - mu_md) / sigma_md
-    replayed_current_norm_score = obj_hs_init_rep + alpha_pen_seq * obj_ps_init_rep + beta_obj * obj_md_init_rep
-
-    replayed_T = initial_T0_for_replay
-
-    for k_it in range(best_found_iteration + 1):
-        r_idx = rnd_round_idx_arr[k_it]
-        m_idx = rnd_match_idx_arr[k_it]
-        h_replay = replayed_schedule_h[r_idx, m_idx]
-        a_replay = replayed_schedule_a[r_idx, m_idx]
-
-        # Skip replay step if either player is the dummy player (represented as 0)
-        if h_replay == 0 or a_replay == 0:
-            replayed_T *= cooling
-            if replayed_T < 1e-5: replayed_T = 1e-5
-            continue # Skip the rest of the replay loop for this iteration
-
-        home_strength_before_move_replay = replayed_current_home_strength
-        pen_seq_before_move_replay = replayed_current_pen_seq
-        max_dev_before_move_replay = replayed_current_max_dev
-        home_cnt_h_before_replay = replayed_home_cnt[h_replay]
-        home_cnt_a_before_replay = replayed_home_cnt[a_replay]
-        seq_h_char_before_replay = get_status_packed(replayed_packed_seq, h_replay, r_idx)
-        seq_a_char_before_replay = get_status_packed(replayed_packed_seq, a_replay, r_idx)
-
-        hs_change_replay = max(0, h_replay - a_replay) - max(0, a_replay - h_replay)
-        replayed_current_home_strength += hs_change_replay
-
-        replayed_home_cnt[h_replay] -= 1
-        replayed_home_cnt[a_replay] += 1
-        old_dev_h_replay = abs(home_cnt_h_before_replay - ideal_home_games)
-        new_dev_h_replay = abs(replayed_home_cnt[h_replay] - ideal_home_games)
-        old_dev_a_replay = abs(home_cnt_a_before_replay - ideal_home_games)
-        new_dev_a_replay = abs(replayed_home_cnt[a_replay] - ideal_home_games)
-        possible_new_max_dev_replay = max_dev_before_move_replay
-        if new_dev_h_replay > possible_new_max_dev_replay: possible_new_max_dev_replay = new_dev_h_replay
-        if new_dev_a_replay > possible_new_max_dev_replay: possible_new_max_dev_replay = new_dev_a_replay
-        if (old_dev_h_replay == max_dev_before_move_replay and new_dev_h_replay < old_dev_h_replay) or \
-           (old_dev_a_replay == max_dev_before_move_replay and new_dev_a_replay < old_dev_a_replay):
-            if new_dev_h_replay < possible_new_max_dev_replay and new_dev_a_replay < possible_new_max_dev_replay :
-                if n > 0:
-                    replayed_current_max_dev = 0.0
-                    for i_player in range(1, n + 1): # Iterate only through real players 1..n
-                        dev = abs(replayed_home_cnt[i_player] - ideal_home_games)
-                        if dev > replayed_current_max_dev: replayed_current_max_dev = dev
-                else: replayed_current_max_dev = 0.0
-            else: replayed_current_max_dev = possible_new_max_dev_replay
-        else: replayed_current_max_dev = possible_new_max_dev_replay
-
-        # Update penalty sequence only for real players
-        if 1 <= h_replay <= n:
-            replayed_current_pen_seq = _update_pen_numba_packed(h_replay, r_idx, 1, 0, replayed_packed_seq, replayed_current_pen_seq, rounds)
-        if 1 <= a_replay <= n:
-            replayed_current_pen_seq = _update_pen_numba_packed(a_replay, r_idx, 0, 1, replayed_packed_seq, replayed_current_pen_seq, rounds)
-
-        replayed_schedule_h[r_idx, m_idx] = a_replay
-        replayed_schedule_a[r_idx, m_idx] = h_replay
-
-        # Calculate candidate normalized score for replay using passed analytical factors
-        obj_hs_cand_rep = (replayed_current_home_strength - mu_hs) / sigma_hs
-        obj_ps_cand_rep = (replayed_current_pen_seq - mu_ps) / sigma_ps
-        obj_md_cand_rep = (replayed_current_max_dev - mu_md) / sigma_md
-        candidate_norm_score_replay = obj_hs_cand_rep + alpha_pen_seq * obj_ps_cand_rep + beta_obj * obj_md_cand_rep
-
-        delta_norm_score_replay = candidate_norm_score_replay - replayed_current_norm_score
-        accept_replay = delta_norm_score_replay < 0 or np.random.random() < math.exp(-delta_norm_score_replay / replayed_T)
-
-        if accept_replay:
-            replayed_current_norm_score = candidate_norm_score_replay
-        else: # Revert move
-            replayed_schedule_h[r_idx, m_idx] = h_replay
-            replayed_schedule_a[r_idx, m_idx] = a_replay
-            # Revert home_cnt only for real players
-            if 1 <= h_replay <= n:
-                replayed_home_cnt[h_replay] = home_cnt_h_before_replay
-            if 1 <= a_replay <= n:
-                replayed_home_cnt[a_replay] = home_cnt_a_before_replay
-
-            # Revert penalty sequence only for real players
-            if 1 <= h_replay <= n:
-                set_status_packed(replayed_packed_seq, h_replay, r_idx, seq_h_char_before_replay)
-            if 1 <= a_replay <= n:
-                set_status_packed(replayed_packed_seq, a_replay, r_idx, seq_a_char_before_replay)
-
-            replayed_current_pen_seq = pen_seq_before_move_replay
-            replayed_current_home_strength -= hs_change_replay
-            replayed_current_max_dev = max_dev_before_move_replay
-
-        replayed_T *= cooling
-        if replayed_T < 1e-5: replayed_T = 1e-5
-
-    return replayed_schedule_h, replayed_schedule_a, replayed_packed_seq, \
+    return best_schedule_h_saved, best_schedule_a_saved, best_packed_seq_saved, \
            actual_best_unnorm_score, actual_best_home_strength, actual_best_pen_seq, actual_best_max_dev
 
 def _sa_worker(args):
     n_arg, iterations_arg, seed_arg, num_threads_for_this_worker_arg, kwargs_arg = args
     numba.set_num_threads(num_threads_for_this_worker_arg)
     # Extract expected arguments from kwargs_arg and pass them to solve_sa
+    # Extract expected arguments from kwargs_arg and pass them to solve_sa
     return solve_sa(
         n_arg,
         iterations=iterations_arg,
         seed=seed_arg,
         alpha_pen_seq=kwargs_arg.get('alpha_pen_seq', config.ALPHA),
-        beta_obj=kwargs_arg.get('beta_obj', config.BETA)
+        beta_obj=kwargs_arg.get('beta_obj', config.BETA),
+        log_interval_sa_loop=kwargs_arg.get('log_interval_sa_loop', 0)
+        # time parameters removed
     )
 
 def _convert_schedule_to_np_format(schedule_list, n):
@@ -394,7 +276,7 @@ def _convert_schedule_to_np_format(schedule_list, n):
             # h and a can be None (dummy player)
             schedule_h[r_idx, m_idx] = h if h is not None else 0 # Represent dummy as 0
             schedule_a[r_idx, m_idx] = a if a is not None else 0 # Represent dummy as 0
-            
+
             # Only update home_cnt and packed_seq for real players
             if h is not None:
                 home_cnt[h] += 1
@@ -403,7 +285,7 @@ def _convert_schedule_to_np_format(schedule_list, n):
             if a is not None:
                  if 1 <= a <= n: # Ensure player ID is within expected range for packed_seq
                     set_status_packed(packed_seq, a, r_idx, 0)
-                    
+
     return schedule_h, schedule_a, home_cnt, packed_seq
 
 def compute_metrics(schedule, n):
@@ -411,14 +293,14 @@ def compute_metrics(schedule, n):
     if not schedule: return 0, 0, 0
     rounds = len(schedule)
     if rounds == 0: return 0, 0, 0
-    
+
     # Convert schedule list to NumPy format to use packed_seq for penalty calc
     _s_h, _s_a, _hc, current_packed_seq = _convert_schedule_to_np_format(schedule, n)
 
     ideal_home_games = (n - 1) / 2.0
-    
+
     raw_home_strength = calculate_home_strength(schedule, n)
-    
+
     home_games_count = {i: 0 for i in players}
     for r_idx, rnd_matches in enumerate(schedule):
         for h_player, a_player in rnd_matches:
@@ -432,26 +314,31 @@ def compute_metrics(schedule, n):
                 status_next = get_status_packed(current_packed_seq, player_idx_loop, r_loop + 1)
                 lut_idx = (status_curr << 1) | status_next
                 penalites_sequence += np.int64(PENALTY_LUT[lut_idx])
-                
+
     max_dev = 0.0
     if ideal_home_games >= 0 and n > 0:
         for i in players:
             deviation = abs(home_games_count[i] - ideal_home_games)
             if deviation > max_dev:
                 max_dev = deviation
-    
+
     return raw_home_strength, penalites_sequence, max_dev
 
 def solve_sa(n, iterations=10000, initial_temp=1.5, cooling_rate=0.97,
              alpha_pen_seq=None, beta_obj=None, seed=42,
-             log_interval_sa_loop=0): # Removed num_empirical_samples and load_best_schedule
+             log_interval_sa_loop=0,
+             start_time_sec=0.0, time_budget_sec=0.0): # Add time parameters
     if alpha_pen_seq is None:
         alpha_pen_seq = config.ALPHA
     if beta_obj is None:
         beta_obj = config.BETA
+    # Use the function’s cooling_rate parameter unless adjusted later
+    effective_cooling_rate = cooling_rate
 
     random.seed(seed)
     np.random.seed(seed)
+
+    log.info(f"solve_sa received iterations: {iterations}, time_budget_sec: {time_budget_sec}") # Add this log
 
     # Calculate analytical normalization factors once per SA run
     (mu_hs, sigma_hs), (mu_ps, sigma_ps), (mu_md, sigma_md) = calculate_analytical_factors(n)
@@ -467,7 +354,7 @@ def solve_sa(n, iterations=10000, initial_temp=1.5, cooling_rate=0.97,
 
     # Calculate initial metrics and scores for the random schedule
     c_home_strength, c_penalites_sequence, c_max_dev = compute_metrics(current_sched_list, n)
-    
+
     # Calculate initial normalized score using analytical factors and get scaled scores
     initial_norm_score, initial_anal_hs, initial_anal_ps, initial_anal_md, \
     initial_scaled_score, initial_scaled_hs, initial_scaled_ps, initial_scaled_md = calculate_normalized_score(
@@ -486,43 +373,45 @@ def solve_sa(n, iterations=10000, initial_temp=1.5, cooling_rate=0.97,
     matches_per_round = n // 2
 
     if rounds > 0 and matches_per_round > 0:
-        rnd_round_idx_arr = np.random.randint(0, rounds, size=iterations, dtype=np.int64)
-        rnd_match_idx_arr = np.random.randint(0, matches_per_round, size=iterations, dtype=np.int64)
+        # Ensure iterations is not excessively large if not using time budget
+        if time_budget_sec <= 0:
+             max_iterations_cap = 10**9 # Cap iterations to prevent memory issues
+             if iterations > max_iterations_cap:
+                  log.warning(f"Requested iterations ({iterations}) exceeds cap ({max_iterations_cap}). Capping at {max_iterations_cap}.")
+                  iterations = max_iterations_cap
+        # If using time budget, iterations can be very large, controlled by time check
+
+        # random indices now generated inside sa_loop – no pre-allocation needed
+        log.info(f"Random indices will be generated inside sa_loop.")
     else:
         log.warning("No rounds or matches to process for random index generation.")
         # Return raw metrics and analytical metrics as 0 or inf for failure case, and scaled metrics as 0.5 (sigmoid center)
         return [], float('inf'), (float('inf'), float('inf'), float('inf')), (float('inf'), float('inf'), float('inf')), \
                float('inf'), (0.5, 0.5, 0.5) # Return scaled score and individual scaled metrics
 
-    start_time = time.time()
-    T_min = 1e-6
-    effective_cooling_rate = cooling_rate
-    if iterations > 0 and initial_temp > T_min and initial_temp > 0:
-        effective_cooling_rate = (T_min / initial_temp)**(1.0 / iterations)
-    elif iterations == 0 and initial_temp > 0 :
-        effective_cooling_rate = 1.0
-    log.info(f"Starting SA loop with {iterations} iterations. Initial Temp: {initial_temp:.2e}, Cooling Rate (effective): {effective_cooling_rate:.6f}. Log interval: {log_interval_sa_loop if log_interval_sa_loop > 0 else 'disabled'}")
-    log.info(f"Using analytical factors for objective: mu_hs={mu_hs:.4f}, sigma_hs={sigma_hs:.4f}, mu_ps={mu_ps:.4f}, sigma_ps={sigma_ps:.4f}, mu_md={mu_md:.4f}, sigma_md={sigma_md:.4f}")
-
+    start_time_loop = time.time() # Use a separate timer for the loop itself
 
     best_schedule_h_arr, best_schedule_a_arr, final_best_packed_seq, \
     best_unnorm_score_found, best_home_strength, best_pen_seq, best_max_dev = sa_loop(
         initial_schedule_h, initial_schedule_a, initial_home_cnt, initial_packed_seq_arr,
-        rnd_round_idx_arr, rnd_match_idx_arr,
         iterations, initial_temp, effective_cooling_rate, alpha_pen_seq, beta_obj, ideal_home_games,
         n, # Pass n
         mu_hs, sigma_hs, mu_ps, sigma_ps, mu_md, sigma_md, # Pass analytical factors
         seed,
         log_interval_sa_loop
+        # time parameters removed
     )
-    elapsed = time.time() - start_time
+    elapsed = time.time() - start_time_loop # Calculate elapsed time for the loop
     log.info(f"SA loop finished in {elapsed:.4f} seconds.")
 
     # Convert best schedule NumPy arrays back to list format
     best_sched_list = []
+    rounds = best_schedule_h_arr.shape[0] # Use shape from returned array
+    matches_per_round = best_schedule_h_arr.shape[1] # Use shape from returned array
     for r in range(rounds):
         round_list = []
         for m_idx in range(matches_per_round):
+            # Use the best found schedule arrays from sa_loop
             round_list.append((best_schedule_h_arr[r, m_idx], best_schedule_a_arr[r, m_idx]))
         best_sched_list.append(round_list)
 
@@ -547,14 +436,19 @@ def solve_sa(n, iterations=10000, initial_temp=1.5, cooling_rate=0.97,
     # Return the best schedule, the analytical normalized score, raw metrics, analytical metrics, scaled score, and scaled metrics
     return best_sched_list, best_norm_score_calculated, best_raw_metrics, best_analytical_metrics, best_scaled_score_calculated, best_scaled_metrics
 
-def solve_sa_parallel(n, iterations, runs=4, seed=42, executor=None, **kwargs):
+def solve_sa_parallel(n, iterations, runs=4, seed=42, executor=None,
+                      start_time_sec=0.0, time_budget_sec=0.0, **kwargs): # Add time parameters
     num_threads_per_worker = max(1, (os.cpu_count() or 1) // runs)
     log.info(f"Parallel SA: Target {runs} chains, {os.cpu_count() or 'N/A'} CPU cores detected. Assigning {num_threads_per_worker} Numba threads per worker.")
 
 
     seeds = [seed + i for i in range(runs)]
     # Pass n and other kwargs to the worker
-    worker_kwargs = {**kwargs, 'n_players': n} # Pass n
+    worker_kwargs = {
+        **kwargs,
+        'n_players': n
+        # time parameters removed
+    }
     args_list = [(n, iterations, s, num_threads_per_worker, worker_kwargs) for s in seeds]
     results_list = []
 
@@ -564,7 +458,7 @@ def solve_sa_parallel(n, iterations, runs=4, seed=42, executor=None, **kwargs):
         for future in cf.as_completed(future_to_seed):
             s = future_to_seed[future]
             try:
-                result = future.result() 
+                result = future.result()
                 results_list.append(result)
             except Exception as exc:
                 log.exception(f"Seed {s} in parallel SA run generated an exception.")
@@ -589,7 +483,7 @@ def solve_sa_parallel(n, iterations, runs=4, seed=42, executor=None, **kwargs):
     # results_list contains tuples: (best_sched_list, best_norm_score, raw_metrics, analytical_metrics, scaled_score, scaled_metrics)
     for result in results_list:
         # The fifth element is the scaled score
-        scaled_score = result[4] 
+        scaled_score = result[4]
         if scaled_score < best_scaled_score_from_runs:
             best_scaled_score_from_runs = scaled_score
             best_result_from_runs = result # Store the entire result tuple
@@ -598,21 +492,71 @@ def solve_sa_parallel(n, iterations, runs=4, seed=42, executor=None, **kwargs):
     # Return the components of the best result tuple
     return best_result_from_runs[0], best_result_from_runs[1], best_result_from_runs[2], best_result_from_runs[3], best_result_from_runs[4], best_result_from_runs[5]
 
-import argparse
+# import argparse # Moved import to the top
 
 
 def main():
-    n_arg = int(sys.argv[1]) if len(sys.argv) > 1 else 6
-    iters_arg = int(sys.argv[2]) if len(sys.argv) > 2 else 100000
-    alpha_pen_seq_arg = float(sys.argv[3]) if len(sys.argv) > 3 else config.ALPHA
-    beta_arg = float(sys.argv[4]) if len(sys.argv) > 4 else config.BETA
-    runs_arg = int(sys.argv[5]) if len(sys.argv) > 5 else 1
+    parser = argparse.ArgumentParser(description='Run Simulated Annealing solver for schedule optimization.')
+    parser.add_argument('n', type=int, help='Number of players.')
+    parser.add_argument('-i', '--iterations', type=int, default=100000,
+                        help='Number of iterations for the SA loop (default: 100000). Ignored if --time_budget is provided.')
+    parser.add_argument('-t', '--time_budget', type=float,
+                        help='Time budget in seconds for the SA loop. Overrides --iterations if provided.')
+    parser.add_argument('alpha', type=float, nargs='?', default=config.ALPHA,
+                        help=f'Weight for penalty sequence objective (default: {config.ALPHA}).')
+    parser.add_argument('beta', type=float, nargs='?', default=config.BETA,
+                        help=f'Weight for max deviation objective (default: {config.BETA}).')
+    parser.add_argument('runs', type=int, nargs='?', default=1,
+                        help='Number of parallel runs (default: 1).')
+    parser.add_argument('--test_iterations', type=int, default=1000,
+                        help='Number of iterations for the test run to estimate iteration rate when using time budget (default: 1000).')
+    parser.add_argument('--log_interval', type=int, default=0,
+                        help='Interval for logging progress inside the SA loop (default: 0, disabled).')
+
+
+    args = parser.parse_args()
+
+    n_arg = args.n
+    alpha_pen_seq_arg = args.alpha
+    beta_arg = args.beta
+    runs_arg = args.runs
+    test_iterations_arg = args.test_iterations
+    iters_arg = args.iterations # Default value or value from -i
+    time_budget_arg = args.time_budget
+    log_interval_arg = args.log_interval # Capture log interval argument
+
+    if time_budget_arg is not None:
+        log.info(f"Time budget specified: {time_budget_arg} seconds.")
+        # Estimate how many iterations fit in the budget using a short test run
+        log.info(f"Estimating iteration rate...")
+        test_iters = test_iterations_arg
+        while True:
+            t0_est = time.time()
+            _ = solve_sa(n_arg, iterations=test_iters,
+                         alpha_pen_seq=alpha_pen_seq_arg, beta_obj=beta_arg,
+                         log_interval_sa_loop=0)
+            elapsed_est = max(1e-6, time.time() - t0_est)
+            if elapsed_est >= 0.25 or test_iters >= 1_000_000:
+                break
+            test_iters *= 4
+        iter_rate = test_iters / elapsed_est
+        iters_arg = int(iter_rate * time_budget_arg * 0.95)
+        hard_cap = 200_000_000
+        if iters_arg > hard_cap:
+            log.info(f"Capping iterations at {hard_cap} for memory safety.")
+            iters_arg = hard_cap
+        if iters_arg < 10:
+            iters_arg = 10
+        log.info(f"Estimated iteration rate: {iter_rate:.2f} it/s. Using {iters_arg} iterations for the main run.")
+    else:
+        iters_arg = args.iterations
 
     log.info(f"Running SA for n={n_arg}, iterations={iters_arg}, alpha_pen_seq={alpha_pen_seq_arg}, beta={beta_arg}, parallel_runs={runs_arg}")
 
     sa_kwargs = {
         'alpha_pen_seq': alpha_pen_seq_arg,
         'beta_obj': beta_arg,
+        'log_interval_sa_loop': log_interval_arg
     }
 
     if runs_arg > 1:
@@ -623,7 +567,15 @@ def main():
         best_schedule, best_norm_score, raw_metrics, analytical_metrics, scaled_score, scaled_metrics = solve_sa(
             n_arg, iterations=iters_arg, **sa_kwargs
         )
-    
+
+    # Optional final top-up run if time budget was used and time remains
+    if time_budget_arg is not None:
+        # Note: This requires tracking elapsed time *outside* the solve_sa call,
+        # which is not currently done in main().
+        # For simplicity based on the provided diff, we'll skip the top-up for now
+        # as the diff doesn't include the necessary time tracking in main().
+        pass # Placeholder for potential future top-up logic
+
     # Unpack raw, analytical, and scaled metrics
     final_raw_hs, final_raw_ps, final_raw_md = raw_metrics
     final_anal_hs, final_anal_ps, final_anal_md = analytical_metrics

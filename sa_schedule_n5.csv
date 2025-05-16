@@ -5,8 +5,8 @@ Round 3,4v1(H),5v3(H)
 Round 4,3v1(H),2v4(H)
 
 Metric,Value
-Overall Analytical Normalized Score (Z-sum),-3.933012016695287
-"Overall Scaled Score ([0,1] sum)",1.519663049036486
+Overall Analytical Normalized Score (Z-sum),-4.323453515040072
+"Overall Scaled Score ([0,1] sum)",1.5216150793005179
 Raw Home Strength,6.0
 Analytical Norm HS (Z-Score),-1.131370849898476
 "Scaled HS ([0,1])",0.5056566129027347
@@ -14,8 +14,8 @@ Raw Penalty Sequence,3
 Analytical Norm PS (Z-Score),-2.32379000772445
 "Scaled PS ([0,1])",0.5116168590792614
 Raw Max Deviation,1.0
-Analytical Norm MD (Z-Score),-0.7855076338477089
-"Scaled MD ([0,1])",0.5039274573919519
+Analytical Norm MD (Z-Score),-1.1108755491350293
+"Scaled MD ([0,1])",0.5055541492786451
 Home Games Player 1,1
 Home Games Player 2,1
 Home Games Player 3,2

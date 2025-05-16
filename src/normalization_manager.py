@@ -30,10 +30,10 @@ def calculate_analytical_factors(n):
 
     # 3. Max Deviation (MD)
     # E[MD] ~ sqrt(R)/2 * sqrt(2*ln n)
-    # sigma_MD ~ sqrt(R)/2 * pi / sqrt(6*ln n)
+    # sigma_MD ~ sqrt(R)/2 * pi / sqrt(12*ln n)
     if n > 1: # ln(1) is undefined, MD is 0 for n=1
         mu_MD = 0.5 * math.sqrt(R) * math.sqrt(2 * math.log(n))
-        sigma_MD = 0.5 * math.sqrt(R) * math.pi / math.sqrt(6 * math.log(n)) if n > 1 else 1.0 # Handle n=1 case
+        sigma_MD = 0.5 * math.sqrt(R) * math.pi / math.sqrt(12 * math.log(n)) if n > 1 else 1.0 # Handle n=1 case
     else:
         mu_MD = 0.0
         sigma_MD = 1.0 # Default sigma for n=1
