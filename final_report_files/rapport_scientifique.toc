@@ -30,4 +30,4 @@
 \contentsline {section}{\numberline {4}Benchmarking des Algorithmes}{10}{section.4}%
 \contentsline {subsection}{\numberline {4.1}Protocole expérimental}{10}{subsection.4.1}%
 \contentsline {subsection}{\numberline {4.2}Résultats chiffrés}{10}{subsection.4.2}%
-\contentsline {subsection}{\numberline {4.3}Visualisation}{10}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.3}Visualisation}{12}{subsection.4.3}%

@@ -342,7 +342,32 @@ En conclusion, l'exploration systématique de l'espace des poids $(\alpha, \beta
 Chaque algorithme est lancé \textbf{une seule fois} avec une limite de temps stricte de \textbf{60 secondes}.
 \subsection{Résultats chiffrés}
 
-% Chemin vers le CSV à ajuster si besoin
+Le tableau \ref{tab:sa-comparison} présente une comparaison détaillée entre les versions optimisée et non-optimisée de l'algorithme de Recuit Simulé (SA) pour différentes tailles de tournoi. On observe une nette amélioration des performances avec la version optimisée, particulièrement visible sur les instances de grande taille.
+
+\begin{table}[htbp]
+\centering
+\caption{Comparaison des performances entre les versions optimisée et non-optimisée du Recuit Simulé}
+\label{tab:sa-comparison}
+\begin{tabular}{|r|rr|rr|rr|rr|}
+\hline
+\multirow{2}{*}{$n$} & \multicolumn{2}{c|}{Z-sum} & \multicolumn{2}{c|}{HomeStrength} & \multicolumn{2}{c|}{Penalty Sequence} & \multicolumn{2}{c|}{Max Deviation} \\
+\cline{2-9}
+ & Non-Opti & Opti & Non-Opti & Opti & Non-Opti & Opti & Non-Opti & Opti \\
+\hline
+4 & -3.72 & -3.72 & 3.00 & 3.00 & 2.00 & 2.00 & 0.50 & 0.50 \\
+6 & -5.47 & -6.05 & 16.00 & 13.00 & 4.00 & 4.00 & 0.50 & 0.50 \\
+8 & -7.14 & -8.09 & 22.00 & 35.00 & 10.00 & 6.00 & 1.50 & 0.50 \\
+25 & -17.99 & -21.83 & 819.00 & 1192.00 & 130.00 & 54.00 & 4.00 & 1.00 \\
+250 & -7.33 & -202.87 & 1261076.00 & 1250494.00 & 30794.00 & 1282.00 & 22.50 & 10.50 \\
+500 & -4.21 & -378.19 & 10400027.00 & 9355982.00 & 124056.00 & 16630.00 & 31.50 & 29.50 \\
+1000 & -0.94 & -180.69 & 83349223.00 & 75548920.00 & 499478.00 & 423188.00 & 50.50 & 34.50 \\
+\hline
+\end{tabular}
+\end{table}
+
+L'amélioration est particulièrement notable pour les instances de taille moyenne et grande ($n \geq 250$), où la version optimisée atteint des scores Z-sum significativement meilleurs. Pour $n=500$, la différence est la plus marquée, la version optimisée atteignant un score Z-sum bien plus faible (-378.19 contre -4.21).
+
+% Maintien du tableau existant pour compatibilité
 \csvstyle{boldwinner}{%
   table head=\toprule Algorithme & {$\mathrm{HS}_\mathrm{norm}$} & {$\mathrm{PS}_\mathrm{norm}$} & {$\mathrm{MD}_\mathrm{norm}$}\\\midrule,
   late after line=\\,
