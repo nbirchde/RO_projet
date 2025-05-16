@@ -506,18 +506,24 @@ def solve_sa(n, iterations=10000, initial_temp=1.5, cooling_rate=0.97,
         effective_cooling_rate = math.exp(math.log(target_fraction) / max(1, iterations))
         log.info(f"Retuned cooling_rate to {effective_cooling_rate:.10f}")
 
+    # ------------------------------------------------------------------
+    #  🚀  Main simulated‑annealing run (single compiled pass)
+    # ------------------------------------------------------------------
     start_time_loop = time.time()
 
-    # Run SA loop in chunks to honor time budget without sacrificing Numba speed
     best_schedule_h_arr, best_schedule_a_arr, final_best_packed_seq, \
-    best_unnorm_score_found, best_home_strength, best_pen_seq, best_max_dev = sa_loop_with_time_budget(
+    best_unnorm_score_found, best_home_strength, best_pen_seq, best_max_dev = sa_loop(
         initial_schedule_h, initial_schedule_a, initial_home_cnt, initial_packed_seq_arr,
         iterations, initial_temp, effective_cooling_rate, alpha_pen_seq, beta_obj, ideal_home_games,
         n, mu_hs, sigma_hs, mu_ps, sigma_ps, mu_md, sigma_md,
-        seed, log_interval_sa_loop, time_budget_sec
+        seed, log_interval_sa_loop
     )
-    elapsed = time.time() - start_time_loop  # Calculate elapsed time for the loop
-    log.info(f"SA loop finished in {elapsed:.4f} seconds.")
+
+    elapsed = time.time() - start_time_loop
+    log.info(
+        f"SA loop finished in {elapsed:.4f} seconds. "
+        f"({iterations:,d} iterations → {iterations/elapsed:,.1f} it/s)"
+    )
 
     # Convert best schedule NumPy arrays back to list format
     best_sched_list = []
