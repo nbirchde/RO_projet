@@ -258,11 +258,12 @@ def sa_loop_with_time_budget(schedule_h_input, schedule_a_input, home_cnt_input,
     enforcing a wall-clock time budget while keeping high performance.
     """
     start_time = time.time()
-    # determine remaining iterations: infinity if using budget, else fixed
-    if time_budget_sec and time_budget_sec > 0.0:
-        remaining = float('inf')
-    else:
-        remaining = iterations
+    # Start with the full iteration allowance that was calculated by the
+    # caller.  The outer loop will still stop as soon as the wall‑clock
+    # budget is exhausted, but keeping a finite *remaining* counter makes
+    # sure the geometric cooling schedule matches the intended number of
+    # iterations so we don’t run indefinitely at a too‑high temperature.
+    remaining = iterations if iterations > 0 else float('inf')
     best_u = float('inf')
     best_res = None
     # initialize temperature for continuous cooling across chunks
@@ -468,7 +469,44 @@ def solve_sa(n, iterations=10000, initial_temp=1.5, cooling_rate=0.97,
         )
     except Exception:
         pass  # ignore compile errors here
-    start_time_loop = time.time()  # Use a separate timer for the loop itself
+
+    # ------------------------------------------------------------------
+    #  🔄  Warm‑up speed test
+    # ------------------------------------------------------------------
+    # If we have a wall‑clock budget, measure the *true* iteration speed
+    # now that all Numba kernels are hot.  Then retune both the iteration
+    # target and the geometric cooling factor so that the temperature
+    # reaches the desired fraction exactly at the end of the budget.
+    if time_budget_sec and time_budget_sec > 0.0:
+        warm_iters = min(50_000, max(2_000, iterations // 10))
+        t0_speed = time.time()
+        _ = sa_loop(
+            initial_schedule_h.copy(),   # work on fresh copies so we don’t disturb the real run
+            initial_schedule_a.copy(),
+            initial_home_cnt.copy(),
+            initial_packed_seq_arr.copy(),
+            warm_iters,
+            initial_temp,
+            effective_cooling_rate,
+            alpha_pen_seq,
+            beta_obj,
+            ideal_home_games,
+            n, mu_hs, sigma_hs, mu_ps, sigma_ps, mu_md, sigma_md,
+            seed,
+            0    # no logging
+        )
+        elapsed_speed = max(1e-6, time.time() - t0_speed)
+        measured_rate = warm_iters / elapsed_speed
+        iterations = int(measured_rate * time_budget_sec * 0.98)  # leave ~2 % buffer
+        log.info(f"Warm‑up measured {measured_rate:.1f} iter/s; "
+                 f"adjusting main run to {iterations} iterations.")
+
+        # Retune the cooling schedule so that T falls to 0.1 % of T0 after
+        # the *new* iteration budget.
+        effective_cooling_rate = math.exp(math.log(target_fraction) / max(1, iterations))
+        log.info(f"Retuned cooling_rate to {effective_cooling_rate:.10f}")
+
+    start_time_loop = time.time()
 
     # Run SA loop in chunks to honor time budget without sacrificing Numba speed
     best_schedule_h_arr, best_schedule_a_arr, final_best_packed_seq, \
