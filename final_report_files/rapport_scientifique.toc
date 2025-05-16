@@ -8,8 +8,8 @@
 \contentsline {subsection}{\numberline {2.2}Variables de Décision}{3}{subsection.2.2}%
 \contentsline {subsubsection}{\numberline {2.2.1}Variable Principale}{3}{subsubsection.2.2.1}%
 \contentsline {subsubsection}{\numberline {2.2.2}Variables Auxiliaires pour l'Équité}{3}{subsubsection.2.2.2}%
-\contentsline {subsection}{\numberline {2.3}Contraintes}{4}{subsection.2.3}%
-\contentsline {subsubsection}{\numberline {2.3.1}Contraintes Fondamentales du Round Robin}{4}{subsubsection.2.3.1}%
+\contentsline {subsection}{\numberline {2.3}Contraintes}{3}{subsection.2.3}%
+\contentsline {subsubsection}{\numberline {2.3.1}Contraintes Fondamentales du Round Robin}{3}{subsubsection.2.3.1}%
 \contentsline {subsubsection}{\numberline {2.3.2}Contraintes d'Équité}{4}{subsubsection.2.3.2}%
 \contentsline {subsection}{\numberline {2.4}Métriques d'Équité}{4}{subsection.2.4}%
 \contentsline {subsubsection}{\numberline {2.4.1}HomeStrength}{4}{subsubsection.2.4.1}%
@@ -17,7 +17,7 @@
 \contentsline {subsubsection}{\numberline {2.4.3}MaxDeviation}{5}{subsubsection.2.4.3}%
 \contentsline {subsection}{\numberline {2.5}Fonction Objectif}{5}{subsection.2.5}%
 \contentsline {subsection}{\numberline {2.6}Fonction Objectif Normalisée et Calibration des Poids Alpha et Beta}{5}{subsection.2.6}%
-\contentsline {subsubsection}{\numberline {2.6.1}Historique des approches de normalisation}{6}{subsubsection.2.6.1}%
+\contentsline {subsubsection}{\numberline {2.6.1}Historique des approches de normalisation}{5}{subsubsection.2.6.1}%
 \contentsline {paragraph}{1. Normalisation par les valeurs maximales.}{6}{section*.2}%
 \contentsline {paragraph}{2. Normalisation empirique.}{6}{section*.3}%
 \contentsline {paragraph}{3. Standardisation analytique.}{6}{section*.4}%

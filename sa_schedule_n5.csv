@@ -1,28 +1,29 @@
 Round,Match 1,Match 2
-Round 1,5v2(H),4v3(H)
+Round 1,2v5(H),4v3(H)
 Round 2,1v5(H),3v2(H)
 Round 3,4v1(H),5v3(H)
 Round 4,3v1(H),2v4(H)
+Round 5,1v2(H),5v4(H)
 
 Metric,Value
-Overall Analytical Normalized Score (Z-sum),-4.323453515040072
-"Overall Scaled Score ([0,1] sum)",1.5216150793005179
-Raw Home Strength,6.0
-Analytical Norm HS (Z-Score),-1.131370849898476
-"Scaled HS ([0,1])",0.5056566129027347
-Raw Penalty Sequence,3
-Analytical Norm PS (Z-Score),-2.32379000772445
-"Scaled PS ([0,1])",0.5116168590792614
-Raw Max Deviation,1.0
-Analytical Norm MD (Z-Score),-1.1108755491350293
-"Scaled MD ([0,1])",0.5055541492786451
-Home Games Player 1,1
-Home Games Player 2,1
+Overall Analytical Normalized Score (Z-sum),-4.457610403645878
+"Overall Scaled Score ([0,1] sum)",1.5222841040031119
+Raw Home Strength,10.0
+Analytical Norm HS (Z-Score),0.0
+"Scaled HS ([0,1])",0.5
+Raw Penalty Sequence,4
+Analytical Norm PS (Z-Score),-1.8073922282301278
+"Scaled PS ([0,1])",0.5090359772450552
+Raw Max Deviation,0.0
+Analytical Norm MD (Z-Score),-2.509747184218147
+"Scaled MD ([0,1])",0.512546101839223
+Home Games Player 1,2
+Home Games Player 2,2
 Home Games Player 3,2
 Home Games Player 4,2
 Home Games Player 5,2
-Sequence Player 1,HAA
-Sequence Player 2,AAH
+Sequence Player 1,HAAH
+Sequence Player 2,HAHA
 Sequence Player 3,AHAH
-Sequence Player 4,HHA
-Sequence Player 5,HAH
+Sequence Player 4,HHAA
+Sequence Player 5,AAHH

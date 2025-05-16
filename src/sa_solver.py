@@ -53,6 +53,8 @@ def _update_pen_numba_packed(player, round_idx, old_player_status_at_round, new_
     set_status_packed(packed_seq_arr, player, round_idx, new_player_status_at_round)
     return current_pen_seq_val + pen_change
 
+import time
+
 @numba.njit(fastmath=True, cache=True)
 def sa_loop(schedule_h_input, schedule_a_input, home_cnt_input, packed_seq_input,
             iterations, T0, cooling, alpha_pen_seq, beta_obj, ideal_home_games,
@@ -247,6 +249,63 @@ def sa_loop(schedule_h_input, schedule_a_input, home_cnt_input, packed_seq_input
     return best_schedule_h_saved, best_schedule_a_saved, best_packed_seq_saved, \
            actual_best_unnorm_score, actual_best_home_strength, actual_best_pen_seq, actual_best_max_dev
 
+def sa_loop_with_time_budget(schedule_h_input, schedule_a_input, home_cnt_input, packed_seq_input,
+                             iterations, T0, cooling, alpha_pen_seq, beta_obj, ideal_home_games,
+                             n, mu_hs, sigma_hs, mu_ps, sigma_ps, mu_md, sigma_md,
+                             seed, log_interval, time_budget_sec, chunk_size=10000):  # smaller chunks for better budget control
+    """
+    Python wrapper that repeatedly calls the Numba sa_loop in chunks,
+    enforcing a wall-clock time budget while keeping high performance.
+    """
+    start_time = time.time()
+    # determine remaining iterations: infinity if using budget, else fixed
+    if time_budget_sec and time_budget_sec > 0.0:
+        remaining = float('inf')
+    else:
+        remaining = iterations
+    best_u = float('inf')
+    best_res = None
+    # initialize temperature for continuous cooling across chunks
+    T_current = T0
+    # Try multiple chunks until time or iterations exhausted
+    while remaining > 0 and (time_budget_sec <= 0 or time.time() - start_time < time_budget_sec):
+        this_chunk = remaining if remaining < chunk_size else chunk_size
+        # Call compiled SA loop with current temperature
+        res = sa_loop(
+            schedule_h_input, schedule_a_input, home_cnt_input, packed_seq_input,
+            this_chunk, T_current, cooling, alpha_pen_seq, beta_obj, ideal_home_games,
+            n, mu_hs, sigma_hs, mu_ps, sigma_ps, mu_md, sigma_md,
+            seed, log_interval
+        )
+        # res = (h_arr, a_arr, p_arr, unnorm_score, hs, ps, md)
+        u_score = res[3]
+        if u_score < best_u:
+            best_u = u_score
+            best_res = res
+        # continue from best found state for next chunk
+        schedule_h_input, schedule_a_input, packed_seq_input = res[0], res[1], res[2]
+        # recompute home_cnt_input from updated home schedule
+        home_cnt_input = np.zeros_like(home_cnt_input)
+        rounds, matches = schedule_h_input.shape
+        for r in range(rounds):
+            for m in range(matches):
+                p = schedule_h_input[r, m]
+                if p > 0:
+                    home_cnt_input[p] += 1
+        remaining -= this_chunk
+        seed += 1  # change seed for next chunk to diversify search
+        # update temperature by geometric cooling over this_chunk iterations
+        T_current *= math.pow(cooling, this_chunk)
+    # If no budget or no best found, do a single full run
+    if (time_budget_sec <= 0 and best_res is None) or best_res is None:
+        return sa_loop(
+            schedule_h_input, schedule_a_input, home_cnt_input, packed_seq_input,
+            iterations, T0, cooling, alpha_pen_seq, beta_obj, ideal_home_games,
+            n, mu_hs, sigma_hs, mu_ps, sigma_ps, mu_md, sigma_md,
+            seed, log_interval
+        )
+    return best_res
+
 def _sa_worker(args):
     n_arg, iterations_arg, seed_arg, num_threads_for_this_worker_arg, kwargs_arg = args
     numba.set_num_threads(num_threads_for_this_worker_arg)
@@ -258,8 +317,8 @@ def _sa_worker(args):
         seed=seed_arg,
         alpha_pen_seq=kwargs_arg.get('alpha_pen_seq', config.ALPHA),
         beta_obj=kwargs_arg.get('beta_obj', config.BETA),
-        log_interval_sa_loop=kwargs_arg.get('log_interval_sa_loop', 0)
-        # time parameters removed
+        log_interval_sa_loop=kwargs_arg.get('log_interval_sa_loop', 0),
+        time_budget_sec=kwargs_arg.get('time_budget_sec', 0.0)
     )
 
 def _convert_schedule_to_np_format(schedule_list, n):
@@ -399,19 +458,27 @@ def solve_sa(n, iterations=10000, initial_temp=1.5, cooling_rate=0.97,
         return [], float('inf'), (float('inf'), float('inf'), float('inf')), (float('inf'), float('inf'), float('inf')), \
                float('inf'), (0.5, 0.5, 0.5) # Return scaled score and individual scaled metrics
 
-    start_time_loop = time.time() # Use a separate timer for the loop itself
+    # Trigger Numba compilation ahead of time with a tiny 1-iteration call
+    try:
+        _ = sa_loop(
+            initial_schedule_h, initial_schedule_a, initial_home_cnt, initial_packed_seq_arr,
+            1, initial_temp, effective_cooling_rate, alpha_pen_seq, beta_obj, ideal_home_games,
+            n, mu_hs, sigma_hs, mu_ps, sigma_ps, mu_md, sigma_md,
+            seed, 0
+        )
+    except Exception:
+        pass  # ignore compile errors here
+    start_time_loop = time.time()  # Use a separate timer for the loop itself
 
+    # Run SA loop in chunks to honor time budget without sacrificing Numba speed
     best_schedule_h_arr, best_schedule_a_arr, final_best_packed_seq, \
-    best_unnorm_score_found, best_home_strength, best_pen_seq, best_max_dev = sa_loop(
+    best_unnorm_score_found, best_home_strength, best_pen_seq, best_max_dev = sa_loop_with_time_budget(
         initial_schedule_h, initial_schedule_a, initial_home_cnt, initial_packed_seq_arr,
         iterations, initial_temp, effective_cooling_rate, alpha_pen_seq, beta_obj, ideal_home_games,
-        n, # Pass n
-        mu_hs, sigma_hs, mu_ps, sigma_ps, mu_md, sigma_md, # Pass analytical factors
-        seed,
-        log_interval_sa_loop
-        # time parameters removed
+        n, mu_hs, sigma_hs, mu_ps, sigma_ps, mu_md, sigma_md,
+        seed, log_interval_sa_loop, time_budget_sec
     )
-    elapsed = time.time() - start_time_loop # Calculate elapsed time for the loop
+    elapsed = time.time() - start_time_loop  # Calculate elapsed time for the loop
     log.info(f"SA loop finished in {elapsed:.4f} seconds.")
 
     # Convert best schedule NumPy arrays back to list format
@@ -446,18 +513,18 @@ def solve_sa(n, iterations=10000, initial_temp=1.5, cooling_rate=0.97,
     # Return the best schedule, the analytical normalized score, raw metrics, analytical metrics, scaled score, and scaled metrics
     return best_sched_list, best_norm_score_calculated, best_raw_metrics, best_analytical_metrics, best_scaled_score_calculated, best_scaled_metrics
 
-def solve_sa_parallel(n, iterations, runs=4, seed=42, executor=None,
+def solve_sa_parallel(n, iterations, runs=6, seed=42, executor=None,
                       start_time_sec=0.0, time_budget_sec=0.0, **kwargs): # Add time parameters
     num_threads_per_worker = max(1, (os.cpu_count() or 1) // runs)
     log.info(f"Parallel SA: Target {runs} chains, {os.cpu_count() or 'N/A'} CPU cores detected. Assigning {num_threads_per_worker} Numba threads per worker.")
 
 
     seeds = [seed + i for i in range(runs)]
-    # Pass n and other kwargs to the worker
+    # Pass n, time budget, and other kwargs to each worker
     worker_kwargs = {
         **kwargs,
-        'n_players': n
-        # time parameters removed
+        'n_players': n,
+        'time_budget_sec': time_budget_sec
     }
     args_list = [(n, iterations, s, num_threads_per_worker, worker_kwargs) for s in seeds]
     results_list = []
@@ -508,7 +575,7 @@ def solve_sa_parallel(n, iterations, runs=4, seed=42, executor=None,
 def main():
     parser = argparse.ArgumentParser(description='Run Simulated Annealing solver for schedule optimization.')
     parser.add_argument('n', type=int, help='Number of players.')
-    parser.add_argument('-i', '--iterations', type=int, default=100000,
+    parser.add_argument('-i', '--iterations', type=int, default=1000000,
                         help='Number of iterations for the SA loop (default: 100000). Ignored if --time_budget is provided.')
     parser.add_argument('-t', '--time_budget', type=float,
                         help='Time budget in seconds for the SA loop. Overrides --iterations if provided.')
@@ -551,7 +618,7 @@ def main():
             test_iters *= 4
         iter_rate = test_iters / elapsed_est
         iters_arg = int(iter_rate * time_budget_arg * 0.95)
-        hard_cap = 200_000_000
+        hard_cap = 200_000_000_000
         if iters_arg > hard_cap:
             log.info(f"Capping iterations at {hard_cap} for memory safety.")
             iters_arg = hard_cap
@@ -569,13 +636,23 @@ def main():
         'log_interval_sa_loop': log_interval_arg
     }
 
+    # Use parallel runs if requested; each chain will respect the time budget if provided
     if runs_arg > 1:
+        # Parallel chains, each respecting time budget
         best_schedule, best_norm_score, raw_metrics, analytical_metrics, scaled_score, scaled_metrics = solve_sa_parallel(
-            n_arg, runs=runs_arg, iterations=iters_arg, **sa_kwargs
+            n_arg,
+            iterations=iters_arg,
+            runs=runs_arg,
+            time_budget_sec=time_budget_arg,
+            **sa_kwargs
         )
     else:
+        # Single chain with time budget enforcement
         best_schedule, best_norm_score, raw_metrics, analytical_metrics, scaled_score, scaled_metrics = solve_sa(
-            n_arg, iterations=iters_arg, **sa_kwargs
+            n_arg,
+            iterations=iters_arg,
+            time_budget_sec=time_budget_arg,
+            **sa_kwargs
         )
 
     # Optional final top-up run if time budget was used and time remains
@@ -618,28 +695,28 @@ def main():
     log.info(f"    Analytical Norm (Z-Score): {final_anal_md:.4f}")
     log.info(f"    Scaled Metric ([0,1]): {final_scaled_md:.4f}")
 
-    log.info("\n  Home Games Per Player (Player ID: Count):")
-    home_games = all_metrics.get('home_games_per_player', [])
-    if home_games:
-        for i, count in enumerate(home_games):
-            log.info(f"    Player {i+1}: {count}")
-    elif all_metrics.get('num_players', 0) > 0:
-        for i in range(all_metrics['num_players']):
-             log.info(f"    Player {i+1}: 0")
-    else:
-        log.info("    N/A")
+    #log.info("\n  Home Games Per Player (Player ID: Count):")
+    #home_games = all_metrics.get('home_games_per_player', [])
+    #if home_games:
+    #    for i, count in enumerate(home_games):
+    #        log.info(f"    Player {i+1}: {count}")
+    #elif all_metrics.get('num_players', 0) > 0:
+    #    for i in range(all_metrics['num_players']):
+    #         log.info(f"    Player {i+1}: 0")
+    #else:
+    #    log.info("    N/A")
 
-    log.info("\n  Player H/A Sequences (Player ID: Sequence):")
-    player_sequences = all_metrics.get('player_ha_sequences', [])
-    if player_sequences:
-        for i, seq_str in enumerate(player_sequences):
-            log.info(f"    Player {i+1}: {seq_str}")
-    elif all_metrics.get('num_players', 0) > 0:
-         for i in range(all_metrics['num_players']):
-             log.info(f"    Player {i+1}: ")
-    else:
-        log.info("    N/A")
-    log.info("---------------------------------")
+    #log.info("\n  Player H/A Sequences (Player ID: Sequence):")
+    #player_sequences = all_metrics.get('player_ha_sequences', [])
+    #if player_sequences:
+    #    for i, seq_str in enumerate(player_sequences):
+    #        log.info(f"    Player {i+1}: {seq_str}")
+    #elif all_metrics.get('num_players', 0) > 0:
+    #     for i in range(all_metrics['num_players']):
+    #         log.info(f"    Player {i+1}: ")
+    #else:
+    #    log.info("    N/A")
+    #log.info("---------------------------------")
 
     # --- Print Schedule and Metrics to CSV ---
     csv_filename = f"sa_schedule_n{n_arg}.csv"

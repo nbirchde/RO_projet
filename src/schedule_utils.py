@@ -50,4 +50,5 @@ def initial_schedule(n):
         # If n_effective is 1 (original n=0), players list is [None], no rotation needed.
 
     # Ensure the schedule has the correct number of rounds for the original n
-    return schedule[:original_n - 1]
+    return schedule[:original_n - 1] if original_n % 2 == 0 else schedule
+    # Remove the last round if n was odd (it contains a dummy player)

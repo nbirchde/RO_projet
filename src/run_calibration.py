@@ -12,7 +12,7 @@ from src.metrics import get_all_fairness_metrics
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(module)s - %(message)s')
 log = logging.getLogger(__name__)
 
-N_PLAYERS = 500
+N_PLAYERS = 300
 ITERATIONS = 1000000
 RUNS_PER_COMBINATION = 8
 ALPHA_VALUES = np.arange(0.5, 1.51, 0.1)

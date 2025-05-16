@@ -92,7 +92,7 @@ La décision fondamentale pour chaque match potentiel est de savoir qui joue à 
         0 & \text{sinon}
     \end{cases}
 \end{equation}
-où $P_{eff} = \{1, \dots, n_{eff}\}$ est l'ensemble des participants (avec $i \neq j$) et $R = \{0, \dots, n_{eff}-2\}$ représente l'ensemble des rondes. L'indice du joueur correspond à son classement (1 étant le plus fort).
+où $P_{eff} = \{1, \dots, n_{eff}\}$ est l'ensemble des participants et $R = \{0, \dots, n_{eff}-2\}$ représente l'ensemble des rondes. L'indice du joueur correspond à son classement (1 étant le plus fort).
 
 \subsubsection{Variables Auxiliaires pour l'Équité}
 Pour modéliser les métriques d'équité, nous introduisons les variables auxiliaires suivantes, définies pour les $n_{eff}$ participants :
@@ -133,7 +133,7 @@ Ces contraintes lient les variables auxiliaires aux variables de décision $x_{i
     \begin{equation}
         H_i = \sum_{r \in R} is\_home_{i,r} \quad \forall i \in P_{eff}
     \end{equation}
-    \item \textbf{Lien $MaxDev$ (Écart Max Domicile) :} Calcule l'écart maximal par rapport à la moyenne $\bar{H} = \frac{n_{eff}-1}{2}$.
+    \item \textbf{Lien $MaxDev$ (Écart Max Domicile) :} Calcule l'écart maximal par rapport à la moyenne $\bar{H} = \dfrac{n-1}{2} \;\;(\text{calculée uniquement sur les joueurs réels})$.
     \begin{align}
         MaxDev &\ge H_i - \bar{H} \quad &\forall i \in P_{eff} \\
         MaxDev &\ge \bar{H} - H_i \quad &\forall i \in P_{eff}
@@ -225,8 +225,7 @@ def z_to_scaled(z, z_range=50.0):
     return 1 / (1 + math.exp(z / z_range))
 \end{lstlisting}
 
-Les solveurs minimisent ensuite la somme pondérée des versions sigmoïdes (variable \verb|scaled_score|), ce qui rend les trois critères directement comparables même pour un lectorat peu familier avec les statistiques.
-où $M_k^{raw}$ est la valeur brute de la métrique $k \in \{\mathrm{HS, PS, MD}\}$.
+Les solveurs minimisent ensuite la somme pondérée des versions sigmoïdes (variable \verb|scaled_score|), ce qui rend les trois critères directement comparables : où $M_k^{raw}$ est la valeur brute de la métrique $k \in \{\mathrm{HS, PS, MD}\}$.
 
 Les formules analytiques utilisées pour calculer $\mu$ et $\sigma$ pour chaque métrique pour $n$ joueurs réels sont les suivantes :
 \begin{itemize}
@@ -238,7 +237,7 @@ Les formules analytiques utilisées pour calculer $\mu$ et $\sigma$ pour chaque 
     \item \textbf{Penalty Sequence (PS) :} Pour $n$ joueurs réels sur $n_{eff}-1$ rondes, chaque joueur réel joue $n-1$ matchs. Le nombre de transitions H/A est $n-2$.
     \begin{align*}
         \mu_{PS} &= n \cdot \frac{n-2}{2} \\
-        \sigma_{PS} &= \sqrt{n \cdot \frac{n-2}{2}} \quad \text{si } n > 2, \text{ sinon } 1.0
+        \sigma_{PS} &= \dfrac{\sqrt{n(n-2)}}{2} \quad \text{si } n > 2, \text{ sinon } 1.0
     \end{align*}
     \item \textbf{Max Deviation (MD) :} Chaque joueur joue $n-1$ matchs, avec $H_i \sim \mathrm{Bin}(n-1, 1/2)$. Le maximum parmi les $n$ joueurs suit une distribution d’extrême valeur bien connue en statistique. Sous l’hypothèse d’indépendance (acceptable ici car chaque joueur a un pattern propre), on peut approximer :
     \begin{align*}

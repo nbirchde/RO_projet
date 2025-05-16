@@ -56,7 +56,7 @@ def initial_schedule(n):
             rotated_part = [players[n_effective - 1]] + players[1:n_effective - 1]
             players = [fixed_player] + rotated_part
 
-    return schedule[:original_n - 1]
+    return schedule
 
 
 def compute_metrics(schedule, n):

@@ -6,8 +6,7 @@ log = logging.getLogger(__name__)
 
 def calculate_analytical_factors(n):
     """
-    Calculates the analytical mean and standard deviation for HS, PS, and MD
-    based on the provided formulas for a random Home/Away assignment.
+    Calculates the analytical mean (μ) and standard deviation (σ) for HS, PS, and MD assuming a random Home/Away assignment. Formulas now use the corrected σ_PS = √[n(n−2)] / 2.
     """
     if n < 2:
         log.warning(f"Cannot calculate analytical factors for n={n}. Must be n >= 2.")
@@ -23,10 +22,10 @@ def calculate_analytical_factors(n):
     sigma_HS = n * math.sqrt(n**2 - 1) / (4 * math.sqrt(3))
 
     # 2. Penalty Sequence (PS)
-    # E[PS] = n*(R-1)/2
-    # sigma_PS = sqrt(n*(R-1))/2
-    mu_PS = n * (R - 1) / 2
-    sigma_PS = math.sqrt(n * (R - 1)) / 2 if R > 1 else 1.0 # Handle R=1 case (n=2)
+    #   Mean   : μ_PS = n (n − 2) / 2
+    #   Std‑dev: σ_PS = √[ n (n − 2) ] / 2   (valid for n > 2, else use 1.0)
+    mu_PS = n * (n - 2) / 2
+    sigma_PS = math.sqrt(n * (n - 2)) / 2 if n > 2 else 1.0  # Handle n≤2 gracefully
 
     # 3. Max Deviation (MD)
     # E[MD] ~ sqrt(R)/2 * sqrt(2*ln n)

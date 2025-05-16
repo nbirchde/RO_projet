@@ -4,16 +4,16 @@ import plotly.express as px
 import os
 import numpy as np
 
-INPUT_CSV = "calibration_results_n500_analytical_norm.csv"
-OUTPUT_DIR = "calibration_plots_n500_analytical_norm"
-PARETO_PLOT_3D_FILE_HTML = os.path.join(OUTPUT_DIR, "pareto_3d_interactive_n500_anal_norm.html")
-PARETO_PLOT_3D_FILE_PNG = os.path.join(OUTPUT_DIR, "pareto_3d_static_n500_anal_norm.png")
-PARETO_PLOT_HS_PS_FILE_HTML = os.path.join(OUTPUT_DIR, "pareto_2d_hs_vs_ps_n500_anal_norm.html")
-PARETO_PLOT_HS_PS_FILE_PNG = os.path.join(OUTPUT_DIR, "pareto_2d_hs_vs_ps_n500_anal_norm.png")
-PARETO_PLOT_HS_MD_FILE_HTML = os.path.join(OUTPUT_DIR, "pareto_2d_hs_vs_md_n500_anal_norm.html")
-PARETO_PLOT_HS_MD_FILE_PNG = os.path.join(OUTPUT_DIR, "pareto_2d_hs_vs_md_n500_anal_norm.png")
-PARETO_PLOT_PS_MD_FILE_HTML = os.path.join(OUTPUT_DIR, "pareto_2d_ps_vs_md_n500_anal_norm.html")
-PARETO_PLOT_PS_MD_FILE_PNG = os.path.join(OUTPUT_DIR, "pareto_2d_ps_vs_md_n500_anal_norm.png")
+INPUT_CSV = "calibration_results_n300_analytical_norm.csv"
+OUTPUT_DIR = "calibration_plots_n300_analytical_norm"
+PARETO_PLOT_3D_FILE_HTML = os.path.join(OUTPUT_DIR, "pareto_3d_interactive_n300_anal_norm.html")
+PARETO_PLOT_3D_FILE_PNG = os.path.join(OUTPUT_DIR, "pareto_3d_static_n300_anal_norm.png")
+PARETO_PLOT_HS_PS_FILE_HTML = os.path.join(OUTPUT_DIR, "pareto_2d_hs_vs_ps_n300_anal_norm.html")
+PARETO_PLOT_HS_PS_FILE_PNG = os.path.join(OUTPUT_DIR, "pareto_2d_hs_vs_ps_n300_anal_norm.png")
+PARETO_PLOT_HS_MD_FILE_HTML = os.path.join(OUTPUT_DIR, "pareto_2d_hs_vs_md_n300_anal_norm.html")
+PARETO_PLOT_HS_MD_FILE_PNG = os.path.join(OUTPUT_DIR, "pareto_2d_hs_vs_md_n300_anal_norm.png")
+PARETO_PLOT_PS_MD_FILE_HTML = os.path.join(OUTPUT_DIR, "pareto_2d_ps_vs_md_n300_anal_norm.html")
+PARETO_PLOT_PS_MD_FILE_PNG = os.path.join(OUTPUT_DIR, "pareto_2d_ps_vs_md_n300_anal_norm.png")
 
 OBJECTIVES = ['scaled_hs', 'scaled_ps', 'scaled_md']
 
