@@ -256,7 +256,7 @@ if __name__ == '__main__':
 
     # Set time limit for the solver if provided
     if time_limit_arg is not None:
-        pulp.LpSolverDefault.setTimeLimit(time_limit_arg)
+        pulp.LpSolverDefault.timeLimit = time_limit_arg
 
     schedule, metrics, status = solve_exact(n_arg, weights)
 
