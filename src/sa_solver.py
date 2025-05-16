@@ -713,6 +713,9 @@ def main():
     final_scaled_hs, final_scaled_ps, final_scaled_md = scaled_metrics
 
     log.info(f"\n--- Best SA Schedule (Overall Analytical Normalized Score: {best_norm_score:.4f}) ---")
+    # Print to stdout for benchmarking script compatibility
+    print(f"Final Best Score (Analytical Normalized): {best_norm_score:.6f}")
+    print(f"best_home_strength: {final_raw_hs}, best_pen_seq: {final_raw_ps}, best_max_dev: {final_raw_md}")
 
     # Get all metrics using the new function from the final best_schedule
     all_metrics = get_all_fairness_metrics(best_schedule, n_arg)

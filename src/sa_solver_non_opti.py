@@ -184,7 +184,7 @@ def neighbor(schedule, n, prob_flip=0.95, prob_swap_rounds=0, prob_swap_players=
     return new_sched
 
 
-def solve_sa(n, iterations=10000, initial_temp=1.0, cooling_rate=0.95, alpha_pen_seq=None, beta_obj=None, seed=51):
+def solve_sa(n, iterations=10000, initial_temp=1.0, cooling_rate=0.95, alpha_pen_seq=None, beta_obj=None, seed=51, time_budget=None):
     """
     Solves the fair round-robin problem using Simulated Annealing.
 
@@ -196,12 +196,16 @@ def solve_sa(n, iterations=10000, initial_temp=1.0, cooling_rate=0.95, alpha_pen
         alpha_pen_seq (float, optional): Weight for Pénalité de séquence objective. Defaults to 1.0.
         beta_obj (float, optional): Weight for Max Deviation objective. Defaults to 1.0.
         seed (int, optional): Random seed for reproducibility. Defaults to 51.
+        time_budget (float, optional): Time budget in seconds. If set, overrides iterations.
 
     Returns:
         tuple: (best_schedule, best_score, final_metrics) where final_metrics
                is a tuple (obj_hs, obj_ps, obj_md).
     """
     random.seed(seed)
+
+    # Support for time budget
+    import time
 
     if alpha_pen_seq is None:
         alpha_pen_seq = config.ALPHA
@@ -222,7 +226,19 @@ def solve_sa(n, iterations=10000, initial_temp=1.0, cooling_rate=0.95, alpha_pen
 
     print(f"Initial Score (normalized): {current_norm_score:.2f} (HS: {obj_c_home_strength:.2f}, PS: {obj_c_pen_seq:.2f}, MD: {obj_c_max_dev:.2f})")
 
-    for it in range(iterations):
+    it = 0
+    start_time = time.time()
+    last_print = 0
+    while True:
+        # Check time budget
+        if time_budget is not None:
+            elapsed = time.time() - start_time
+            if elapsed >= time_budget:
+                break
+        else:
+            if it >= iterations:
+                break
+
         candidate_sched = neighbor(current_sched, n)
 
         obj_cand_home_strength, obj_cand_pen_seq, obj_cand_max_dev = compute_metrics(candidate_sched, n)
@@ -247,10 +263,18 @@ def solve_sa(n, iterations=10000, initial_temp=1.0, cooling_rate=0.95, alpha_pen
 
         T *= cooling_rate
         if T < 1e-5:
-             T = 1e-5
+            T = 1e-5
 
-        if it % (iterations // 10) == 0:
-             print(f"Iter {it}/{iterations}, Temp: {T:.4f}, Current: {current_norm_score:.2f}, Best: {best_norm_score:.2f}")
+        # Print progress every 10% of iterations or every 10% of time budget
+        if time_budget is not None:
+            elapsed = time.time() - start_time
+            if time_budget > 0 and elapsed - last_print >= time_budget / 10:
+                print(f"Time {elapsed:.1f}/{time_budget}s, Temp: {T:.4f}, Current: {current_norm_score:.2f}, Best: {best_norm_score:.2f}")
+                last_print = elapsed
+        else:
+            if it % max(1, (iterations // 10)) == 0:
+                print(f"Iter {it}/{iterations}, Temp: {T:.4f}, Current: {current_norm_score:.2f}, Best: {best_norm_score:.2f}")
+        it += 1
 
     final_home_strength, final_penalites_sequence, final_max_dev = best_metrics
     print(f"Final Best Score (normalized): {best_norm_score:.2f} (HS: {final_home_strength:.2f}, PS: {final_penalites_sequence:.2f}, MD: {final_max_dev:.2f})")
@@ -262,19 +286,42 @@ def main():
     start_time = time.time()
 
     n_arg = int(sys.argv[1]) if len(sys.argv) > 1 else 6
-    iters_arg = int(sys.argv[2]) if len(sys.argv) > 2 else 10000
+    # If argument 2 is a float, treat as time budget, else as iterations
+    iters_arg = None
+    time_budget_arg = None
+    if len(sys.argv) > 2:
+        try:
+            # Try to parse as float (time budget)
+            val = float(sys.argv[2])
+            if '.' in sys.argv[2] or val < 100:  # Heuristic: treat as seconds if float or small int
+                time_budget_arg = val
+            else:
+                iters_arg = int(val)
+        except ValueError:
+            iters_arg = int(sys.argv[2])
+    else:
+        iters_arg = 10000
+
     alpha_pen_seq_arg = float(sys.argv[3]) if len(sys.argv) > 3 else config.ALPHA
     beta_arg = float(sys.argv[4]) if len(sys.argv) > 4 else config.BETA
 
-
-    print(f"Running SA for n={n_arg}, iterations={iters_arg}, alpha_pen_seq={alpha_pen_seq_arg}, beta={beta_arg}")
-
-    best_schedule, best_score, (final_home_strength, final_penalites_sequence, final_max_dev) = solve_sa(
-        n_arg,
-        iterations=iters_arg,
-        alpha_pen_seq=alpha_pen_seq_arg,
-        beta_obj=beta_arg
-    )
+    if time_budget_arg is not None:
+        print(f"Running SA for n={n_arg}, time_budget={time_budget_arg}s, alpha_pen_seq={alpha_pen_seq_arg}, beta={beta_arg}")
+        best_schedule, best_score, (final_home_strength, final_penalites_sequence, final_max_dev) = solve_sa(
+            n_arg,
+            iterations=100000000,  # Large number, will be overridden by time_budget
+            alpha_pen_seq=alpha_pen_seq_arg,
+            beta_obj=beta_arg,
+            time_budget=time_budget_arg
+        )
+    else:
+        print(f"Running SA for n={n_arg}, iterations={iters_arg}, alpha_pen_seq={alpha_pen_seq_arg}, beta={beta_arg}")
+        best_schedule, best_score, (final_home_strength, final_penalites_sequence, final_max_dev) = solve_sa(
+            n_arg,
+            iterations=iters_arg,
+            alpha_pen_seq=alpha_pen_seq_arg,
+            beta_obj=beta_arg
+        )
 
     print(f"\n--- Best SA Schedule (Score: {best_score:.2f}) ---")
     print(f"Metrics: HomeStrength={final_home_strength:.4f}, Total Pénalités Séquence={final_penalites_sequence:.4f}, Max Deviation={final_max_dev:.4f}")
