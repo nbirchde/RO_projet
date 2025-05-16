@@ -17,4 +17,10 @@
 \contentsline {subsubsection}{\numberline {2.4.3}MaxDeviation}{5}{subsubsection.2.4.3}%
 \contentsline {subsection}{\numberline {2.5}Fonction Objectif}{5}{subsection.2.5}%
 \contentsline {subsection}{\numberline {2.6}Fonction Objectif Normalisée et Calibration des Poids Alpha et Beta}{5}{subsection.2.6}%
-\contentsline {section}{\numberline {3}Calibration des Poids par Analyse du Front de Pareto Analytique}{6}{section.3}%
+\contentsline {subsubsection}{\numberline {2.6.1}Historique des approches de normalisation}{6}{subsubsection.2.6.1}%
+\contentsline {paragraph}{1. Normalisation par les valeurs maximales.}{6}{section*.2}%
+\contentsline {paragraph}{2. Normalisation empirique.}{6}{section*.3}%
+\contentsline {paragraph}{3. Standardisation analytique.}{6}{section*.4}%
+\contentsline {subsubsection}{\numberline {2.6.2}Échelle sigmoïde : motivation et interprétation}{6}{subsubsection.2.6.2}%
+\contentsline {paragraph}{Quantification de l’écart entre valeurs maximales et valeurs typiques}{7}{section*.5}%
+\contentsline {section}{\numberline {3}Calibration des Poids par Analyse du Front de Pareto Analytique}{8}{section.3}%

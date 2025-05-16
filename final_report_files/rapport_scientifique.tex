@@ -174,6 +174,7 @@ Nous combinons les trois métriques d'équité principales en une fonction objec
 \end{equation}
 La fonction exacte, incluant la pondération et la normalisation, est détaillée ci-dessous.
 
+% --- Section: Fonction Objectif Normalisée et Calibration des Poids Alpha et Beta ---
 \subsection[Fonction Objectif Normalisée et Calibration des Poids Alpha et Beta]{Fonction Objectif Normalisée et Calibration des Poids Alpha et Beta}
 \label{sec:normalisation_et_objectif_sa}
 Les trois métriques d'équité -- HomeStrength (HS, Équation~\ref{eq:homestrength}), TotalPenalitesSequence (PS), et MaxDeviation (MD) -- sont de natures et d'échelles intrinsèquement différentes. Une combinaison directe dans une fonction objectif pondérée nécessite une normalisation adéquate pour que les poids attribués à chaque critère reflètent fidèlement leur importance relative et pour que la recherche ne soit pas biaisée par les échelles disparates.
@@ -183,6 +184,48 @@ Contrairement à une normalisation empirique qui dépend d'un échantillon de so
     M_k^{anal\_norm} = \frac{M_k^{raw} - \mu_k}{\sigma_k}
     \label{eq:anal_norm_general}
 \end{equation}
+
+
+\subsubsection{Historique des approches de normalisation}
+
+Avant d'adopter la standardisation analytique, nous avons expérimenté deux autres méthodes :
+
+\paragraph{1. Normalisation par les valeurs maximales.}  
+Cette première approche divisait chaque métrique par sa valeur maximale théorique ($M^\text{max}$). Bien que séduisante par sa simplicité, elle faisait varier la notion même d’« équité » avec $n$ : le ratio $M^\text{max}/\mu$ double pour HS et PS et diverge pour MD, faussant les comparaisons entre tournois de taille différente.
+
+\paragraph{2. Normalisation empirique.}  
+Nous avons ensuite essayé de centrer chaque métrique sur la moyenne et l'écart‑type obtenus en simulant un grand nombre de calendriers aléatoires. Cette technique fonctionne pour de petites tailles ($n\lesssim 50$) mais devient prohibitive au‑delà : le nombre de simulations nécessaires pour stabiliser les estimations de $\mu$ et $\sigma$ croît au moins linéairement, et chaque simulation exige déjà $O(n^2)$ affectations.
+
+\paragraph{3. Standardisation analytique.}  
+La méthode retenue dans ce rapport calcule $\mu$ et $\sigma$ \emph{exactement}, sans échantillonnage, à partir des distributions théoriques des métriques sous assignation domicile/extérieur aléatoire. Elle est indépendante de $n$, reproductible et garantit que deux tournois de tailles différentes sont comparés sur une base commune.
+
+\bigskip
+
+\subsubsection{Échelle sigmoïde : motivation et interprétation}
+
+Bien que la minimisation directe de la somme pondérée des $Z$‑scores (Éq.~\ref{eq:objectif_analytique}) suffise aux solveurs, ces scores peuvent dérouter les lecteurs : une valeur de $-3$ pour HS n’a pas la même « distance » intuitive qu’un $+3$ pour MD dès lors que les signes s’inversent et que les pondérations diffèrent.  
+Pour retrouver une échelle uniforme dans $[0,1]$, nous appliquons la fonction logistique
+
+\begin{equation}
+    s(z) \;=\; \frac{1}{1 + e^{z / z_\text{range}}}, \qquad z_\text{range}=50,
+    \label{eq:sigmoid_scaling}
+\end{equation}
+
+où $z$ est le $Z$‑score d’une métrique. Deux raisons principales motivent ce choix :
+
+\begin{enumerate}
+    \item \textbf{Bornage naturel.} La sigmoïde « écrase » toute valeur extrême dans la zone $(0,1)$, évitant qu’une métrique domine indûment la somme pondérée.  
+    \item \textbf{Interprétation probabiliste.} Dans le contexte du logit $\rightarrow$ probabilité $[0,1]$, $s(z)$ peut se lire comme la probabilité qu’une assignation aléatoire produise une valeur plus défavorable que le calendrier étudié. Pour $z=0$ on obtient $s(0)=0.5$ ; un $Z$‑score négatif ($z=-\sigma$) se traduit par $s\!\approx\!0.73$, indiquant que le calendrier bat 73 \% des tirages aléatoires, et vice‑versa.
+\end{enumerate}
+
+Cette transformation est implémentée dans \verb|normalization_manager.py| via la fonction \verb|z_to_scaled| :
+
+\begin{lstlisting}[style=python]
+def z_to_scaled(z, z_range=50.0):
+    return 1 / (1 + math.exp(z / z_range))
+\end{lstlisting}
+
+Les solveurs minimisent ensuite la somme pondérée des versions sigmoïdes (variable \verb|scaled_score|), ce qui rend les trois critères directement comparables même pour un lectorat peu familier avec les statistiques.
 où $M_k^{raw}$ est la valeur brute de la métrique $k \in \{\mathrm{HS, PS, MD}\}$.
 
 Les formules analytiques utilisées pour calculer $\mu$ et $\sigma$ pour chaque métrique pour $n$ joueurs réels sont les suivantes :
@@ -197,11 +240,12 @@ Les formules analytiques utilisées pour calculer $\mu$ et $\sigma$ pour chaque 
         \mu_{PS} &= n \cdot \frac{n-2}{2} \\
         \sigma_{PS} &= \sqrt{n \cdot \frac{n-2}{2}} \quad \text{si } n > 2, \text{ sinon } 1.0
     \end{align*}
-    \item \textbf{Max Deviation (MD) :} Pour $n$ joueurs réels sur $n_{eff}-1$ rondes, le nombre idéal de matchs à domicile est $\frac{n-1}{2}$. Les formules analytiques pour la moyenne et l'écart-type de l'écart maximal sont des approximations pour de grandes valeurs de $n$.
+    \item \textbf{Max Deviation (MD) :} Chaque joueur joue $n-1$ matchs, avec $H_i \sim \mathrm{Bin}(n-1, 1/2)$. Le maximum parmi les $n$ joueurs suit une distribution d’extrême valeur bien connue en statistique. Sous l’hypothèse d’indépendance (acceptable ici car chaque joueur a un pattern propre), on peut approximer :
     \begin{align*}
-        \mu_{MD} &\approx \frac{\sqrt{n-1}}{2} \sqrt{2 \ln n} \quad \text{si } n > 1, \text{ sinon } 0.0 \\
-        \sigma_{MD} &\approx \frac{\sqrt{n-1}}{2} \frac{\pi}{\sqrt{6 \ln n}} \quad \text{si } n > 1, \text{ sinon } 1.0
+        \mu_{MD} &\approx \frac{\sqrt{n-1}}{2} \cdot \sqrt{2 \ln n} \\
+        \sigma_{MD} &\approx \frac{\sqrt{n-1}}{2 \sqrt{2 \ln n}}
     \end{align*}
+    Ces formules proviennent de l’approximation classique du maximum de $n$ variables Gaussiennes centrées-réduites, adaptées ici au cas binomial avec $\mu = \frac{n-1}{2}$ et $\sigma = \frac{\sqrt{n-1}}{2}$. L’utilisation de ces expressions permet une mise à l’échelle cohérente des valeurs typiques de MaxDeviation sur tout $n$.
 \end{itemize}
 La normalisation analytique présente l'avantage d'être indépendante d'un échantillon particulier de calendriers, fournissant une base de comparaison cohérente entre différentes exécutions ou méthodes. Les scores Z résultants $M_k^{anal\_norm}$ indiquent de combien d'écarts-types la valeur brute s'écarte de la moyenne théorique attendue sous assignation aléatoire. Des valeurs négatives sont préférables car elles indiquent une performance meilleure que la moyenne aléatoire.
 
@@ -211,6 +255,23 @@ Les solveurs (MILP et SA) cherchent à minimiser une combinaison pondérée de c
     \label{eq:objectif_analytique}
 \end{equation}
 Les paramètres $\alpha \geq 0$ et $\beta \geq 0$ sont les poids qui déterminent l'importance relative de la pénalité de séquence et de la déviation maximale par rapport à HomeStrength.
+
+En ramenant chaque critère à une unité naturelle (son écart-type),
+
+\paragraph{Quantification de l’écart entre valeurs maximales et valeurs typiques}
+
+Il est instructif de comparer les écarts relatifs entre la valeur maximale possible d’une métrique et sa valeur moyenne typique sous assignation aléatoire :
+
+\begin{itemize}
+    \item \textbf{HomeStrength :} $\mu_{HS} = \frac{n(n-1)(n+1)}{12}$, $S_{max} = \frac{n(n-1)(n+1)}{6}$. Donc $S_{max} = 2 \cdot \mu_{HS}$, et ce ratio est constant quel que soit $n$.
+    \item \textbf{Penalty Sequence :} $\mu_{PS} = \frac{n(n-2)}{2}$, $PS_{max} = n(n-2)$ donc même ratio 2.
+    \item \textbf{MaxDeviation :} $\mu_{MD} \approx \frac{\sqrt{n-1}}{2} \cdot \sqrt{2 \ln n}$, $MD_{max} = \frac{n-1}{2}$ donc le ratio est :
+    \[
+    \frac{MD_{max}}{\mu_{MD}} \approx \frac{\sqrt{n-1}}{\sqrt{2 \ln n}} \quad \Rightarrow \quad \text{ce ratio diverge avec } n.
+    \]
+\end{itemize}
+
+Cela signifie que la normalisation par le maximum devient de plus en plus biaisée à mesure que $n$ augmente, surtout pour MaxDeviation. La normalisation analytique permet de corriger ce biais de manière rigoureuse.
 
 \section{Calibration des Poids par Analyse du Front de Pareto Analytique}
 \label{sec:calibration_pareto_analytique}
