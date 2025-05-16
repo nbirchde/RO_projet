@@ -22,5 +22,12 @@
 \contentsline {paragraph}{2. Normalisation empirique.}{6}{section*.3}%
 \contentsline {paragraph}{3. Standardisation analytique.}{6}{section*.4}%
 \contentsline {subsubsection}{\numberline {2.6.2}Échelle sigmoïde : motivation et interprétation}{6}{subsubsection.2.6.2}%
-\contentsline {paragraph}{Quantification de l’écart entre valeurs maximales et valeurs typiques}{7}{section*.5}%
+\contentsline {paragraph}{HomeStrength (HS).}{7}{section*.6}%
+\contentsline {paragraph}{Penalty Sequence (PS).}{7}{section*.7}%
+\contentsline {paragraph}{Max Deviation (MD).}{7}{section*.8}%
+\contentsline {paragraph}{Quantification de l’écart entre valeurs maximales et valeurs typiques}{8}{section*.9}%
 \contentsline {section}{\numberline {3}Calibration des Poids par Analyse du Front de Pareto Analytique}{8}{section.3}%
+\contentsline {section}{\numberline {4}Benchmarking des Algorithmes}{10}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Protocole expérimental}{10}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Résultats chiffrés}{10}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Visualisation}{10}{subsection.4.3}%

@@ -242,10 +242,46 @@ Les formules analytiques utilisées pour calculer $\mu$ et $\sigma$ pour chaque 
     \item \textbf{Max Deviation (MD) :} Chaque joueur joue $n-1$ matchs, avec $H_i \sim \mathrm{Bin}(n-1, 1/2)$. Le maximum parmi les $n$ joueurs suit une distribution d’extrême valeur bien connue en statistique. Sous l’hypothèse d’indépendance (acceptable ici car chaque joueur a un pattern propre), on peut approximer :
     \begin{align*}
         \mu_{MD} &\approx \frac{\sqrt{n-1}}{2} \cdot \sqrt{2 \ln n} \\
-        \sigma_{MD} &\approx \frac{\sqrt{n-1}}{2 \sqrt{2 \ln n}}
+        \sigma_{MD} &\approx \frac{\sqrt{n-1}}{2} \cdot \frac{\pi}{\sqrt{12 \ln n}}
     \end{align*}
     Ces formules proviennent de l’approximation classique du maximum de $n$ variables Gaussiennes centrées-réduites, adaptées ici au cas binomial avec $\mu = \frac{n-1}{2}$ et $\sigma = \frac{\sqrt{n-1}}{2}$. L’utilisation de ces expressions permet une mise à l’échelle cohérente des valeurs typiques de MaxDeviation sur tout $n$.
-\end{itemize}
+\\end{itemize}
+
+\subsubsection*{Dérivation des facteurs analytiques}
+
+Nous résumons ici, pour mémoire, les étapes menant aux expressions fermées de $\mu_k$ et $\sigma_k$ sous l’hypothèse d’une assignation domicile/extérieur uniforme et indépendante.
+
+\paragraph{HomeStrength (HS).}
+Pour chaque paire $\{i,j\}$ ($i<j$) il y a exactement une rencontre et la probabilité que $i$ reçoive $j$ vaut $1/2$.
+Ainsi
+\[
+\mathbb{E}[HS]=\tfrac12 \sum_{i=1}^{n-1}\sum_{j=i+1}^{n}(j-i)
+      =\tfrac{n(n-1)(n+1)}{12}.
+\]
+La variance s’obtient en additionnant des termes indépendants :
+\[
+\operatorname{Var}[HS]=\tfrac{n^{2}(n^{2}-1)}{48},\quad
+\sigma_{HS}= \tfrac{n\sqrt{n^{2}-1}}{4\sqrt{3}}.
+\]
+
+\paragraph{Penalty Sequence (PS).}
+Pour un joueur donné il existe $R=n-2$ transitions ; chacune engendre une pénalité avec probabilité $1/2$. 
+Par la loi binomiale
+\[
+\mathbb{E}[PS]=n\cdot\tfrac{R}{2}= \tfrac{n(n-2)}{2},\quad
+\operatorname{Var}[PS]=n\cdot\tfrac{R}{4},\quad
+\sigma_{PS}= \tfrac{\sqrt{n(n-2)}}{2}.
+\]
+
+\paragraph{Max Deviation (MD).}
+Soit $H_i\sim\mathrm{Bin}(n-1,\tfrac12)$. 
+Le maximum \(M_n = \max_i |H_i-\tfrac{n-1}{2}|\) est asymptotiquement Gumbel ; on obtient
+\[
+\mu_{MD}\approx\tfrac{\sqrt{n-1}}{2}\sqrt{2\ln n},\quad
+\sigma_{MD}\approx\tfrac{\sqrt{n-1}}{2}\,\tfrac{\pi}{\sqrt{12\ln n}}.
+\]
+
+Ces expressions coïncident avec l’implémentation Python.
 La normalisation analytique présente l'avantage d'être indépendante d'un échantillon particulier de calendriers, fournissant une base de comparaison cohérente entre différentes exécutions ou méthodes. Les scores Z résultants $M_k^{anal\_norm}$ indiquent de combien d'écarts-types la valeur brute s'écarte de la moyenne théorique attendue sous assignation aléatoire. Des valeurs négatives sont préférables car elles indiquent une performance meilleure que la moyenne aléatoire.
 
 Les solveurs (MILP et SA) cherchent à minimiser une combinaison pondérée de ces métriques normalisées analytiquement. La fonction objectif est formulée comme la somme pondérée des scores Z :
@@ -293,5 +329,35 @@ Le choix d'une solution spécifique (et donc d'une paire $(\alpha, \beta)$) sur 
 Pour notre étude avec $n=500$ et la normalisation analytique, l'analyse du front de Pareto a mis en évidence plusieurs combinaisons $(\alpha, \beta)$ intéressantes. Après analyse des compromis, nous avons choisi la configuration avec $\alpha=0.8$ (pour PS) et $\beta=1.2$ (pour MD), avec un poids implicite de 1 pour HS. Ce choix est motivé par plusieurs facteurs. Premièrement, il représente un bon compromis sur le front de Pareto pour $n=500$, offrant des valeurs négatives pour les trois métriques normalisées, indiquant une performance meilleure que la moyenne aléatoire pour chacun des trois critères d'équité. Le poids légèrement plus élevé pour MD ($\beta=1.2$) par rapport à PS ($\alpha=0.8$) reflète une priorité donnée à l'homogénéité de la répartition domicile/extérieur. Deuxièmement, il est crucial de noter que, pour garantir une comparaison équitable entre les différents modèles (MILP, SA), les poids $\alpha$ et $\beta$ doivent être fixés et utilisés uniformément pour toutes les évaluations.
 
 En conclusion, l'exploration systématique de l'espace des poids $(\alpha, \beta)$ et l'analyse du front de Pareto basé sur la normalisation analytique fournissent un outil décisionnel robuste. Elles permettent de choisir un calendrier qui correspond au mieux aux préférences spécifiques en matière d'équité, en se basant sur la performance relative des solutions dans l'espace des objectifs normalisés analytiquement, désormais interprétables comme des déviations par rapport à une performance aléatoire moyenne.
+
+\section{Benchmarking des Algorithmes}
+\label{sec:benchmarking}
+
+\subsection{Protocole expérimental}
+Chaque algorithme est lancé 10 fois avec une limite de temps stricte de \textbf{60 secondes}.  
+Les meilleures solutions trouvées lors de chaque exécution sont évaluées via les trois métriques normalisées analytiquement.
+
+\subsection{Résultats chiffrés}
+
+% Chemin vers le CSV à ajuster si besoin
+\csvstyle{boldwinner}{%
+  table head=\toprule Algorithme & {$\mathrm{HS}_\mathrm{norm}$} & {$\mathrm{PS}_\mathrm{norm}$} & {$\mathrm{MD}_\mathrm{norm}$}\\\midrule,
+  late after line=\\,
+  tabular=|l|S|S|S|,
+  table foot=\bottomrule
+}
+\csvreader[style=boldwinner,separator=comma, respect all]{../benchmark_results.csv}{}%
+{\csvcoli & \csvcolii & \csvcoliii & \csvcoliv}
+
+\subsection{Visualisation}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.9\textwidth]{/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/raw_metrics_comparison.png}
+    \caption{Évolution des valeurs brutes de HomeStrength (HS), Penalty Sequence (PS) et Max Deviation (MD) en fonction de $n$ pour les versions \textit{Non‑Opti} et \textit{Opti} du Recuit Simulé. Chaque point correspond à la meilleure solution trouvée dans la fenêtre de 60 s.}
+    \label{fig:raw_metrics_evolution}
+\end{figure}
+
+On constate que la variante \textit{Opti} domine systématiquement la version \textit{Non‑Opti} sur les trois métriques, avec un avantage qui s’amplifie lorsque la taille du tournoi augmente. Les tendances théoriques $O(n^{3})$ pour HS, $O(n^{2})$ pour PS et $O(\sqrt{\ln n})$ pour MD se vérifient empiriquement.
 
 \end{document}
