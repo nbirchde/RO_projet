@@ -332,8 +332,18 @@ def solve_sa(n, iterations=10000, initial_temp=1.5, cooling_rate=0.97,
         alpha_pen_seq = config.ALPHA
     if beta_obj is None:
         beta_obj = config.BETA
-    # Use the function’s cooling_rate parameter unless adjusted later
-    effective_cooling_rate = cooling_rate
+    # Auto‑tune the geometric cooling factor so that the temperature
+    # drops to roughly 0.1 % of its initial value after the allotted
+    # number of iterations.  This prevents the schedule from “freezing”
+    # too early when we run millions of iterations for a time budget.
+    target_fraction = 1e-3            # T_final / T_initial
+    if iterations > 0:
+        effective_cooling_rate = math.exp(math.log(target_fraction) / iterations)
+    else:                              # Fallback for the degenerate case
+        effective_cooling_rate = cooling_rate
+
+    log.info(f"Autotuned cooling_rate to {effective_cooling_rate:.10f} "
+             f"so that T reaches {target_fraction}·T0 after {iterations} iterations.")
 
     random.seed(seed)
     np.random.seed(seed)
