@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.4.19)  17 MAY 2025 12:11
+This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.4.19)  17 MAY 2025 12:24
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -700,14 +700,15 @@ Package: float 2001/11/08 v1.3d Float enhancements (AL)
 \float@box=\box80
 \@float@everytoks=\toks51
 \@floatcapt=\box81
+) (/usr/local/texlive/2025/texmf-dist/tex/latex/emptypage/emptypage.sty
+Package: emptypage 2010/05/30 v1.2 Suppress page numbers and headings on empty pages
 )
 Package hyperref Info: Option `colorlinks' set `true' on input line 53.
  (/usr/local/texlive/2025/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
 File: l3backend-pdftex.def 2024-05-08 L3 backend support: PDF output (pdfTeX)
 \l__color_backend_stack_int=\count372
 \l__pdf_internal_box=\box82
-)
-No file rapport_scientifique.aux.
+) (./rapport_scientifique.aux)
 \openout1 = `rapport_scientifique.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 62.
@@ -730,7 +731,7 @@ LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 62.
 LaTeX Font Info:    ... okay on input line 62.
 LaTeX Info: Redefining \degres on input line 62.
 LaTeX Info: Redefining \up on input line 62.
-(/usr/local/texlive/2025/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
+ (/usr/local/texlive/2025/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
 \scratchcounter=\count373
 \scratchdimen=\dimen342
@@ -784,10 +785,12 @@ File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Live
 * (1in=72.27pt=25.4mm, 1cm=28.453pt)
 
 Package hyperref Info: Link coloring ON on input line 62.
+(./rapport_scientifique.out) (./rapport_scientifique.out)
 \@outlinefile=\write5
 \openout5 = `rapport_scientifique.out'.
 
 \c@lstlisting=\count379
+
 Package pgfplots notification 'compat/show suggested version=true': document has been generated with the most recent feature set (\pgfplotsset{compat=1.18}).
 
 (/usr/local/texlive/2025/texmf-dist/tex/latex/translations/translations-basic-dictionary-french.trsl
@@ -804,8 +807,7 @@ File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 LaTeX Font Info:    Trying to load font information for U+msb on input line 65.
  (/usr/local/texlive/2025/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
-)
-No file rapport_scientifique.toc.
+) (./rapport_scientifique.toc)
 \tf@toc=\write6
 \openout6 = `rapport_scientifique.toc'.
 
@@ -815,22 +817,6 @@ No file rapport_scientifique.toc.
 
 {/usr/local/texlive/2025/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{/usr/local/texlive/2025/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc}]
 
-LaTeX Warning: Reference `sec:modelisation' on page 2 undefined on input line 83.
-
-
-LaTeX Warning: Reference `sec:normalisation_et_objectif_sa' on page 2 undefined on input line 83.
-
-
-LaTeX Warning: Reference `sec:calibration_pareto_analytique' on page 2 undefined on input line 83.
-
-
-LaTeX Warning: Reference `sec:benchmarking' on page 2 undefined on input line 83.
-
-
-LaTeX Warning: Reference `sec:conclusion' on page 2 undefined on input line 83.
-
-
-
 [2
 
 ]
@@ -839,96 +825,7 @@ LaTeX Warning: Reference `sec:conclusion' on page 2 undefined on input line 83.
 
 [4]
 
-LaTeX Warning: Reference `sec:normalisation_et_objectif_sa' on page 5 undefined on input line 190.
-
-
-LaTeX Warning: Reference `eq:homestrength' on page 5 undefined on input line 194.
-
-
-/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:208: LaTeX Error: Unicode character   (U+202F)
-               not set up for use with LaTeX.
-
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.208 ... faisait varier la notion même d’« 
-                                                  équité » avec $n$ : ...
-You may provide a definition with
-\DeclareUnicodeCharacter 
-
-
-/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:208: LaTeX Error: Unicode character   (U+202F)
-               not set up for use with LaTeX.
-
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.208 ...rier la notion même d’« équité 
-                                                  » avec $n$ : le ratio $M...
-You may provide a definition with
-\DeclareUnicodeCharacter 
-
-
-/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:211: LaTeX Error: Unicode character   (U+202F)
-               not set up for use with LaTeX.
-
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.211 ...$) mais devient prohibitive au‑delà 
-                                                  : le nombre de simulations...
-You may provide a definition with
-\DeclareUnicodeCharacter 
-
-
-
 [5]
-
-LaTeX Warning: Reference `eq:objectif_analytique' on page 6 undefined on input line 220.
-
-
-/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:220: LaTeX Error: Unicode character   (U+202F)
-               not set up for use with LaTeX.
-
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.220 ... de $-3$ pour HS n’a pas la même « 
-                                                  distance » intuitive qu...
-You may provide a definition with
-\DeclareUnicodeCharacter 
-
-
-/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:220: LaTeX Error: Unicode character   (U+202F)
-               not set up for use with LaTeX.
-
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.220 ...ur HS n’a pas la même « distance 
-                                                  » intuitive qu’un $+3$ ...
-You may provide a definition with
-\DeclareUnicodeCharacter 
-
-
-/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:232: LaTeX Error: Unicode character   (U+202F)
-               not set up for use with LaTeX.
-
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.232 ...3$, indiquant que le calendrier bat 73 
-                                                  \% des tirages aléatoires...
-You may provide a definition with
-\DeclareUnicodeCharacter 
-
-
 Overfull \hbox (39.4721pt too wide) in paragraph at lines 235--236
 []\T1/cmr/m/n/10.95 Cette trans-for-ma-tion est im-pl�-men-t�e dans \T1/cmtt/m/n/10.95 normalization_manager.py \T1/cmr/m/n/10.95 via la fonc-tion \T1/cmtt/m/n/10.95 z_to_scaled \T1/cmr/m/n/10.95 : 
  []
@@ -945,20 +842,12 @@ Overfull \hbox (27.01682pt too wide) in paragraph at lines 242--243
 [6]
 
 [7]
-
-LaTeX Warning: Reference `eq:objectif_analytique' on page 8 undefined on input line 331.
-
-
-LaTeX Warning: Reference `fig:pareto_3d_analytique' on page 8 undefined on input line 333.
-
-<./pareto_3d_static_n500_anal_norm.png, id=108, 1405.25pt x 1003.75pt>
+<./pareto_3d_static_n500_anal_norm.png, id=234, 1405.25pt x 1003.75pt>
 File: ./pareto_3d_static_n500_anal_norm.png Graphic file (type png)
 <use ./pareto_3d_static_n500_anal_norm.png>
 Package pdftex.def Info: ./pareto_3d_static_n500_anal_norm.png  used on input line 337.
 (pdftex.def)             Requested size: 364.19667pt x 260.14178pt.
 
-
-[8]
 Overfull \hbox (25.71742pt too wide) in paragraph at lines 349--349
 []\T1/cmtt/m/n/10.95 open calibration_plots_n500_analytical_norm/pareto_3d_interactive_n500_anal_norm.html[] 
  []
@@ -969,6 +858,8 @@ Overfull \hbox (55.70866pt too wide) in paragraph at lines 355--356
  []
 
 
+
+[8]
 
 [9 <./pareto_3d_static_n500_anal_norm.png>]
 Overfull \hbox (53.27235pt too wide) in paragraph at lines 364--365
@@ -985,38 +876,24 @@ Overfull \hbox (5.475pt too wide) detected at line 399
 $\OT1/cmr/m/n/10.95 150 166 456$
  []
 
-
-
-[10]
-<./raw_metrics_comparison.png, id=132, 875.4306pt x 1019.9706pt>
+<./raw_metrics_comparison.png, id=248, 875.4306pt x 1019.9706pt>
 File: ./raw_metrics_comparison.png Graphic file (type png)
 <use ./raw_metrics_comparison.png>
 Package pdftex.def Info: ./raw_metrics_comparison.png  used on input line 410.
 (pdftex.def)             Requested size: 455.24411pt x 530.4189pt.
-<./z_score_comparison.png, id=133, 1002.6258pt x 577.1964pt>
+<./z_score_comparison.png, id=249, 1002.6258pt x 577.1964pt>
 File: ./z_score_comparison.png Graphic file (type png)
 <use ./z_score_comparison.png>
 Package pdftex.def Info: ./z_score_comparison.png  used on input line 417.
-(pdftex.def)             Requested size: 455.24693pt x 262.0787pt.
+(pdftex.def)             Requested size: 455.24411pt x 262.0787pt.
 
-
-[11]
-
-[12]
-Overfull \vbox (246.33394pt too high) has occurred while \output is active []
+LaTeX Warning: Float too large for page by 214.93106pt on input line 422.
 
 
 
-[13 <./raw_metrics_comparison.png> <./z_score_comparison.png>]
+[10]
 
-LaTeX Warning: Reference `fig:raw_metrics_evolution' on page 14 undefined on input line 424.
-
-
-LaTeX Warning: Reference `fig:z_score_comparison' on page 14 undefined on input line 424.
-
-
-LaTeX Warning: Reference `fig:z_score_comparison' on page 14 undefined on input line 424.
-
+[11 <./raw_metrics_comparison.png> <./z_score_comparison.png>]
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
 (hyperref)                removing `math shift' on input line 426.
@@ -1032,40 +909,29 @@ Overfull \hbox (4.4374pt too wide) in paragraph at lines 427--428
 
 
 
-[14] (./rapport_scientifique.aux)
+[12]
+
+[13] (./rapport_scientifique.aux)
  ***********
 LaTeX2e <2024-11-01> patch level 2
 L3 programming layer <2025-01-18>
  ***********
-
-
-LaTeX Warning: There were undefined references.
-
-
-LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
-
-
-Package rerunfilecheck Warning: File `rapport_scientifique.out' has changed.
-(rerunfilecheck)                Rerun to get outlines right
-(rerunfilecheck)                or use package `bookmark'.
-
-Package rerunfilecheck Info: Checksums for `rapport_scientifique.out':
-(rerunfilecheck)             Before: <no file>
-(rerunfilecheck)             After:  651A71AB77F886BF9FD82F4E8B22F0E0;5838.
+Package rerunfilecheck Info: File `rapport_scientifique.out' has not changed.
+(rerunfilecheck)             Checksum: 651A71AB77F886BF9FD82F4E8B22F0E0;5838.
  ) 
 Here is how much of TeX's memory you used:
- 41813 strings out of 473190
- 970837 string characters out of 5715800
- 1595483 words of memory out of 5000000
- 64395 multiletter control sequences out of 15000+600000
+ 41870 strings out of 473190
+ 972212 string characters out of 5715800
+ 1594930 words of memory out of 5000000
+ 64441 multiletter control sequences out of 15000+600000
  579361 words of font info for 86 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  99i,12n,101p,1125b,1393s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfbi1095.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfbx1095.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfbx1200.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfbx1440.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfcc1095.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfrm0600.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfrm0800.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfrm1000.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfrm1095.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfrm1200.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfrm1728.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfti1000.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfti1095.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sftt1000.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sftt1095.pfb>
-Output written on rapport_scientifique.pdf (14 pages, 1503199 bytes).
+Output written on rapport_scientifique.pdf (13 pages, 1508511 bytes).
 PDF statistics:
- 290 PDF objects out of 1000 (max. 8388607)
- 213 compressed objects within 3 object streams
- 78 named destinations out of 1000 (max. 500000)
- 28 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 409 PDF objects out of 1000 (max. 8388607)
+ 332 compressed objects within 4 object streams
+ 77 named destinations out of 1000 (max. 500000)
+ 244 words of extra memory for PDF output out of 10000 (max. 10000000)
 

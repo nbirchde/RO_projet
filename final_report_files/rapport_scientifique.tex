@@ -22,7 +22,7 @@
 \usepackage{adjustbox} % For resizing tables/figures
 \usepackage{array} % For better column definitions
 \usepackage{float} % For [H] option for figures
-%\usepackage{emptypage} % To remove numbers from empty pages if any (might help with blank page issue)
+\usepackage{emptypage} % To remove numbers from empty pages if any (might help with blank page issue)
 
 \geometry{a4paper, margin=2.5cm}
 
@@ -205,10 +205,10 @@ Contrairement à une normalisation empirique qui dépend d'un échantillon de so
 Avant d'adopter la standardisation analytique, nous avons expérimenté deux autres méthodes :
 
 \paragraph{1. Normalisation par les valeurs maximales.}
-Cette première approche divisait chaque métrique par sa valeur maximale théorique ($M^\text{max}$). Bien que séduisante par sa simplicité, elle faisait varier la notion même d’« équité » avec $n$ : le ratio $M^\text{max}/\mu$ double pour HS et PS et diverge pour MD, faussant les comparaisons entre tournois de taille différente.
+Cette première approche divisait chaque métrique par sa valeur maximale théorique ($M^\text{max}$). Bien que séduisante par sa simplicité, elle faisait varier la notion même d’« équité » avec $n$ : le ratio $M^\text{max}/\mu$ double pour HS et PS et diverge pour MD, faussant les comparaisons entre tournois de taille différente.
 
 \paragraph{2. Normalisation empirique.}
-Nous avons ensuite essayé de centrer chaque métrique sur la moyenne et l'écart‑type obtenus en simulant un grand nombre de calendriers aléatoires. Cette technique fonctionne pour de petites tailles ($n\lesssim 50$) mais devient prohibitive au‑delà : le nombre de simulations nécessaires pour stabiliser les estimations de $\mu$ et $\sigma$ croît au moins linéairement, et chaque simulation exige déjà $O(n^2)$ affectations.
+Nous avons ensuite essayé de centrer chaque métrique sur la moyenne et l'écart‑type obtenus en simulant un grand nombre de calendriers aléatoires. Cette technique fonctionne pour de petites tailles ($n\lesssim 50$) mais devient prohibitive au‑delà : le nombre de simulations nécessaires pour stabiliser les estimations de $\mu$ et $\sigma$ croît au moins linéairement, et chaque simulation exige déjà $O(n^2)$ affectations.
 
 \paragraph{3. Standardisation analytique.}
 La méthode retenue dans ce rapport calcule $\mu$ et $\sigma$ \emph{exactement}, sans échantillonnage, à partir des distributions théoriques des métriques sous assignation domicile/extérieur aléatoire. Elle est indépendante de $n$, reproductible et garantit que deux tournois de tailles différentes sont comparés sur une base commune.
@@ -217,7 +217,7 @@ La méthode retenue dans ce rapport calcule $\mu$ et $\sigma$ \emph{exactement},
 
 \subsubsection{Échelle sigmoïde : motivation et interprétation}
 
-Bien que la minimisation directe de la somme pondérée des $Z$‑scores (Éq.~\ref{eq:objectif_analytique}) suffise aux solveurs, ces scores peuvent dérouter les lecteurs : une valeur de $-3$ pour HS n’a pas la même « distance » intuitive qu’un $+3$ pour MD dès lors que les signes s’inversent et que les pondérations diffèrent.
+Bien que la minimisation directe de la somme pondérée des $Z$‑scores (Éq.~\ref{eq:objectif_analytique}) suffise aux solveurs, ces scores peuvent dérouter les lecteurs : une valeur de $-3$ pour HS n’a pas la même « distance » intuitive qu’un $+3$ pour MD dès lors que les signes s’inversent et que les pondérations diffèrent.
 Pour retrouver une échelle uniforme dans $[0,1]$, nous appliquons la fonction logistique
 
 \begin{equation}
@@ -229,7 +229,7 @@ où $z$ est le $Z$‑score d’une métrique. Deux raisons principales motivent 
 
 \begin{enumerate}
     \item \textbf{Bornage naturel.} La sigmoïde « écrase » toute valeur extrême dans la zone $(0,1)$, évitant qu’une métrique domine indûment la somme pondérée.
-    \item \textbf{Interprétation probabiliste.} Dans le contexte du logit $\rightarrow$ probabilité $[0,1]$, $s(z)$ peut se lire comme la probabilité qu’une assignation aléatoire produise une valeur plus défavorable que le calendrier étudié. Pour $z=0$ on obtient $s(0)=0.5$ ; un $Z$‑score négatif ($z=-\sigma$) se traduit par $s\!\approx\!0.73$, indiquant que le calendrier bat 73 \% des tirages aléatoires, et vice‑versa.
+    \item \textbf{Interprétation probabiliste.} Dans le contexte du logit $\rightarrow$ probabilité $[0,1]$, $s(z)$ peut se lire comme la probabilité qu’une assignation aléatoire produise une valeur plus défavorable que le calendrier étudié. Pour $z=0$ on obtient $s(0)=0.5$ ; un $Z$‑score négatif ($z=-\sigma$) se traduit par $s\!\approx\!0.73$, indiquant que le calendrier bat 73 \% des tirages aléatoires, et vice‑versa.
 \end{enumerate}
 
 Cette transformation est implémentée dans \pyfile{normalization_manager.py} via la fonction \texttt{z\_to\_scaled}:
@@ -332,7 +332,7 @@ La calibration des poids $\alpha$ et $\beta$ dans la fonction objectif (Équatio
 
 Chaque exécution avec une paire $(\alpha, \beta)$ spécifique produit un calendrier, dont les trois métriques normalisées ($Z_{HS}$, $Z_{PS}$, $Z_{MD}$) constituent un point dans l'espace tridimensionnel des objectifs. L'ensemble de ces points forme un nuage à partir duquel le front de Pareto est extrait. Ce front regroupe les solutions non-dominées : celles pour lesquelles aucune amélioration sur un critère n'est possible sans en dégrader au moins un autre. La Figure~\ref{fig:pareto_3d_analytique} illustre ce front. Les scores Z, indiquant l'écart par rapport à la moyenne théorique en termes d'écarts-types, sont préférablement négatifs, signifiant une performance meilleure que la moyenne aléatoire.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=0.8\textwidth]{./pareto_3d_static_n500_anal_norm.png}
     \caption{Front de Pareto 3D des métriques d'équité normalisées ($Z_{HS}$, $Z_{PS}$, $Z_{MD}$) pour $n=500$. Les points rouges sont Pareto-optimaux. Des valeurs plus faibles (négatives) sont meilleures.}
@@ -354,7 +354,7 @@ open calibration_plots_n500_analytical_norm/pareto_3d_interactive_n500_anal_norm
 \subsection{Protocole Expérimental et Stratégie d'Optimisation}
 Pour évaluer l'efficacité de notre méta-heuristique de Recuit Simulé (SA), nous avons adopté une approche itérative. Initialement, une version "naïve" du SA (implémentée dans \pyfile{sa_solver_non_opti.py}) a été développée. Cette version, bien que fonctionnellement correcte, recalculait intégralement les métriques à chaque itération et utilisait des structures de données Python standard, la rendant lente pour des instances de grande taille.
 
-Conscients de cette limitation, nous avons rapidement entrepris d'optimiser significativement l'algorithme (version \pyfile{sa_solver.py}). Les optimisations clés incluent :
+Conscients de cette limitation, nous avons rapidement entrepris d'optimiser significativamente l'algorithme (version \pyfile{sa_solver.py}). Les optimisations clés incluent :
 \begin{itemize}
     \item \textbf{Compilation Just-in-Time (JIT) avec Numba} : La boucle principale du SA et les fonctions critiques de calcul de métriques ont été décorées avec \texttt{@numba.njit}, permettant une compilation en code machine quasi-natif.
     \item \textbf{Utilisation de NumPy} : Les calendriers et les compteurs ont été représentés par des tableaux NumPy, favorisant des opérations vectorielles rapides.
@@ -378,7 +378,7 @@ Bien que fonctionnel, ce mécanisme n'est pas infaillible. L'estimation de la vi
 \subsection{Résultats Chiffrés des Comparaisons SA} % Anciennement 4.3, devient 4.2
 Chaque version du SA a été lancée une fois pour différentes tailles $n$, avec une limite de temps de 60 secondes. Les poids pour la fonction objectif étaient $\alpha=0.8, \beta=1.2$.
 
-\begin{table}[H]
+\begin{table}[htbp]
 \centering
 \caption{Comparaison des performances (métriques brutes et Z-sum) entre les versions SA Non-Optimisée et Optimisée (60s de budget temps). Z-sum : plus il est faible (négatif), mieux c'est. Métriques brutes : plus elles sont faibles, mieux c'est.}
 \label{tab:sa-comparison}
@@ -404,7 +404,7 @@ Chaque version du SA a été lancée une fois pour différentes tailles $n$, ave
 
 \subsection{Analyse Visuelle et Qualitative des Plannings} % Anciennement 4.4, devient 4.3
 
-\begin{figure}[H]
+\begin{figure}[htbp]
     \centering
     \begin{subfigure}{\textwidth}
         \includegraphics[width=\linewidth]{./raw_metrics_comparison.png}
@@ -414,7 +414,7 @@ Chaque version du SA a été lancée une fois pour différentes tailles $n$, ave
     \vfill\vspace{1cm}
     \begin{subfigure}{\textwidth}
         \centering
-        \includegraphics[width=\textwidth, height=0.55\textheight, keepaspectratio]{./z_score_comparison.png}
+        \includegraphics[width=\textwidth, keepaspectratio]{./z_score_comparison.png}
         \caption{Comparaison du score Z-sum (multiplié par -1, donc "plus haut est mieux" ici) entre les versions \textit{Non-Opti} et \textit{Opti}. La version optimisée explore plus efficacement l'espace des solutions.}
         \label{fig:z_score_comparison}
     \end{subfigure}
