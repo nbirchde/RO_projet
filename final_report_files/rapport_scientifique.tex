@@ -406,19 +406,16 @@ Chaque version du SA a été lancée une fois pour différentes tailles $n$, ave
 
 \begin{figure}[htbp]
     \centering
-    \begin{subfigure}{\textwidth}
-        \includegraphics[width=\linewidth]{./raw_metrics_comparison.png}
-        \caption{Évolution des valeurs brutes de HomeStrength (HS), Penalty Sequence (PS) et Max Deviation (MD) en fonction de $n$ pour les versions \textit{Non‑Opti} (bleu) et \textit{Opti} (rouge) du Recuit Simulé, comparées au pire cas théorique (vert). Chaque point correspond à la meilleure solution trouvée en 60 s.}
-        \label{fig:raw_metrics_evolution}
-    \end{subfigure}
-    \vfill\vspace{1cm}
-    \begin{subfigure}{\textwidth}
-        \centering
-        \includegraphics[width=\textwidth, keepaspectratio]{./z_score_comparison.png}
-        \caption{Comparaison du score Z-sum (multiplié par -1, donc "plus haut est mieux" ici) entre les versions \textit{Non-Opti} et \textit{Opti}. La version optimisée explore plus efficacement l'espace des solutions.}
-        \label{fig:z_score_comparison}
-    \end{subfigure}
-    \caption{Comparaison visuelle des performances des deux versions du Recuit Simulé.}
+    \includegraphics[width=\linewidth]{./raw_metrics_comparison.png}
+    \caption{Évolution des valeurs brutes de HomeStrength (HS), Penalty Sequence (PS) et Max Deviation (MD) en fonction de $n$ pour les versions \textit{Non‑Opti} (bleu) et \textit{Opti} (rouge) du Recuit Simulé, comparées au pire cas théorique (vert). Chaque point correspond à la meilleure solution trouvée en 60 s.}
+    \label{fig:raw_metrics_evolution}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth, keepaspectratio]{./z_score_comparison.png}
+    \caption{Comparaison du score Z-sum (multiplié par -1, donc "plus haut est mieux" ici) entre les versions \textit{Non-Opti} et \textit{Opti}. La version optimisée explore plus efficacement l'espace des solutions.}
+    \label{fig:z_score_comparison}
 \end{figure}
 
 La Figure~\ref{fig:raw_metrics_evolution} et la Figure~\ref{fig:z_score_comparison} confirment la supériorité de la version optimisée du SA. Concernant le Z-sum (Fig.~\ref{fig:z_score_comparison}), le pic de performance est atteint à $n=700$ pour SA-Opti, tandis que SA-NonOpti plafonne vers $n=100$. Cette "dégradation" apparente du Z-score pour $N$ très grands sous budget temps fixe s'explique par l'immensité croissante de l'espace de recherche et la difficulté à atteindre des améliorations absolues proportionnellement aussi importantes que pour des $N$ intermédiaires.
