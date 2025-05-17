@@ -1,7 +1,7 @@
 # Fdb version 4
-["pdflatex"] 1747435268.29243 "/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex" "rapport_scientifique.pdf" "rapport_scientifique" 1747435269.97519 2
+["pdflatex"] 1747437520.30873 "/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex" "rapport_scientifique.pdf" "rapport_scientifique" 1747437521.85824 2
   "../calibration_plots_n500_analytical_norm/pareto_3d_static_n500_anal_norm.png" 1747397924.55492 133069 dd485ec5c57bba15e1e83650f5cee98a ""
-  "/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex" 1747435215.08426 31289 aa1f969260da149c60e23458db0eeceb ""
+  "/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex" 1747437520.06319 31289 aa1f969260da149c60e23458db0eeceb ""
   "/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/raw_metrics_comparison.png" 1747431344.37019 650379 15ec178157cef3282c4c9578a23ed414 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc" 1136849721 2971 def0b6c1f0b107b3b936def894055589 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
@@ -249,10 +249,10 @@
   "/usr/local/texlive/2025/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1745060723 5467155 19efa205003f9ecad95fbbaa6ff24da1 ""
   "/usr/local/texlive/2025/texmf-var/web2c/pdftex/pdflatex.fmt" 1745060667 3345734 96f6f7cc2ce50ab21d0c6db8f51fc67e ""
   "/usr/local/texlive/2025/texmf.cnf" 1741450484 577 418a7058ec8e006d8704f60ecd22c938 ""
-  "rapport_scientifique.aux" 1747435269.84416 7727 d5d276d8d8a74c592a4b05515e49698d "pdflatex"
-  "rapport_scientifique.out" 1747435269.8477 4850 15cf3739469510e53241ea68341a2984 "pdflatex"
-  "rapport_scientifique.tex" 1747435215.08426 31289 aa1f969260da149c60e23458db0eeceb ""
-  "rapport_scientifique.toc" 1747435269.84894 2925 07a0824102ba90f81eae765e2c9b43b8 "pdflatex"
+  "rapport_scientifique.aux" 1747437521.7614 7727 d5d276d8d8a74c592a4b05515e49698d "pdflatex"
+  "rapport_scientifique.out" 1747437521.76235 4850 15cf3739469510e53241ea68341a2984 "pdflatex"
+  "rapport_scientifique.tex" 1747437520.06319 31289 aa1f969260da149c60e23458db0eeceb ""
+  "rapport_scientifique.toc" 1747437521.7626 2925 07a0824102ba90f81eae765e2c9b43b8 "pdflatex"
   (generated)
   "rapport_scientifique.aux"
   "rapport_scientifique.log"

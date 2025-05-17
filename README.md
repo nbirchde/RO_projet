@@ -69,7 +69,7 @@ Une version optimisée avec Numba de l'heuristique de Recuit Simulé pour de mei
 Pour exécuter le solveur SA optimisé :
 
 ```bash
-python3 -m src.sa_solver <n_players> [-i <iterations>] [-t <time_budget>] [<alpha> <beta>] [<runs>]
+python3 -m src.sa_solver <n_players> [-t <time_budget>] [<alpha> <beta>] [<runs>]
 ```
 
 Paramètres :
