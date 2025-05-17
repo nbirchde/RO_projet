@@ -20,6 +20,7 @@
 \usepackage{multirow} % For multirow in tables
 \usepackage{adjustbox} % For resizing tables/figures
 \usepackage{array} % For better column definitions
+\usepackage{float} % For [H] option for figures
 
 \geometry{a4paper, margin=2.5cm}
 
@@ -35,7 +36,8 @@
     breaklines=true,
     frame=single,
     numbers=left,
-    numberstyle=\tiny\color{gray}
+    numberstyle=\tiny\color{gray},
+    escapeinside={`}{`} % To allow LaTeX inside listings, e.g. for underscores
 }
 
 \hypersetup{
@@ -44,8 +46,12 @@
     filecolor=magenta,
     urlcolor=cyan,
     pdftitle={Rapport Projet INFO-H-3000},
-    pdfpagemode=FullScreen,
+    pdfpagemode=UseNone, % Changed from FullScreen to avoid issues with ToC display on first page
+    pdfstartview={FitH} % Start with page fitted horizontally
 }
+
+% Command to properly display underscores in texttt
+\newcommand{\pyfile}[1]{\texttt{\detokenize{#1}}}
 
 \title{Projet INFO-H-3000 : Planification Équitable des Tournois Round Robin avec Méta-heuristiques}
 \author{Nicholas Birch de la Calle \\ Gabriel Badan \\ Milena Paques \\[1em] Enseignant : Yves De Smet \\ Assistant : Jean Rosenfeld}
@@ -66,7 +72,7 @@ La planification de tournois "Round Robin" simples (SRR), où chaque participant
 \subsection{Objectifs et Approche}
 Notre objectif est de générer des calendriers SRR équitables pour $n$ joueurs, en minimisant les déséquilibres liés à :
 \begin{itemize}
-    \item La \textbf{HomeStrength} : l'avantage de jouer à domicile contre des adversaires de force variable.
+    \item La \textbf{HomeStrength} : l'avantage de jouer à domicile contre des adversaires de force va\-riable.
     \item La \textbf{Pénalité de séquence} : les séries de matchs consécutifs à domicile ou à l'extérieur.
     \item La \textbf{Max Deviation} : l'écart maximal du nombre de matchs à domicile par joueur par rapport à l'idéal.
 \end{itemize}
@@ -181,9 +187,8 @@ Nous combinons les trois métriques d'équité principales en une fonction objec
 \begin{equation}
     \text{Objectif} = f(\text{HomeStrength}, \text{TotalPenalitesSequence}, \text{MaxDeviation})
 \end{equation}
-La fonction exacte, incluant la pondération et la normalisation, est détaillée ci-dessous.
+La fonction exacte, incluant la pondération et la normalisation, est détaillée ci-dessous (Section~\ref{sec:normalisation_et_objectif_sa}).
 
-% --- Section: Fonction Objectif Normalisée et Calibration des Poids Alpha et Beta ---
 \subsection[Fonction Objectif Normalisée et Calibration des Poids Alpha et Beta]{Fonction Objectif Normalisée et Calibration des Poids Alpha et Beta}
 \label{sec:normalisation_et_objectif_sa}
 Les trois métriques d'équité -- HomeStrength (HS, Équation~\ref{eq:homestrength}), TotalPenalitesSequence (PS), et MaxDeviation (MD) -- sont de natures et d'échelles intrinsèquement différentes. Une combinaison directe dans une fonction objectif pondérée nécessite une normalisation adéquate pour que les poids attribués à chaque critère reflètent fidèlement leur importance relative et pour que la recherche ne soit pas biaisée par les échelles disparates.
@@ -227,14 +232,14 @@ où $z$ est le $Z$‑score d’une métrique. Deux raisons principales motivent 
     \item \textbf{Interprétation probabiliste.} Dans le contexte du logit $\rightarrow$ probabilité $[0,1]$, $s(z)$ peut se lire comme la probabilité qu’une assignation aléatoire produise une valeur plus défavorable que le calendrier étudié. Pour $z=0$ on obtient $s(0)=0.5$ ; un $Z$‑score négatif ($z=-\sigma$) se traduit par $s\!\approx\!0.73$, indiquant que le calendrier bat 73 \% des tirages aléatoires, et vice‑versa.
 \end{enumerate}
 
-Cette transformation est implémentée dans \verb|normalization_manager.py| via la fonction \verb|z_to_scaled| :
+Cette transformation est implémentée dans \pyfile{normalization_manager.py} via la fonction \texttt{z\_to\_scaled}:
 
-\begin{lstlisting}[style=python]
+\begin{lstlisting}[style=python, escapechar=|]
 def z_to_scaled(z, z_range=50.0):
     return 1 / (1 + math.exp(z / z_range))
 \end{lstlisting}
 
-Les solveurs minimisent ensuite la somme pondérée des versions sigmoïdes (variable \verb|scaled_score|), ce qui rend les trois critères directement comparables : où $M_k^{raw}$ est la valeur brute de la métrique $k \in \{\mathrm{HS, PS, MD}\}$.
+Les solveurs minimisent ensuite la somme pondérée des versions sigmoïdes (variable \texttt{scaled\_score}), ce qui rend les trois critères directement comparables : où $M_k^{raw}$ est la valeur brute de la métrique $k \in \{\mathrm{HS, PS, MD}\}$.
 
 Les formules analytiques utilisées pour calculer $\mu$ et $\sigma$ pour chaque métrique pour $n$ joueurs réels sont les suivantes :
 \begin{itemize}
@@ -248,7 +253,7 @@ Les formules analytiques utilisées pour calculer $\mu$ et $\sigma$ pour chaque 
         \mu_{PS} &= n \cdot \frac{n-2}{2} \\
         \sigma_{PS} &= \dfrac{\sqrt{n(n-2)}}{2} \quad \text{si } n > 2, \text{ sinon } 1.0
     \end{align*}
-    \item \textbf{Max Deviation (MD) :} Chaque joueur joue $n-1$ matchs, avec $H_i \sim \mathrm{Bin}(n-1, 1/2)$. Le maximum parmi les $n$ joueurs suit une distribution d’extrême valeur bien connue en statistique. Sous l’hypothèse d’indépendance (acceptable ici car chaque joueur a un pattern propre), on can approximer :
+    \item \textbf{Max Deviation (MD) :} Chaque joueur joue $n-1$ matchs, avec $H_i \sim \mathrm{Bin}(n-1, 1/2)$. Le maximum parmi les $n$ joueurs suit une distribution d’extrême valeur bien connue en statistique. Sous l’hypothèse d’indépendance (acceptable ici car chaque joueur a un pattern propre), on peut approximer :
     \begin{align*}
         \mu_{MD} &\approx \frac{\sqrt{n-1}}{2} \cdot \sqrt{2 \ln n} \\
         \sigma_{MD} &\approx \frac{\sqrt{n-1}}{2} \cdot \frac{\pi}{\sqrt{12 \ln n}}
@@ -300,8 +305,6 @@ Les solveurs (MILP et SA) cherchent à minimiser une combinaison pondérée de c
 \end{equation}
 Les paramètres $\alpha \geq 0$ et $\beta \geq 0$ sont les poids qui déterminent l'importance relative de la pénalité de séquence et de la déviation maximale par rapport à HomeStrength.
 
-En ramenant chaque critère à une unité naturelle (son écart-type),
-
 \paragraph{Quantification de l’écart entre valeurs maximales et valeurs typiques}
 
 Il est instructif de comparer les écarts relatifs entre la valeur maximale possible d’une métrique et sa valeur moyenne typique sous assignation aléatoire :
@@ -327,12 +330,11 @@ Cela signifie que la normalisation par le maximum devient de plus en plus biais�
 
 La calibration des poids $\alpha$ et $\beta$ dans la fonction objectif (Équation~\ref{eq:objectif_analytique}) est cruciale pour naviguer les compromis inhérents entre les trois objectifs d'équité (HomeStrength, Pénalité de Séquence, Max Deviation), une fois ceux-ci normalisés analytiquement. Pour ce faire, nous avons exécuté notre algorithme de Recuit Simulé optimisé pour $n=500$ joueurs, en variant systématiquement les paires $(\alpha, \beta)$.
 
-Chaque exécution avec une paire $(\alpha, \beta)$ spécifique produit un calendrier, dont les trois métriques normalisées ($Z_{HS}$, $Z_{PS}$, $Z_{MD}$) constituent un point dans l'espace tridimensionnel des objectifs. L'ensemble de ces points forme un nuage à partir duquel le front de Pareto est extrait. Ce front regroupe les solutions non-dominées : celles pour lesquelles aucune amélioration sur un critère n'est possible sans en dégrader au moins un autre. La Figure~\ref{fig:pareto_3d_analytique} illustre ce front.
-Les scores Z, indiquant l'écart par rapport à la moyenne théorique en termes d'écarts-types, sont préférablement négatifs, signifiant une performance meilleure que la moyenne aléatoire.
+Chaque exécution avec une paire $(\alpha, \beta)$ spécifique produit un calendrier, dont les trois métriques normalisées ($Z_{HS}$, $Z_{PS}$, $Z_{MD}$) constituent un point dans l'espace tridimensionnel des objectifs. L'ensemble de ces points forme un nuage à partir duquel le front de Pareto est extrait. Ce front regroupe les solutions non-dominées : celles pour lesquelles aucune amélioration sur un critère n'est possible sans en dégrader au moins un autre. La Figure~\ref{fig:pareto_3d_analytique} illustre ce front. Les scores Z, indiquant l'écart par rapport à la moyenne théorique en termes d'écarts-types, sont préférablement négatifs, signifiant une performance meilleure que la moyenne aléatoire.
 
-\begin{figure}[htbp]
+\begin{figure}[H] % Use [H] from float package for "here exactly"
     \centering
-    \includegraphics[width=0.9\textwidth]{./pareto_3d_static_n500_anal_norm.png}
+    \includegraphics[width=0.8\textwidth]{./pareto_3d_static_n500_anal_norm.png}
     \caption{Front de Pareto 3D des métriques d'équité normalisées ($Z_{HS}$, $Z_{PS}$, $Z_{MD}$) pour $n=500$. Les points rouges sont Pareto-optimaux. Des valeurs plus faibles (négatives) sont meilleures.}
     \label{fig:pareto_3d_analytique}
 \end{figure}
@@ -350,16 +352,16 @@ open calibration_plots_n500_analytical_norm/pareto_3d_interactive_n500_anal_norm
 \label{sec:benchmarking}
 
 \subsection{Protocole Expérimental et Stratégie d'Optimisation}
-Pour évaluer l'efficacité de notre méta-heuristique de Recuit Simulé (SA), nous avons adopté une approche itérative. Initialement, une version "naïve" du SA (implémentée dans `sa_solver_non_opti.py`) a été développée. Cette version, bien que fonctionnellement correcte, recalculait intégralement les métriques à chaque itération et utilisait des structures de données Python standard, la rendant lente pour des instances de grande taille.
+Pour évaluer l'efficacité de notre méta-heuristique de Recuit Simulé (SA), nous avons adopté une approche itérative. Initialement, une version "naïve" du SA (implémentée dans \pyfile{sa_solver_non_opti.py}) a été développée. Cette version, bien que fonctionnellement correcte, recalculait intégralement les métriques à chaque itération et utilisait des structures de données Python standard, la rendant lente pour des instances de grande taille.
 
-Conscients de cette limitation, nous avons rapidement entrepris d'optimiser significativement l'algorithme (version `sa_solver.py`). Les optimisations clés incluent :
+Conscients de cette limitation, nous avons rapidement entrepris d'optimiser significativement l'algorithme (version \pyfile{sa_solver.py}). Les optimisations clés incluent :
 \begin{itemize}
-    \item \textbf{Compilation Just-in-Time (JIT) avec Numba} : La boucle principale du SA et les fonctions critiques de calcul de métriques ont été décorées avec `@numba.njit`, permettant une compilation en code machine quasi-natif.
+    \item \textbf{Compilation Just-in-Time (JIT) avec Numba} : La boucle principale du SA et les fonctions critiques de calcul de métriques ont été décorées avec \texttt{@numba.njit}, permettant une compilation en code machine quasi-natif.
     \item \textbf{Utilisation de NumPy} : Les calendriers et les compteurs ont été représentés par des tableaux NumPy, favorisant des opérations vectorielles rapides.
     \item \textbf{Mises à jour incrémentielles} : Plutôt que de recalculer entièrement les métriques (HomeStrength, Pénalité de Séquence, Max Deviation) après chaque mouvement (inversion domicile/extérieur d'un match), nous avons implémenté des mises à jour différentielles. Cela réduit considérablement le coût de chaque itération.
-    \item \textbf{Représentation compacte des séquences} : Le module `packed_array_utils` utilise un encodage binaire pour stocker les statuts domicile/extérieur (H/A) de plusieurs joueurs dans un seul octet, optimisant l'accès mémoire et le calcul des pénalités de séquence.
+    \item \textbf{Représentation compacte des séquences} : Le module \pyfile{packed_array_utils.py} utilise un encodage binaire pour stocker les statuts domicile/extérieur (H/A) de plusieurs joueurs dans un seul octet, optimisant l'accès mémoire et le calcul des pénalités de séquence.
     \item \textbf{Simplification des Voisinages} : La version optimisée se concentre sur un seul type de mouvement (inversion H/A d'un match aléatoire), tandis que la version non optimisée explorait d'autres mouvements plus complexes (échange de rondes, échange de joueurs). Cette simplification facilite grandement l'implémentation de mises à jour incrémentielles efficaces.
-    \item \textbf{Parallélisation des `runs` multiples} : L'utilisation de `concurrent.futures.ProcessPoolExecutor` permet de lancer plusieurs chaînes de SA indépendantes en parallèle, exploitant les cœurs multiples des processeurs modernes pour une meilleure exploration de l'espace des solutions.
+    \item \textbf{Parallélisation des \textit{runs} multiples} : L'utilisation de \texttt{concurrent.futures.ProcessPoolExecutor} permet de lancer plusieurs chaînes de SA indépendantes en parallèle, exploitant les cœurs multiples des processeurs modernes pour une meilleure exploration de l'espace des solutions.
 \end{itemize}
 
 Cette stratégie d'optimisation précoce a eu des conséquences importantes. D'une part, elle nous a permis d'évaluer le comportement du SA sur des instances de très grande taille ($N \ge 500$) bien plus tôt dans le projet. Cette capacité a été cruciale pour identifier les limites de notre approche initiale de normalisation des métriques (basée sur les valeurs maximales), qui se comportait mal pour $N$ élevé. Cela nous a conduits à adopter la normalisation analytique (basée sur les Z-scores), plus robuste et cohérente.
@@ -369,34 +371,34 @@ D'autre part, la complexité inhérente au code optimisé (en particulier avec N
     \item Une phase de "warm-up" (ou "test d'étalonnage") est exécutée au début : l'algorithme effectue un petit nombre d'itérations pour mesurer la vitesse d'itération sur la machine actuelle.
     \item Le nombre total d'itérations pour la boucle principale du SA est ensuite ajusté pour tenter de respecter le budget temps imparti, tout en assurant un refroidissement progressif de la température.
 \end{enumerate}
-Bien que fonctionnel, ce mécanisme n'est pas infaillible. L'estimation de la vitesse d'itération peut être optimiste, surtout lorsque plusieurs `runs` parallèles saturent le CPU, pouvant entraîner un phénomène de "throttling" (ralentissement thermique du processeur). Ainsi, le temps d'exécution final peut parfois légèrement dépasser le budget alloué.
+Bien que fonctionnel, ce mécanisme n'est pas infaillible. L'estimation de la vitesse d'itération peut être optimiste, surtout lorsque plusieurs \textit{runs} parallèles saturent le CPU, pouvant entraîner un phénomène de "throttling" (ralentissement thermique du processeur). Ainsi, le temps d'exécution final peut parfois légèrement dépasser le budget alloué.
 
 \subsection{Comparaison des Performances : Recuit Simulé vs. Approche Exacte}
-Pour les petites instances ($n=4, 6$), nous avons pu comparer nos algorithmes de Recuit Simulé (SA-Opti et SA-NonOpti, avec un budget de 60s) aux solutions obtenues par une méthode exacte (MILP), dont les résultats nous ont été fournis.
+Pour les petites instances ($n=4, 6$), nous avons pu comparer nos algorithmes de Recuit Simulé aux solutions obtenues par une méthode exacte (MILP). La comparaison se concentre sur les métriques brutes pour évaluer la capacité des heuristiques à approcher l'optimalité structurelle.
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
-\caption{Comparaison du Z-sum et de la Pénalité de Séquence (PS) brute pour les petites instances.}
+\caption{Comparaison des métriques brutes (HS, PS, MD) pour les petites instances.}
 \label{tab:sa_vs_exact}
 \begin{tabular}{l rrr rrr}
 \toprule
 \multirow{2}{*}{Algorithme} & \multicolumn{3}{c}{$n=4$} & \multicolumn{3}{c}{$n=6$} \\
 \cmidrule(lr){2-4} \cmidrule(lr){5-7}
- & Z-sum & PS (brut) & Temps (s) & Z-sum & PS (brut) & Temps (s) \\
+ & HS & PS & MD & HS & PS & MD \\
 \midrule
-MILP Exact & -3.27 & 2 & 0.23 & -4.30 & 4 & 6.73 \\
-SA-Opti (60s) & -3.72 & 2 & $\approx$60 & -6.05 & 4 & $\approx$60 \\
-SA-NonOpti (60s) & -3.72 & 2 & $\approx$60 & -5.47 & 4 & $\approx$60 \\
+MILP Exact & 4.0 & 2 & 0.5 & 22.0 & 4 & 0.5 \\
+SA-Opti (60s) & 3.0 & 2 & 0.5 & 13.0 & 4 & 0.5 \\
+SA-NonOpti (60s) & 3.0 & 2 & 0.5 & 16.0 & 4 & 0.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Pour $n=4$, les trois approches trouvent des solutions avec une PS brute identique (optimale) et des Z-sums très proches, l'exact étant légèrement meilleur. Pour $n=6$, les SA trouvent également la PS brute optimale de 4. Le SA-Opti obtient même un Z-sum légèrement meilleur que l'exact, ce qui peut s'expliquer par les compromis avec HS et MD sur lesquels l'heuristique a pu trouver un meilleur équilibre global dans le temps imparti, même si l'optimalité sur une métrique individuelle comme PS est atteinte par tous. Ces résultats valident la capacité du SA à trouver d'excellentes solutions pour les petites tailles.
+Pour $n=4$ et $n=6$, les deux versions du SA parviennent à égaler les valeurs optimales pour la Pénalité de Séquence (PS) et la Max Deviation (MD) trouvées par la méthode exacte. Pour HomeStrength (HS), les valeurs obtenues par le SA sont très proches et parfois même meilleures (plus faibles) que celles rapportées pour l'exact dans le temps court alloué à ce dernier. Cela suggère que pour ces très petites tailles, le SA explore efficacement l'espace et identifie des solutions de très haute qualité, comparables à l'optimalité.
 
 \subsection{Résultats Chiffrés des Comparaisons SA}
 Chaque version du SA a été lancée une fois pour différentes tailles $n$, avec une limite de temps de 60 secondes. Les poids pour la fonction objectif étaient $\alpha=0.8, \beta=1.2$.
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \caption{Comparaison des performances (métriques brutes et Z-sum) entre les versions SA Non-Optimisée et Optimisée (60s de budget temps). Z-sum : plus il est faible (négatif), mieux c'est. Métriques brutes : plus elles sont faibles, mieux c'est.}
 \label{tab:sa-comparison}
@@ -407,7 +409,7 @@ Chaque version du SA a été lancée une fois pour différentes tailles $n$, ave
 \cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9}
  & {Non-Opti} & {Opti} & {Non-Opti} & {Opti} & {Non-Opti} & {Opti} & {Non-Opti} & {Opti} \\
 \midrule
-5 & -3.6314 & -4.4576 & 10 & 10 & 6 & 4 & 0.00 & 0.00 \\ % n=5 from CSV, not n=4
+5 & -3.6314 & -4.4576 & 10 & 10 & 6 & 4 & 0.00 & 0.00 \\
 25 & -17.9921 & -21.7879 & 819 & 1184 & 130 & 56 & 4.00 & 1.00 \\
 100 & -36.4179 & -84.2157 & 62233 & 79476 & 3678 & 264 & 11.50 & 3.50 \\
 250 & -7.2309 & -203.7024 & 1261646 & 1253161 & 30800 & 1168 & 22.50 & 9.50 \\
@@ -419,21 +421,20 @@ Chaque version du SA a été lancée une fois pour différentes tailles $n$, ave
 \end{tabular}
 \end{adjustbox}
 \end{table}
-Note : Les données pour $n=4$ et $n=6$ dans Table~\ref{tab:sa-comparison} proviennent d'exécutions SA distinctes de celles comparées à l'exact, utilisant le CSV `sa_algorithms_comparison_results.csv` qui commence à $n=5$.
 
 \subsection{Analyse Visuelle et Qualitative des Plannings}
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
     \begin{subfigure}{\textwidth}
         \includegraphics[width=\linewidth]{./raw_metrics_comparison.png}
         \caption{Évolution des valeurs brutes de HomeStrength (HS), Penalty Sequence (PS) et Max Deviation (MD) en fonction de $n$ pour les versions \textit{Non‑Opti} (bleu) et \textit{Opti} (rouge) du Recuit Simulé, comparées au pire cas théorique (vert). Chaque point correspond à la meilleure solution trouvée en 60 s.}
         \label{fig:raw_metrics_evolution}
     \end{subfigure}
-    \vfill
+    \vfill\vspace{1cm} % Add more vertical space
     \begin{subfigure}{\textwidth}
         \centering
-        \includegraphics[width=0.9\linewidth]{./z_score_comparison.png}
+        \includegraphics[width=0.9\linewidth, height=0.6\textheight, keepaspectratio]{./z_score_comparison.png}
         \caption{Comparaison du score Z-sum (multiplié par -1, donc "plus haut est mieux" ici) entre les versions \textit{Non-Opti} et \textit{Opti}. La version optimisée explore plus efficacement l'espace des solutions.}
         \label{fig:z_score_comparison}
     \end{subfigure}
@@ -443,15 +444,14 @@ Note : Les données pour $n=4$ et $n=6$ dans Table~\ref{tab:sa-comparison} provi
 La Figure~\ref{fig:raw_metrics_evolution} et la Figure~\ref{fig:z_score_comparison} confirment la supériorité de la version optimisée du SA. Concernant le Z-sum (Fig.~\ref{fig:z_score_comparison}), le pic de performance est atteint à $n=700$ pour SA-Opti, tandis que SA-NonOpti plafonne vers $n=100$. Cette "dégradation" apparente du Z-score pour $N$ très grands sous budget temps fixe s'explique par l'immensité croissante de l'espace de recherche et la difficulté à atteindre des améliorations absolues proportionnellement aussi importantes que pour des $N$ intermédiaires.
 
 \subsubsection{Qualité d'un Planning Exemple ($n=25$)}
-Le planning généré par SA-Opti pour $n=25$ (voir `sa_schedule_n25.csv` en annexe ou produit par le code) illustre la qualité atteignable.
-Le nombre de matchs à domicile par joueur y est très bien équilibré : l'idéal est $(25-1)/2 = 12$. Les valeurs observées varient entre 11 et 13, résultant en un Max Deviation de 1.0, ce qui est excellent.
-Extrait des séquences H/A pour $n=25$ (Joueur 1 et Joueur 20) :
+Le planning généré par SA-Opti pour $n=25$ (voir \pyfile{sa_schedule_n25.csv}, dont un extrait est en Annexe~\ref{annex:planning_n25}, ou produit par le code) illustre la qualité atteignable. Le nombre de matchs à domicile par joueur y est très bien équilibré : l'idéal est $(25-1)/2 = 12$. Les valeurs observées dans cet exemple varient entre 11 et 13 (Player 10, 14, 19, 20, 21, 22, 23, 24, 25 ont 13 matchs à domicile), résultant en un Max Deviation de 1.0, ce qui est excellent.
+
+Extrait des séquences H/A pour $n=25$ pour deux joueurs :
 \begin{itemize}
-    \item Joueur 1: \texttt{HAAAAHAAHAHAHAHAHAHAHHAH} (PS faible)
-    \item Joueur 20: \texttt{AHHAHAHHAHAHAHAHAHAHAHAH} (PS faible)
+    \item Joueur 1: \texttt{HAAAAHAAHAHAHAHAHAHAHHAH}
+    \item Joueur 25: \texttt{HAHHAHAHAHAHAAHAHAHAHAHH}
 \end{itemize}
-Ces séquences montrent une bonne alternance générale. Cependant, on observe occasionnellement des séries de 3 ou (rarement) 4 matchs consécutifs à domicile ou à l'extérieur pour certains joueurs dans le planning complet. Par exemple, Joueur 25 : \texttt{HAHHAHAA...}. La séquence \texttt{HH} ou \texttt{AA} est pénalisée d'un point (voir Éq. (5) et (6)). Une séquence \texttt{HHH} compte pour deux pénalités (H1-H2 et H2-H3).
-Notre définition actuelle de la Pénalité de Séquence ne pénalise pas exponentiellement les séries plus longues. Si une réduction drastique des séries de 3+ était prioritaire, il faudrait modifier la fonction de pénalité pour, par exemple, attribuer un coût croissant à $L-1$ pour une série de longueur $L$. Cela dit, avec $\alpha=0.8$, le solveur cherche déjà activement à minimiser ces breaks.
+Ces séquences montrent une bonne alternance générale. On observe occasionnellement des séries de 3 matchs consécutifs à domicile ou à l'extérieur (par ex., Joueur 1 : \texttt{AAA}). Une série de 4 (\texttt{AAAA} ou \texttt{HHHH}) est plus rare mais peut survenir. Notre définition actuelle de la Pénalité de Séquence (Éq. (5) et (6)) pénalise chaque transition H-H ou A-A d'un point. Ainsi, \texttt{HHH} compte pour deux pénalités (H1-H2 et H2-H3), et \texttt{HHHH} pour trois. Pour renforcer la lutte contre les longues séries, une fonction de pénalité non-linéaire (e.g., coût de $(L-1)^2$ pour une série de longueur $L$) pourrait être explorée, bien que cela complexifierait les mises à jour incrémentielles.
 
 \section{Conclusion et Perspectives}
 \label{sec:conclusion}
@@ -464,11 +464,31 @@ Pour des travaux futurs, l'exploration d'autres méta-heuristiques (comme la rec
 \subsection*{Instructions pour la Reproductibilité et Exploration}
 Le code source complet de ce projet est disponible sur un dépôt GitLab (le lien sera fourni séparément). Le dépôt contient :
 \begin{itemize}
-    \item Les implémentations des solveurs (`sa_solver.py`, `sa_solver_non_opti.py`, etc.).
+    \item Les implémentations des solveurs (e.g., \pyfile{sa_solver.py}, \pyfile{sa_solver_non_opti.py}).
     \item Les scripts pour générer les données de calibration et les benchmarks.
-    \item Un `README.md` détaillé avec les instructions pour installer les dépendances, exécuter les solveurs, et reproduire les résultats présentés dans ce rapport.
-    \item Un `Makefile` simplifiant certaines commandes courantes.
+    \item Un fichier \pyfile{README.md} détaillé avec les instructions pour installer les dépendances, exécuter les solveurs, et reproduire les résultats présentés dans ce rapport.
+    \item Un \pyfile{Makefile} simplifiant certaines commandes courantes.
 \end{itemize}
 Nous encourageons le lecteur à cloner le dépôt et à explorer le code et les outils fournis pour une compréhension plus approfondie de notre travail.
+
+\begin{appendices}
+\section{Extrait du Planning pour n=25}
+\label{annex:planning_n25}
+Voici les premières rondes et les métriques globales du planning généré par SA-Opti pour $n=25$. Le fichier complet \pyfile{sa_schedule_n25.csv} est produit par l'exécution du solveur.
+
+\begin{verbatim}
+Round,Match 1,Match 2,...,Match 12
+Round 1,25v2(H),24v3(H),...,13v14(H)
+Round 2,1v25(H),2v23(H),...,12v13(H)
+... (23 autres rondes) ...
+
+Metric,Value
+Overall Analytical Normalized Score (Z-sum),-21.7878...
+Raw Home Strength,1184.0
+Raw Penalty Sequence,56
+Raw Max Deviation,1.0
+... (détail par joueur) ...
+\end{verbatim}
+\end{appendices}
 
 \end{document}
