@@ -79,9 +79,9 @@ Paramètres :
 - `beta` (float, optionnel) : Poids pour la métrique Max Deviation. Par défaut, utilise la valeur `BETA` dans `src/config.py` (actuellement 1.2).
 - `runs` (int, optionnel) : Nombre d'exécutions parallèles. Par défaut : 1.
 
-Exemple (avec budget temps de 10 secondes) :
+Exemple (avec budget temps de 10 secondes et 10 threads exploramt l'espace des solution en parallele) :
 ```bash
-python3 -m src.sa_solver 10 -t 10
+python3 -m src.sa_solver 10 -t 10 0.8 1.2 10
 ```
 
 ## Génération et Visualisation des Résultats de Calibration

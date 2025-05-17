@@ -16,6 +16,10 @@
 \usepackage{siunitx} % For typesetting numbers with units and aligning numbers in tables
 \usepackage{csvsimple} % For including CSV files as tables
 \usepackage{appendix} % For appendix
+\usepackage{subcaption} % For subfigures
+\usepackage{multirow} % For multirow in tables
+\usepackage{adjustbox} % For resizing tables/figures
+\usepackage{array} % For better column definitions
 
 \geometry{a4paper, margin=2.5cm}
 
@@ -34,42 +38,47 @@
     numberstyle=\tiny\color{gray}
 }
 
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,
+    urlcolor=cyan,
+    pdftitle={Rapport Projet INFO-H-3000},
+    pdfpagemode=FullScreen,
+}
+
 \title{Projet INFO-H-3000 : Planification Équitable des Tournois Round Robin avec Méta-heuristiques}
 \author{Nicholas Birch de la Calle \\ Gabriel Badan \\ Milena Paques \\[1em] Enseignant : Yves De Smet \\ Assistant : Jean Rosenfeld}
-\date{Mai 2025} % Updated date
+\date{Mai 2025}
 
 \begin{document}
 
 \maketitle
-
+\par\vspace{0.5cm}\hrule\vspace{0.5cm}
 \tableofcontents
+\par\vspace{0.5cm}\hrule\vspace{0.5cm}
 \newpage
 
 \section{Introduction}
-\subsection{Contexte}
-La planification de tournois où chaque participant rencontre tous les autres une seule fois (tournoi "Round Robin" simple, ou SRR) est un problème classique en recherche opérationnelle et en gestion sportive. L'objectif de base est de s'assurer que toutes les rencontres requises aient lieu. Cependant, dans de nombreux contextes, l'équité du calendrier devient un enjeu majeur. Des avantages positionnels, comme jouer à domicile dans les sports d'équipe (football, basketball) ou jouer avec les pièces blanches aux échecs, peuvent influencer significativement l'issue des matchs et, par conséquent, le classement final du tournoi. Un calendrier qui attribue systématiquement les matchs à domicile contre les adversaires les plus faibles à une équipe, ou qui impose de longues séries de matchs à l'extérieur à une autre, peut être considéré comme injuste. Ce projet s'attaque au défi de construire des calendriers SRR qui non seulement respectent les contraintes de base, mais optimisent également l'équité selon plusieurs dimensions.
+\subsection{Contexte du Projet}
+La planification de tournois "Round Robin" simples (SRR), où chaque participant affronte tous les autres une unique fois, est un défi classique. Au-delà de la simple organisation des rencontres, l'équité du calendrier est primordiale. Des facteurs comme jouer à domicile ou avec les pièces blanches aux échecs introduisent des avantages qui, s'ils sont mal répartis, peuvent fausser les résultats. Ce projet vise à élaborer des calendriers SRR optimisant l'équité, en tenant compte de la force relative des adversaires et de la régularité des séquences domicile/extérieur.
 
-\subsection{Objectifs du Projet}
-L'objectif principal de ce projet est de développer et d'évaluer des méthodes pour générer des calendriers de tournois SRR équitables pour un nombre $n$ de joueurs (pair ou impair). L'équité est définie à travers un ensemble de critères quantifiables :
+\subsection{Objectifs et Approche}
+Notre objectif est de générer des calendriers SRR équitables pour $n$ joueurs, en minimisant les déséquilibres liés à :
 \begin{itemize}
-    \item Équilibrage de l'avantage domicile/extérieur en fonction de la différence de force entre les adversaires (HomeStrength). Cette métrique évalue si les équipes les plus fortes ont tendance à recevoir les plus faibles, ou vice-versa.
-    \item Minimisation des séries de matchs consécutifs joués à domicile ou à l'extérieur ("Pénalité de séquence").
-    \item Homogénéité de la répartition des matchs domicile/extérieur entre tous les joueurs (Proxy : Max Deviation).
+    \item La \textbf{HomeStrength} : l'avantage de jouer à domicile contre des adversaires de force variable.
+    \item La \textbf{Pénalité de séquence} : les séries de matchs consécutifs à domicile ou à l'extérieur.
+    \item La \textbf{Max Deviation} : l'écart maximal du nombre de matchs à domicile par joueur par rapport à l'idéal.
 \end{itemize}
-Pour gérer les cas où $n$ est impair, un joueur fictif (ou "dummy player") est ajouté. Ce joueur fictif joue contre chaque joueur réel une fois. Lorsqu'un joueur réel rencontre le joueur fictif, il a une journée de repos (un "bye"). Les métriques d'équité sont calculées uniquement pour les $n$ joueurs réels.
-
-Pour atteindre cet objectif, nous avons exploré trois approches complémentaires :
-\begin{enumerate}
-    \item Une méthode exacte basée sur la Programmation Linéaire en Nombres Entiers Mixtes (MILP) pour obtenir des solutions optimales sur de petites instances.
-    \item Une méta-heuristique (Recuit Simulé, SA) optimisée pour trouver des solutions de bonne qualité pour des instances de taille moyenne et grande dans un temps raisonnable.
-    \item Une seconde méta-heuristique (Recherche Tabou "légère", TS) pour comparer les approches heuristiques et explorer différentes stratégies de recherche.
-\end{enumerate}
+Pour les $n$ impairs, un joueur fictif est introduit pour gérer les journées de repos ("bye").
+Nous avons exploré une méthode exacte (Programmation Linéaire en Nombres Entiers Mixtes, MILP) pour les petites instances et une méta-heuristique de Recuit Simulé (SA) pour les instances plus grandes, en mettant l'accent sur l'optimisation de cette dernière pour une analyse approfondie.
 
 \subsection{Structure du Rapport}
-Ce rapport détaille la modélisation mathématique du problème (Section~\ref{sec:modelisation}), incluant la définition du problème, les variables de décision, les contraintes fondamentales et d'équité, ainsi que les métriques d'équité (HomeStrength, Pénalité de Séquence, et Max Deviation). La Section~\ref{sec:normalisation_et_objectif_sa} aborde ensuite la normalisation des métriques et la fonction objectif utilisée par les solveurs. Enfin, la Section~\ref{sec:calibration_pareto_analytique} présente la méthode de calibration des poids de cette fonction objectif via l'analyse d'un front de Pareto basé sur la normalisation analytique et discute de la sélection d'un point opératoire.
+Ce rapport détaille d'abord la modélisation mathématique du problème (Section~\ref{sec:modelisation}). Il aborde ensuite la normalisation des métriques et la fonction objectif (Section~\ref{sec:normalisation_et_objectif_sa}), puis la calibration des poids de cette fonction (Section~\ref{sec:calibration_pareto_analytique}). La Section~\ref{sec:benchmarking} présente notre stratégie de développement du Recuit Simulé, les optimisations implémentées, une comparaison de performance détaillée, et une analyse qualitative des plannings obtenus. Enfin, la Section~\ref{sec:conclusion} résume nos travaux et propose des pistes pour l'exploration future.
 
 \section{Modélisation Mathématique}
 \label{sec:modelisation}
+% ... (contenu de la modélisation inchangé, gardé pour la complétude) ...
 \subsection{Définition du Problème}
 Le problème consiste à générer un calendrier pour un tournoi Round Robin simple (SRR) impliquant $n$ joueurs, où $n$ peut être pair ou impair. Les joueurs sont numérotés de $1$ à $n$, et cet indice représente également leur classement de force (1 étant le plus fort, $n$ le plus faible). Si $n$ est impair, un joueur fictif numéroté $n+1$ est ajouté, portant le nombre total de participants à $n_{eff} = n+1$. Le tournoi se déroule sur $n_{eff}-1$ rondes (numérotées de $0$ à $n_{eff}-2$). Dans chaque ronde, $n_{eff}/2$ matchs sont joués simultanément. Chaque paire de joueurs $\{i, j\}$ (incluant le joueur fictif si $n$ est impair) doit s'affronter exactement une fois au cours du tournoi. Pour chaque match, l'un des joueurs est désigné comme jouant "à domicile" (H) et l'autre "à l'extérieur" (A). L'objectif est de produire un calendrier complet qui minimise une fonction d'équité combinant plusieurs critères pour les $n$ joueurs réels.
 
@@ -128,7 +137,7 @@ Ces contraintes lient les variables auxiliaires aux variables de décision $x_{i
         pen\_seq_{i,r} &\ge is\_home_{i,r} + is\_home_{i,r+1} - 1 \quad &\forall i \in P_{eff}, \forall r \in R' \\
         pen\_seq_{i,r} &\ge (1 - is\_home_{i,r}) + (1 - is\_home_{i,r+1}) - 1 \quad &\forall i \in P_{eff}, \forall r \in R'
     \end{align}
-    où $R' = \{0, \dots, n_{eff}-3\}$.
+    où $R' = \{0, \dots, n_{eff}-3\}$. Cette formulation capture les transitions H-H (première inéquation) et A-A (seconde inéquation). Chaque transition de ce type compte pour une pénalité.
     \item \textbf{Lien $H_i$ (Total Domicile) :} Calcule le nombre total de matchs à domicile.
     \begin{equation}
         H_i = \sum_{r \in R} is\_home_{i,r} \quad \forall i \in P_{eff}
@@ -190,20 +199,20 @@ Contrairement à une normalisation empirique qui dépend d'un échantillon de so
 
 Avant d'adopter la standardisation analytique, nous avons expérimenté deux autres méthodes :
 
-\paragraph{1. Normalisation par les valeurs maximales.}  
+\paragraph{1. Normalisation par les valeurs maximales.}
 Cette première approche divisait chaque métrique par sa valeur maximale théorique ($M^\text{max}$). Bien que séduisante par sa simplicité, elle faisait varier la notion même d’« équité » avec $n$ : le ratio $M^\text{max}/\mu$ double pour HS et PS et diverge pour MD, faussant les comparaisons entre tournois de taille différente.
 
-\paragraph{2. Normalisation empirique.}  
+\paragraph{2. Normalisation empirique.}
 Nous avons ensuite essayé de centrer chaque métrique sur la moyenne et l'écart‑type obtenus en simulant un grand nombre de calendriers aléatoires. Cette technique fonctionne pour de petites tailles ($n\lesssim 50$) mais devient prohibitive au‑delà : le nombre de simulations nécessaires pour stabiliser les estimations de $\mu$ et $\sigma$ croît au moins linéairement, et chaque simulation exige déjà $O(n^2)$ affectations.
 
-\paragraph{3. Standardisation analytique.}  
+\paragraph{3. Standardisation analytique.}
 La méthode retenue dans ce rapport calcule $\mu$ et $\sigma$ \emph{exactement}, sans échantillonnage, à partir des distributions théoriques des métriques sous assignation domicile/extérieur aléatoire. Elle est indépendante de $n$, reproductible et garantit que deux tournois de tailles différentes sont comparés sur une base commune.
 
 \bigskip
 
 \subsubsection{Échelle sigmoïde : motivation et interprétation}
 
-Bien que la minimisation directe de la somme pondérée des $Z$‑scores (Éq.~\ref{eq:objectif_analytique}) suffise aux solveurs, ces scores peuvent dérouter les lecteurs : une valeur de $-3$ pour HS n’a pas la même « distance » intuitive qu’un $+3$ pour MD dès lors que les signes s’inversent et que les pondérations diffèrent.  
+Bien que la minimisation directe de la somme pondérée des $Z$‑scores (Éq.~\ref{eq:objectif_analytique}) suffise aux solveurs, ces scores peuvent dérouter les lecteurs : une valeur de $-3$ pour HS n’a pas la même « distance » intuitive qu’un $+3$ pour MD dès lors que les signes s’inversent et que les pondérations diffèrent.
 Pour retrouver une échelle uniforme dans $[0,1]$, nous appliquons la fonction logistique
 
 \begin{equation}
@@ -214,7 +223,7 @@ Pour retrouver une échelle uniforme dans $[0,1]$, nous appliquons la fonction l
 où $z$ est le $Z$‑score d’une métrique. Deux raisons principales motivent ce choix :
 
 \begin{enumerate}
-    \item \textbf{Bornage naturel.} La sigmoïde « écrase » toute valeur extrême dans la zone $(0,1)$, évitant qu’une métrique domine indûment la somme pondérée.  
+    \item \textbf{Bornage naturel.} La sigmoïde « écrase » toute valeur extrême dans la zone $(0,1)$, évitant qu’une métrique domine indûment la somme pondérée.
     \item \textbf{Interprétation probabiliste.} Dans le contexte du logit $\rightarrow$ probabilité $[0,1]$, $s(z)$ peut se lire comme la probabilité qu’une assignation aléatoire produise une valeur plus défavorable que le calendrier étudié. Pour $z=0$ on obtient $s(0)=0.5$ ; un $Z$‑score négatif ($z=-\sigma$) se traduit par $s\!\approx\!0.73$, indiquant que le calendrier bat 73 \% des tirages aléatoires, et vice‑versa.
 \end{enumerate}
 
@@ -239,7 +248,7 @@ Les formules analytiques utilisées pour calculer $\mu$ et $\sigma$ pour chaque 
         \mu_{PS} &= n \cdot \frac{n-2}{2} \\
         \sigma_{PS} &= \dfrac{\sqrt{n(n-2)}}{2} \quad \text{si } n > 2, \text{ sinon } 1.0
     \end{align*}
-    \item \textbf{Max Deviation (MD) :} Chaque joueur joue $n-1$ matchs, avec $H_i \sim \mathrm{Bin}(n-1, 1/2)$. Le maximum parmi les $n$ joueurs suit une distribution d’extrême valeur bien connue en statistique. Sous l’hypothèse d’indépendance (acceptable ici car chaque joueur a un pattern propre), on peut approximer :
+    \item \textbf{Max Deviation (MD) :} Chaque joueur joue $n-1$ matchs, avec $H_i \sim \mathrm{Bin}(n-1, 1/2)$. Le maximum parmi les $n$ joueurs suit une distribution d’extrême valeur bien connue en statistique. Sous l’hypothèse d’indépendance (acceptable ici car chaque joueur a un pattern propre), on can approximer :
     \begin{align*}
         \mu_{MD} &\approx \frac{\sqrt{n-1}}{2} \cdot \sqrt{2 \ln n} \\
         \sigma_{MD} &\approx \frac{\sqrt{n-1}}{2} \cdot \frac{\pi}{\sqrt{12 \ln n}}
@@ -265,7 +274,7 @@ La variance s’obtient en additionnant des termes indépendants :
 \]
 
 \paragraph{Penalty Sequence (PS).}
-Pour un joueur donné il existe $R=n-2$ transitions ; chacune engendre une pénalité avec probabilité $1/2$. 
+Pour un joueur donné il existe $R=n-2$ transitions ; chacune engendre une pénalité avec probabilité $1/2$.
 Par la loi binomiale
 \[
 \mathbb{E}[PS]=n\cdot\tfrac{R}{2}= \tfrac{n(n-2)}{2},\quad
@@ -274,7 +283,7 @@ Par la loi binomiale
 \]
 
 \paragraph{Max Deviation (MD).}
-Soit $H_i\sim\mathrm{Bin}(n-1,\tfrac12)$. 
+Soit $H_i\sim\mathrm{Bin}(n-1,\tfrac12)$.
 Le maximum \(M_n = \max_i |H_i-\tfrac{n-1}{2}|\) est asymptotiquement Gumbel ; on obtient
 \[
 \mu_{MD}\approx\tfrac{\sqrt{n-1}}{2}\sqrt{2\ln n},\quad
@@ -313,80 +322,153 @@ ce ratio croît comme $\sqrt{n/\ln n}$ et diverge lentement avec $n$.
 
 Cela signifie que la normalisation par le maximum devient de plus en plus biaisée à mesure que $n$ augmente, surtout pour MaxDeviation. La normalisation analytique permet de corriger ce biais de manière rigoureuse.
 
-\section{Calibration des Poids par Analyse du Front de Pareto Analytique}
+\section{Calibration des Poids et Analyse du Front de Pareto}
 \label{sec:calibration_pareto_analytique}
-La calibration des poids $\alpha$ et $\beta$ de la fonction objectif (Équation~\ref{eq:objectif_analytique}) est essentielle pour comprendre les compromis entre les trois objectifs d'équité normalisés analytiquement. Cette calibration a été réalisée en exécutant l'algorithme de Recuit Simulé optimisé (SA Numba) pour un nombre $n=500$ joueurs, sur un ensemble de paires de valeurs $(\alpha, \beta)$.
 
-Pour chaque calendrier résultant d'une exécution du SA avec une paire $(\alpha, \beta)$ donnée, les valeurs des trois métriques normalisées analytiquement ($anal\_norm\_hs$, $anal\_norm\_ps$, $anal\_norm\_md$) sont calculées. Ces points forment un nuage dans l'espace tridimensionnel des objectifs. À partir de cet ensemble de solutions, le front de Pareto est identifié. Un front de Pareto est constitué de l'ensemble des solutions non-dominées, c'est-à-dire des solutions pour lesquelles aucune amélioration sur un objectif n'est possible sans dégrader au moins un autre objectif.
+La calibration des poids $\alpha$ et $\beta$ dans la fonction objectif (Équation~\ref{eq:objectif_analytique}) est cruciale pour naviguer les compromis inhérents entre les trois objectifs d'équité (HomeStrength, Pénalité de Séquence, Max Deviation), une fois ceux-ci normalisés analytiquement. Pour ce faire, nous avons exécuté notre algorithme de Recuit Simulé optimisé pour $n=500$ joueurs, en variant systématiquement les paires $(\alpha, \beta)$.
+
+Chaque exécution avec une paire $(\alpha, \beta)$ spécifique produit un calendrier, dont les trois métriques normalisées ($Z_{HS}$, $Z_{PS}$, $Z_{MD}$) constituent un point dans l'espace tridimensionnel des objectifs. L'ensemble de ces points forme un nuage à partir duquel le front de Pareto est extrait. Ce front regroupe les solutions non-dominées : celles pour lesquelles aucune amélioration sur un critère n'est possible sans en dégrader au moins un autre. La Figure~\ref{fig:pareto_3d_analytique} illustre ce front.
+Les scores Z, indiquant l'écart par rapport à la moyenne théorique en termes d'écarts-types, sont préférablement négatifs, signifiant une performance meilleure que la moyenne aléatoire.
 
 \begin{figure}[htbp]
     \centering
-    % Path updated based on workspace structure
-    \includegraphics[width=0.9\textwidth]{../calibration_plots_n500_analytical_norm/pareto_3d_static_n500_anal_norm.png}
-    \caption{Front de Pareto 3D illustrant les compromis entre les trois métriques d'équité normalisées analytiquement ($anal\_norm\_hs$, $anal\_norm\_ps$, $anal\_norm\_md$) pour un tournoi de $n=500$ joueurs. Les points rouges représentent les solutions Pareto-optimales, tandis que les points bleus représentent les solutions dominées. Les axes représentent les valeurs des métriques normalisées analytiquement (scores Z), où des valeurs plus faibles (y compris négatives) sont préférées pour chaque axe.}
+    \includegraphics[width=0.9\textwidth]{./pareto_3d_static_n500_anal_norm.png}
+    \caption{Front de Pareto 3D des métriques d'équité normalisées ($Z_{HS}$, $Z_{PS}$, $Z_{MD}$) pour $n=500$. Les points rouges sont Pareto-optimaux. Des valeurs plus faibles (négatives) sont meilleures.}
     \label{fig:pareto_3d_analytique}
 \end{figure}
 
-La Figure~\ref{fig:pareto_3d_analytique} montre le front de Pareto obtenu pour $n=500$ joueurs en utilisant la normalisation analytique. Ce front illustre visuellement les relations de compromis : par exemple, chercher à minimiser agressivement les pénalités de séquence ($anal\_norm\_ps$) pourrait conduire à une augmentation de la déviation maximale ($anal\_norm\_md$) ou à une valeur moins favorable de HomeStrength ($anal\_norm\_hs$).
+Le choix d'une configuration $(\alpha, \beta)$ spécifique sur ce front dépend des priorités accordées à chaque critère. Notre analyse pour $n=500$ a conduit à la sélection de $\alpha=0.8$ pour la Pénalité de Séquence et $\beta=1.2$ pour la Max Deviation, avec un poids implicite de 1 pour HomeStrength. Ce choix offre un bon équilibre, produisant des Z-scores négatifs pour les trois métriques, ce qui est désirable.
 
-Le choix d'une solution spécifique (et donc d'une paire $(\alpha, \beta)$) sur le front de Pareto dépend des priorités de l'organisateur du tournoi. Avec la normalisation analytique (scores Z), une valeur de $anal\_norm\_k$ représente l'écart par rapport à la moyenne théorique sous assignation aléatoire, mesuré en nombre d'écarts-types. Une valeur négative indique une performance meilleure que la moyenne aléatoire, tandis qu'une valeur positive indique une performance moins bonne. L'objectif est toujours de minimiser ces scores Z. Une stratégie de sélection judicieuse pourrait privilégier les points sur le front qui offrent des valeurs faibles (idéalement négatives) pour les trois métriques.
+La légère prépondérance accordée à Max Deviation ($\beta=1.2$) par rapport à la Pénalité de Séquence ($\alpha=0.8$) et HomeStrength (poids de 1) est délibérée. La métrique HomeStrength, si elle était le seul critère ou un critère trop dominant, pourrait potentiellement favoriser des calendriers où les joueurs forts jouent souvent à l'extérieur contre d'autres joueurs forts (pour minimiser $\sum \max(0, j-i) \cdot x_{i,j,r}$ lorsque $i$ et $j$ sont forts et $j-i$ est petit ou négatif), ce qui pourrait indirectement déséquilibrer la répartition globale des matchs à domicile. En augmentant légèrement le poids de Max Deviation, nous visons à assurer une distribution plus homogène des matchs à domicile pour tous les joueurs, contrant ainsi d'éventuels effets secondaires indésirables d'une focalisation excessive sur HomeStrength. Ces poids, une fois déterminés, ont été utilisés de manière cohérente pour toutes les évaluations comparatives des algorithmes.
 
-Pour notre étude avec $n=500$ et la normalisation analytique, l'analyse du front de Pareto a mis en évidence plusieurs combinaisons $(\alpha, \beta)$ intéressantes. Après analyse des compromis, nous avons choisi la configuration avec $\alpha=0.8$ (pour PS) et $\beta=1.2$ (pour MD), avec un poids implicite de 1 pour HS. Ce choix est motivé par plusieurs facteurs. Premièrement, il représente un bon compromis sur le front de Pareto pour $n=500$, offrant des valeurs négatives pour les trois métriques normalisées, indiquant une performance meilleure que la moyenne aléatoire pour chacun des trois critères d'équité. Le poids légèrement plus élevé pour MD ($\beta=1.2$) par rapport à PS ($\alpha=0.8$) reflète une priorité donnée à l'homogénéité de la répartition domicile/extérieur. Deuxièmement, il est crucial de noter que, pour garantir une comparaison équitable entre les différents modèles (MILP, SA), les poids $\alpha$ et $\beta$ doivent être fixés et utilisés uniformément pour toutes les évaluations.
+\textbf{Note pour l'exploration interactive :} Une version interactive de ce front de Pareto est disponible. Après avoir cloné le dépôt GitLab du projet, exécutez la commande suivante dans le terminal depuis la racine du projet :
+\begin{verbatim}
+open calibration_plots_n500_analytical_norm/pareto_3d_interactive_n500_anal_norm.html
+\end{verbatim}
 
-En conclusion, l'exploration systématique de l'espace des poids $(\alpha, \beta)$ et l'analyse du front de Pareto basé sur la normalisation analytique fournissent un outil décisionnel robuste. Elles permettent de choisir un calendrier qui correspond au mieux aux préférences spécifiques en matière d'équité, en se basant sur la performance relative des solutions dans l'espace des objectifs normalisés analytiquement, désormais interprétables comme des déviations par rapport à une performance aléatoire moyenne.
-
-\section{Benchmarking des Algorithmes}
+\section{Développement et Performance du Recuit Simulé}
 \label{sec:benchmarking}
 
-\subsection{Protocole expérimental}
-Chaque algorithme est lancé \textbf{une seule fois} avec une limite de temps stricte de \textbf{60 secondes}.
-\subsection{Résultats chiffrés}
+\subsection{Protocole Expérimental et Stratégie d'Optimisation}
+Pour évaluer l'efficacité de notre méta-heuristique de Recuit Simulé (SA), nous avons adopté une approche itérative. Initialement, une version "naïve" du SA (implémentée dans `sa_solver_non_opti.py`) a été développée. Cette version, bien que fonctionnellement correcte, recalculait intégralement les métriques à chaque itération et utilisait des structures de données Python standard, la rendant lente pour des instances de grande taille.
 
-Le tableau \ref{tab:sa-comparison} présente une comparaison détaillée entre les versions optimisée et non-optimisée de l'algorithme de Recuit Simulé (SA) pour différentes tailles de tournoi. On observe une nette amélioration des performances avec la version optimisée, particulièrement visible sur les instances de grande taille.
+Conscients de cette limitation, nous avons rapidement entrepris d'optimiser significativement l'algorithme (version `sa_solver.py`). Les optimisations clés incluent :
+\begin{itemize}
+    \item \textbf{Compilation Just-in-Time (JIT) avec Numba} : La boucle principale du SA et les fonctions critiques de calcul de métriques ont été décorées avec `@numba.njit`, permettant une compilation en code machine quasi-natif.
+    \item \textbf{Utilisation de NumPy} : Les calendriers et les compteurs ont été représentés par des tableaux NumPy, favorisant des opérations vectorielles rapides.
+    \item \textbf{Mises à jour incrémentielles} : Plutôt que de recalculer entièrement les métriques (HomeStrength, Pénalité de Séquence, Max Deviation) après chaque mouvement (inversion domicile/extérieur d'un match), nous avons implémenté des mises à jour différentielles. Cela réduit considérablement le coût de chaque itération.
+    \item \textbf{Représentation compacte des séquences} : Le module `packed_array_utils` utilise un encodage binaire pour stocker les statuts domicile/extérieur (H/A) de plusieurs joueurs dans un seul octet, optimisant l'accès mémoire et le calcul des pénalités de séquence.
+    \item \textbf{Simplification des Voisinages} : La version optimisée se concentre sur un seul type de mouvement (inversion H/A d'un match aléatoire), tandis que la version non optimisée explorait d'autres mouvements plus complexes (échange de rondes, échange de joueurs). Cette simplification facilite grandement l'implémentation de mises à jour incrémentielles efficaces.
+    \item \textbf{Parallélisation des `runs` multiples} : L'utilisation de `concurrent.futures.ProcessPoolExecutor` permet de lancer plusieurs chaînes de SA indépendantes en parallèle, exploitant les cœurs multiples des processeurs modernes pour une meilleure exploration de l'espace des solutions.
+\end{itemize}
+
+Cette stratégie d'optimisation précoce a eu des conséquences importantes. D'une part, elle nous a permis d'évaluer le comportement du SA sur des instances de très grande taille ($N \ge 500$) bien plus tôt dans le projet. Cette capacité a été cruciale pour identifier les limites de notre approche initiale de normalisation des métriques (basée sur les valeurs maximales), qui se comportait mal pour $N$ élevé. Cela nous a conduits à adopter la normalisation analytique (basée sur les Z-scores), plus robuste et cohérente.
+
+D'autre part, la complexité inhérente au code optimisé (en particulier avec Numba et les mises à jour incrémentielles) a rendu certaines adaptations ultérieures plus laborieuses. Un exemple notable est l'implémentation d'un budget temps strict pour les comparaisons. Initialement, notre SA optimisé fonctionnait avec un nombre fixe d'itérations. Pour permettre une comparaison équitable avec d'autres approches sur la base d'un temps d'exécution fixe, nous avons dû intégrer un mécanisme de gestion du temps :
+\begin{enumerate}
+    \item Une phase de "warm-up" (ou "test d'étalonnage") est exécutée au début : l'algorithme effectue un petit nombre d'itérations pour mesurer la vitesse d'itération sur la machine actuelle.
+    \item Le nombre total d'itérations pour la boucle principale du SA est ensuite ajusté pour tenter de respecter le budget temps imparti, tout en assurant un refroidissement progressif de la température.
+\end{enumerate}
+Bien que fonctionnel, ce mécanisme n'est pas infaillible. L'estimation de la vitesse d'itération peut être optimiste, surtout lorsque plusieurs `runs` parallèles saturent le CPU, pouvant entraîner un phénomène de "throttling" (ralentissement thermique du processeur). Ainsi, le temps d'exécution final peut parfois légèrement dépasser le budget alloué.
+
+\subsection{Comparaison des Performances : Recuit Simulé vs. Approche Exacte}
+Pour les petites instances ($n=4, 6$), nous avons pu comparer nos algorithmes de Recuit Simulé (SA-Opti et SA-NonOpti, avec un budget de 60s) aux solutions obtenues par une méthode exacte (MILP), dont les résultats nous ont été fournis.
 
 \begin{table}[htbp]
 \centering
-\caption{Comparaison des performances entre les versions optimisée et non-optimisée du Recuit Simulé}
-\label{tab:sa-comparison}
-\begin{tabular}{|r|rr|rr|rr|rr|}
-\hline
-\multirow{2}{*}{$n$} & \multicolumn{2}{c|}{Z-sum} & \multicolumn{2}{c|}{HomeStrength} & \multicolumn{2}{c|}{Penalty Sequence} & \multicolumn{2}{c|}{Max Deviation} \\
-\cline{2-9}
- & Non-Opti & Opti & Non-Opti & Opti & Non-Opti & Opti & Non-Opti & Opti \\
-\hline
-4 & -3.72 & -3.72 & 3.00 & 3.00 & 2.00 & 2.00 & 0.50 & 0.50 \\
-6 & -5.47 & -6.05 & 16.00 & 13.00 & 4.00 & 4.00 & 0.50 & 0.50 \\
-8 & -7.14 & -8.09 & 22.00 & 35.00 & 10.00 & 6.00 & 1.50 & 0.50 \\
-25 & -17.99 & -21.83 & 819.00 & 1192.00 & 130.00 & 54.00 & 4.00 & 1.00 \\
-250 & -7.33 & -202.87 & 1261076.00 & 1250494.00 & 30794.00 & 1282.00 & 22.50 & 10.50 \\
-500 & -4.21 & -378.19 & 10400027.00 & 9355982.00 & 124056.00 & 16630.00 & 31.50 & 29.50 \\
-1000 & -0.94 & -180.69 & 83349223.00 & 75548920.00 & 499478.00 & 423188.00 & 50.50 & 34.50 \\
-\hline
+\caption{Comparaison du Z-sum et de la Pénalité de Séquence (PS) brute pour les petites instances.}
+\label{tab:sa_vs_exact}
+\begin{tabular}{l rrr rrr}
+\toprule
+\multirow{2}{*}{Algorithme} & \multicolumn{3}{c}{$n=4$} & \multicolumn{3}{c}{$n=6$} \\
+\cmidrule(lr){2-4} \cmidrule(lr){5-7}
+ & Z-sum & PS (brut) & Temps (s) & Z-sum & PS (brut) & Temps (s) \\
+\midrule
+MILP Exact & -3.27 & 2 & 0.23 & -4.30 & 4 & 6.73 \\
+SA-Opti (60s) & -3.72 & 2 & $\approx$60 & -6.05 & 4 & $\approx$60 \\
+SA-NonOpti (60s) & -3.72 & 2 & $\approx$60 & -5.47 & 4 & $\approx$60 \\
+\bottomrule
 \end{tabular}
 \end{table}
 
-L'amélioration est particulièrement notable pour les instances de taille moyenne et grande ($n \geq 250$), où la version optimisée atteint des scores Z-sum significativement meilleurs. Pour $n=500$, la différence est la plus marquée, la version optimisée atteignant un score Z-sum bien plus faible (-378.19 contre -4.21).
+Pour $n=4$, les trois approches trouvent des solutions avec une PS brute identique (optimale) et des Z-sums très proches, l'exact étant légèrement meilleur. Pour $n=6$, les SA trouvent également la PS brute optimale de 4. Le SA-Opti obtient même un Z-sum légèrement meilleur que l'exact, ce qui peut s'expliquer par les compromis avec HS et MD sur lesquels l'heuristique a pu trouver un meilleur équilibre global dans le temps imparti, même si l'optimalité sur une métrique individuelle comme PS est atteinte par tous. Ces résultats valident la capacité du SA à trouver d'excellentes solutions pour les petites tailles.
 
-% Maintien du tableau existant pour compatibilité
-\csvstyle{boldwinner}{%
-  table head=\toprule Algorithme & {$\mathrm{HS}_\mathrm{norm}$} & {$\mathrm{PS}_\mathrm{norm}$} & {$\mathrm{MD}_\mathrm{norm}$}\\\midrule,
-  late after line=\\,
-  tabular=|l|S|S|S|,
-  table foot=\bottomrule
-}
-\csvreader[style=boldwinner,separator=comma, respect all]{../benchmark_results.csv}{}%
-{\csvcoli & \csvcolii & \csvcoliii & \csvcoliv}
+\subsection{Résultats Chiffrés des Comparaisons SA}
+Chaque version du SA a été lancée une fois pour différentes tailles $n$, avec une limite de temps de 60 secondes. Les poids pour la fonction objectif étaient $\alpha=0.8, \beta=1.2$.
 
-\subsection{Visualisation}
+\begin{table}[htbp]
+\centering
+\caption{Comparaison des performances (métriques brutes et Z-sum) entre les versions SA Non-Optimisée et Optimisée (60s de budget temps). Z-sum : plus il est faible (négatif), mieux c'est. Métriques brutes : plus elles sont faibles, mieux c'est.}
+\label{tab:sa-comparison}
+\begin{adjustbox}{width=\textwidth,center}
+\begin{tabular}{r S[table-format=-2.4] S[table-format=-3.4] S[table-format=8.0] S[table-format=8.0] S[table-format=6.0] S[table-format=6.0] S[table-format=2.2] S[table-format=2.2]}
+\toprule
+{\multirow{2}{*}{$n$}} & \multicolumn{2}{c}{Z-sum} & \multicolumn{2}{c}{HomeStrength (brut)} & \multicolumn{2}{c}{Penalty Seq (brut)} & \multicolumn{2}{c}{Max Deviation (brut)} \\
+\cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9}
+ & {Non-Opti} & {Opti} & {Non-Opti} & {Opti} & {Non-Opti} & {Opti} & {Non-Opti} & {Opti} \\
+\midrule
+5 & -3.6314 & -4.4576 & 10 & 10 & 6 & 4 & 0.00 & 0.00 \\ % n=5 from CSV, not n=4
+25 & -17.9921 & -21.7879 & 819 & 1184 & 130 & 56 & 4.00 & 1.00 \\
+100 & -36.4179 & -84.2157 & 62233 & 79476 & 3678 & 264 & 11.50 & 3.50 \\
+250 & -7.2309 & -203.7024 & 1261646 & 1253161 & 30800 & 1168 & 22.50 & 9.50 \\
+500 & -4.3434 & -376.4995 & 10397292 & 9372697 & 124038 & 17196 & 31.50 & 27.50 \\
+700 & -1.6844 & -466.7747 & 28561754 & 25290130 & 244072 & 62438 & 44.50 & 32.50 \\
+1000 & -0.9371 & -192.9358 & 83349223 & 75316457 & 499478 & 416408 & 50.50 & 35.50 \\
+1250 & -3.7943 & -138.7044 & 162424383 & 150166456 & 779642 & 719098 & 57.50 & 42.50 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+Note : Les données pour $n=4$ et $n=6$ dans Table~\ref{tab:sa-comparison} proviennent d'exécutions SA distinctes de celles comparées à l'exact, utilisant le CSV `sa_algorithms_comparison_results.csv` qui commence à $n=5$.
+
+\subsection{Analyse Visuelle et Qualitative des Plannings}
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.9\textwidth]{/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/raw_metrics_comparison.png}
-    \caption{Évolution des valeurs brutes de HomeStrength (HS), Penalty Sequence (PS) et Max Deviation (MD) en fonction de $n$ pour les versions \textit{Non‑Opti} et \textit{Opti} du Recuit Simulé. Chaque point correspond à la meilleure solution trouvée dans la fenêtre de 60 s.}
-    \label{fig:raw_metrics_evolution}
+    \begin{subfigure}{\textwidth}
+        \includegraphics[width=\linewidth]{./raw_metrics_comparison.png}
+        \caption{Évolution des valeurs brutes de HomeStrength (HS), Penalty Sequence (PS) et Max Deviation (MD) en fonction de $n$ pour les versions \textit{Non‑Opti} (bleu) et \textit{Opti} (rouge) du Recuit Simulé, comparées au pire cas théorique (vert). Chaque point correspond à la meilleure solution trouvée en 60 s.}
+        \label{fig:raw_metrics_evolution}
+    \end{subfigure}
+    \vfill
+    \begin{subfigure}{\textwidth}
+        \centering
+        \includegraphics[width=0.9\linewidth]{./z_score_comparison.png}
+        \caption{Comparaison du score Z-sum (multiplié par -1, donc "plus haut est mieux" ici) entre les versions \textit{Non-Opti} et \textit{Opti}. La version optimisée explore plus efficacement l'espace des solutions.}
+        \label{fig:z_score_comparison}
+    \end{subfigure}
+    \caption{Comparaison visuelle des performances des deux versions du Recuit Simulé.}
 \end{figure}
 
-Dans la plage de tailles testées, la version \textit{Opti} obtient systématiquement de meilleurs scores que la version \textit{Non‑Opti}.  
+La Figure~\ref{fig:raw_metrics_evolution} et la Figure~\ref{fig:z_score_comparison} confirment la supériorité de la version optimisée du SA. Concernant le Z-sum (Fig.~\ref{fig:z_score_comparison}), le pic de performance est atteint à $n=700$ pour SA-Opti, tandis que SA-NonOpti plafonne vers $n=100$. Cette "dégradation" apparente du Z-score pour $N$ très grands sous budget temps fixe s'explique par l'immensité croissante de l'espace de recherche et la difficulté à atteindre des améliorations absolues proportionnellement aussi importantes que pour des $N$ intermédiaires.
 
+\subsubsection{Qualité d'un Planning Exemple ($n=25$)}
+Le planning généré par SA-Opti pour $n=25$ (voir `sa_schedule_n25.csv` en annexe ou produit par le code) illustre la qualité atteignable.
+Le nombre de matchs à domicile par joueur y est très bien équilibré : l'idéal est $(25-1)/2 = 12$. Les valeurs observées varient entre 11 et 13, résultant en un Max Deviation de 1.0, ce qui est excellent.
+Extrait des séquences H/A pour $n=25$ (Joueur 1 et Joueur 20) :
+\begin{itemize}
+    \item Joueur 1: \texttt{HAAAAHAAHAHAHAHAHAHAHHAH} (PS faible)
+    \item Joueur 20: \texttt{AHHAHAHHAHAHAHAHAHAHAHAH} (PS faible)
+\end{itemize}
+Ces séquences montrent une bonne alternance générale. Cependant, on observe occasionnellement des séries de 3 ou (rarement) 4 matchs consécutifs à domicile ou à l'extérieur pour certains joueurs dans le planning complet. Par exemple, Joueur 25 : \texttt{HAHHAHAA...}. La séquence \texttt{HH} ou \texttt{AA} est pénalisée d'un point (voir Éq. (5) et (6)). Une séquence \texttt{HHH} compte pour deux pénalités (H1-H2 et H2-H3).
+Notre définition actuelle de la Pénalité de Séquence ne pénalise pas exponentiellement les séries plus longues. Si une réduction drastique des séries de 3+ était prioritaire, il faudrait modifier la fonction de pénalité pour, par exemple, attribuer un coût croissant à $L-1$ pour une série de longueur $L$. Cela dit, avec $\alpha=0.8$, le solveur cherche déjà activement à minimiser ces breaks.
+
+\section{Conclusion et Perspectives}
+\label{sec:conclusion}
+Ce projet a permis de développer et d'évaluer une approche basée sur le Recuit Simulé pour la génération de calendriers de tournois Round Robin équitables. L'optimisation du SA, combinée à une normalisation analytique robuste des métriques d'équité et une calibration soignée des poids de la fonction objectif, a démontré sa capacité à produire des solutions de haute qualité, même pour des instances de grande taille, dans un temps de calcul contraint.
+
+Les comparaisons avec une version non optimisée et, pour les petits cas, avec une approche exacte, ont validé l'efficacité de notre SA optimisé. L'analyse des plannings générés montre un bon respect des différents critères d'équité, bien que des améliorations ciblées (par exemple, sur la pénalisation des longues séries H/A) soient toujours possibles.
+
+Pour des travaux futurs, l'exploration d'autres méta-heuristiques (comme la recherche Tabou initialement envisagée) ou l'hybridation d'approches pourrait s'avérer fructueuse. De même, l'étude de fonctions de pénalité alternatives pour la métrique de séquence pourrait affiner davantage l'équité des calendriers sur cet aspect spécifique.
+
+\subsection*{Instructions pour la Reproductibilité et Exploration}
+Le code source complet de ce projet est disponible sur un dépôt GitLab (le lien sera fourni séparément). Le dépôt contient :
+\begin{itemize}
+    \item Les implémentations des solveurs (`sa_solver.py`, `sa_solver_non_opti.py`, etc.).
+    \item Les scripts pour générer les données de calibration et les benchmarks.
+    \item Un `README.md` détaillé avec les instructions pour installer les dépendances, exécuter les solveurs, et reproduire les résultats présentés dans ce rapport.
+    \item Un `Makefile` simplifiant certaines commandes courantes.
+\end{itemize}
+Nous encourageons le lecteur à cloner le dépôt et à explorer le code et les outils fournis pour une compréhension plus approfondie de notre travail.
 
 \end{document}

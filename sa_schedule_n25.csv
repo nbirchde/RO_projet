@@ -1,0 +1,89 @@
+Round,Match 1,Match 2,Match 3,Match 4,Match 5,Match 6,Match 7,Match 8,Match 9,Match 10,Match 11,Match 12
+Round 1,25v2(H),24v3(H),23v4(H),22v5(H),21v6(H),7v20(H),19v8(H),9v18(H),17v10(H),11v16(H),15v12(H),13v14(H)
+Round 2,1v25(H),2v23(H),3v22(H),4v21(H),20v5(H),6v19(H),18v7(H),8v17(H),16v9(H),10v15(H),14v11(H),12v13(H)
+Round 3,24v1(H),25v23(H),21v2(H),20v3(H),19v4(H),5v18(H),17v6(H),7v16(H),15v8(H),9v14(H),13v10(H),11v12(H)
+Round 4,23v1(H),22v24(H),25v21(H),2v19(H),18v3(H),4v17(H),16v5(H),6v15(H),14v7(H),8v13(H),12v9(H),10v11(H)
+Round 5,22v1(H),21v23(H),24v20(H),19v25(H),17v2(H),3v16(H),15v4(H),5v14(H),13v6(H),7v12(H),11v8(H),9v10(H)
+Round 6,21v1(H),20v22(H),23v19(H),18v24(H),25v17(H),2v15(H),14v3(H),4v13(H),12v5(H),6v11(H),10v7(H),8v9(H)
+Round 7,1v20(H),19v21(H),22v18(H),17v23(H),24v16(H),15v25(H),13v2(H),3v12(H),11v4(H),5v10(H),9v6(H),7v8(H)
+Round 8,19v1(H),20v18(H),21v17(H),16v22(H),23v15(H),14v24(H),25v13(H),2v11(H),10v3(H),4v9(H),8v5(H),6v7(H)
+Round 9,18v1(H),17v19(H),20v16(H),15v21(H),22v14(H),13v23(H),24v12(H),11v25(H),9v2(H),3v8(H),7v4(H),5v6(H)
+Round 10,1v17(H),16v18(H),19v15(H),14v20(H),21v13(H),12v22(H),23v11(H),10v24(H),25v9(H),2v7(H),6v3(H),4v5(H)
+Round 11,16v1(H),15v17(H),18v14(H),13v19(H),20v12(H),11v21(H),22v10(H),9v23(H),24v8(H),7v25(H),5v2(H),3v4(H)
+Round 12,1v15(H),14v16(H),17v13(H),12v18(H),19v11(H),10v20(H),21v9(H),8v22(H),23v7(H),6v24(H),25v5(H),2v3(H)
+Round 13,14v1(H),13v15(H),16v12(H),11v17(H),18v10(H),9v19(H),20v8(H),7v21(H),22v6(H),5v23(H),24v4(H),3v25(H)
+Round 14,1v13(H),12v14(H),15v11(H),10v16(H),17v9(H),8v18(H),19v7(H),6v20(H),21v5(H),4v22(H),23v3(H),2v24(H)
+Round 15,12v1(H),11v13(H),14v10(H),9v15(H),16v8(H),7v17(H),18v6(H),5v19(H),20v4(H),3v21(H),22v2(H),24v25(H)
+Round 16,1v11(H),10v12(H),13v9(H),8v14(H),15v7(H),6v16(H),17v5(H),4v18(H),19v3(H),2v20(H),25v22(H),23v24(H)
+Round 17,10v1(H),9v11(H),12v8(H),7v13(H),14v6(H),5v15(H),16v4(H),3v17(H),18v2(H),20v25(H),24v21(H),22v23(H)
+Round 18,1v9(H),8v10(H),11v7(H),6v12(H),13v5(H),4v14(H),15v3(H),2v16(H),25v18(H),19v24(H),23v20(H),21v22(H)
+Round 19,8v1(H),7v9(H),10v6(H),5v11(H),12v4(H),3v13(H),14v2(H),16v25(H),24v17(H),18v23(H),22v19(H),20v21(H)
+Round 20,1v7(H),6v8(H),9v5(H),4v10(H),11v3(H),2v12(H),25v14(H),15v24(H),23v16(H),17v22(H),21v18(H),19v20(H)
+Round 21,6v1(H),5v7(H),8v4(H),3v9(H),10v2(H),12v25(H),24v13(H),14v23(H),22v15(H),16v21(H),20v17(H),18v19(H)
+Round 22,1v5(H),4v6(H),7v3(H),2v8(H),25v10(H),11v24(H),23v12(H),13v22(H),21v14(H),15v20(H),19v16(H),17v18(H)
+Round 23,1v4(H),5v3(H),6v2(H),8v25(H),24v9(H),10v23(H),22v11(H),12v21(H),20v13(H),14v19(H),18v15(H),16v17(H)
+Round 24,3v1(H),4v2(H),25v6(H),7v24(H),23v8(H),9v22(H),21v10(H),11v20(H),19v12(H),13v18(H),17v14(H),15v16(H)
+Round 25,1v2(H),25v4(H),24v5(H),23v6(H),22v7(H),21v8(H),20v9(H),10v19(H),18v11(H),12v17(H),16v13(H),14v15(H)
+
+Metric,Value
+Overall Analytical Normalized Score (Z-sum),-21.787878792621818
+"Overall Scaled Score ([0,1] sum)",1.6079784080520443
+Raw Home Strength,1184.0
+Analytical Norm HS (Z-Score),-1.2869044552425315
+"Scaled HS ([0,1])",0.5064341670877144
+Raw Penalty Sequence,56
+Analytical Norm PS (Z-Score),-19.308434741685122
+"Scaled PS ([0,1])",0.5953600513509103
+Raw Max Deviation,1.0
+Analytical Norm MD (Z-Score),-4.211855453359323
+"Scaled MD ([0,1])",0.5210468332363348
+Home Games Player 1,11
+Home Games Player 2,11
+Home Games Player 3,11
+Home Games Player 4,11
+Home Games Player 5,11
+Home Games Player 6,12
+Home Games Player 7,12
+Home Games Player 8,11
+Home Games Player 9,11
+Home Games Player 10,13
+Home Games Player 11,12
+Home Games Player 12,12
+Home Games Player 13,11
+Home Games Player 14,13
+Home Games Player 15,12
+Home Games Player 16,12
+Home Games Player 17,11
+Home Games Player 18,12
+Home Games Player 19,13
+Home Games Player 20,13
+Home Games Player 21,13
+Home Games Player 22,13
+Home Games Player 23,13
+Home Games Player 24,13
+Home Games Player 25,13
+Sequence Player 1,HAAAAHAAHAHAHAHAHAHAHHAH
+Sequence Player 2,AHAHAHAHAHAHHAHAHAHAHAAA
+Sequence Player 3,AHAAHAHAHAHAHAHAHAHAHAAH
+Sequence Player 4,AHAHAHAHAHAAHAHAHAHAHAHA
+Sequence Player 5,AAHAHAHAHAHAHAHAHAHAHAHA
+Sequence Player 6,AHAHAHAHAHHAHAHAHAHHAHAA
+Sequence Player 7,HAHAHAHAHAHAHAHAHAHAAHHA
+Sequence Player 8,AHAHAHAHAAHAHAHAHHAHAHAA
+Sequence Player 9,HAHAHAHAHAHAHAHAHAAHAAHA
+Sequence Player 10,AHAHAHAHHAHAHAHHAHAHAHAH
+Sequence Player 11,HAHAHAHAHAHAHAHAAHAHHAHA
+Sequence Player 12,AHAHAHAAHAHAHHAHAHAHAHAH
+Sequence Player 13,HAHAHAHAHAHAHAAHAHAAHAHA
+Sequence Player 14,AHAHAHHAHAHHAHAHAHAHAHAH
+Sequence Player 15,HAHAHAHAHAHAAHAHAHHAHAHA
+Sequence Player 16,AHAHAAHAHHAHAHAHAHAHAHAH
+Sequence Player 17,HAHAHAHAHAAHAHAHAAHAHAHA
+Sequence Player 18,AHAHHAAHAHAHAHAHAHAHAHAH
+Sequence Player 19,HAHAHAHHAHAHAHAHHAHAHAHA
+Sequence Player 20,AHHAHAHHAHAHAHAHAHAHAHAH
+Sequence Player 21,HAHAHHAHAHAHAHAAHAHAHAHH
+Sequence Player 22,HAHHAHAHAHAHAHAHAHAHAHAH
+Sequence Player 23,HAAHAHAHAHAHAHHAHAHAHAHH
+Sequence Player 24,HHAHAHAHAHAHAHAHAHAHAHAH
+Sequence Player 25,HAHHAHAHAHAHAAHAHAHAHAHH

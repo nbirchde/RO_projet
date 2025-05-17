@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.4.19)  17 MAY 2025 01:18
+This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.4.19)  17 MAY 2025 11:31
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -624,47 +624,124 @@ Package: appendix 2020/02/08 v1.2c extra appendix facilities
 \c@@pps=\count363
 \c@@ppsavesec=\count364
 \c@@ppsaveapp=\count365
-) (/usr/local/texlive/2025/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
+) (/usr/local/texlive/2025/texmf-dist/tex/latex/caption/subcaption.sty
+Package: subcaption 2023/07/28 v1.6b Sub-captions (AR)
+ (/usr/local/texlive/2025/texmf-dist/tex/latex/caption/caption.sty
+Package: caption 2023/08/05 v3.6o Customizing captions (AR)
+ (/usr/local/texlive/2025/texmf-dist/tex/latex/caption/caption3.sty
+Package: caption3 2023/07/31 v2.4d caption3 kernel (AR)
+\caption@tempdima=\dimen319
+\captionmargin=\dimen320
+\caption@leftmargin=\dimen321
+\caption@rightmargin=\dimen322
+\caption@width=\dimen323
+\caption@indent=\dimen324
+\caption@parindent=\dimen325
+\caption@hangindent=\dimen326
+Package caption Info: Standard document class detected.
+Package caption Info: french babel package is loaded.
+)
+\c@caption@flags=\count366
+\c@continuedfloat=\count367
+Package caption Info: hyperref package is loaded.
+Package caption Info: listings package is loaded.
+)
+Package caption Info: New subtype `subfigure' on input line 238.
+\c@subfigure=\count368
+Package caption Info: New subtype `subtable' on input line 238.
+\c@subtable=\count369
+) (/usr/local/texlive/2025/texmf-dist/tex/latex/multirow/multirow.sty
+Package: multirow 2024/11/12 v2.9 Span multiple rows of a table
+\multirow@colwidth=\skip57
+\multirow@cntb=\count370
+\multirow@dima=\skip58
+\bigstrutjot=\dimen327
+) (/usr/local/texlive/2025/texmf-dist/tex/latex/adjustbox/adjustbox.sty
+Package: adjustbox 2025/02/26 v1.3c Adjusting TeX boxes (trim, clip, ...)
+ (/usr/local/texlive/2025/texmf-dist/tex/latex/xkeyval/xkeyval.sty
+Package: xkeyval 2022/06/16 v2.9 package option processing (HA)
+ (/usr/local/texlive/2025/texmf-dist/tex/generic/xkeyval/xkeyval.tex (/usr/local/texlive/2025/texmf-dist/tex/generic/xkeyval/xkvutils.tex
+\XKV@toks=\toks48
+\XKV@tempa@toks=\toks49
+)
+\XKV@depth=\count371
+File: xkeyval.tex 2014/12/03 v2.7a key=value parser (HA)
+)) (/usr/local/texlive/2025/texmf-dist/tex/latex/adjustbox/adjcalc.sty
+Package: adjcalc 2012/05/16 v1.1 Provides advanced setlength with multiple back-ends (calc, etex, pgfmath)
+) (/usr/local/texlive/2025/texmf-dist/tex/latex/adjustbox/trimclip.sty
+Package: trimclip 2025/02/21 v1.2a Trim and clip general TeX material
+ (/usr/local/texlive/2025/texmf-dist/tex/latex/collectbox/collectbox.sty
+Package: collectbox 2022/10/17 v0.4c Collect macro arguments as boxes
+\collectedbox=\box78
+)
+\tc@llx=\dimen328
+\tc@lly=\dimen329
+\tc@urx=\dimen330
+\tc@ury=\dimen331
+Package trimclip Info: Using driver 'tc-pdftex.def'.
+ (/usr/local/texlive/2025/texmf-dist/tex/latex/adjustbox/tc-pdftex.def
+File: tc-pdftex.def 2025/02/26 v2.3 Clipping driver for pdftex
+))
+\adjbox@Width=\dimen332
+\adjbox@Height=\dimen333
+\adjbox@Depth=\dimen334
+\adjbox@Totalheight=\dimen335
+\adjbox@pwidth=\dimen336
+\adjbox@pheight=\dimen337
+\adjbox@pdepth=\dimen338
+\adjbox@ptotalheight=\dimen339
+ (/usr/local/texlive/2025/texmf-dist/tex/latex/ifoddpage/ifoddpage.sty
+Package: ifoddpage 2022/10/18 v1.2 Conditionals for odd/even page detection
+\c@checkoddpage=\count372
+) (/usr/local/texlive/2025/texmf-dist/tex/latex/varwidth/varwidth.sty
+Package: varwidth 2009/03/30 ver 0.92;  Variable-width minipages
+\@vwid@box=\box79
+\sift@deathcycles=\count373
+\@vwid@loff=\dimen340
+\@vwid@roff=\dimen341
+))
+Package hyperref Info: Option `colorlinks' set `true' on input line 48.
+ (/usr/local/texlive/2025/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
 File: l3backend-pdftex.def 2024-05-08 L3 backend support: PDF output (pdfTeX)
-\l__color_backend_stack_int=\count366
-\l__pdf_internal_box=\box78
+\l__color_backend_stack_int=\count374
+\l__pdf_internal_box=\box80
 )
 No file rapport_scientifique.aux.
 \openout1 = `rapport_scientifique.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 41.
-LaTeX Font Info:    ... okay on input line 41.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 41.
-LaTeX Font Info:    ... okay on input line 41.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 41.
-LaTeX Font Info:    ... okay on input line 41.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 41.
-LaTeX Font Info:    ... okay on input line 41.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 41.
-LaTeX Font Info:    ... okay on input line 41.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 41.
-LaTeX Font Info:    ... okay on input line 41.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 41.
-LaTeX Font Info:    ... okay on input line 41.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 41.
-LaTeX Font Info:    ... okay on input line 41.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 41.
-LaTeX Font Info:    ... okay on input line 41.
-LaTeX Info: Redefining \degres on input line 41.
-LaTeX Info: Redefining \up on input line 41.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 54.
+LaTeX Font Info:    ... okay on input line 54.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 54.
+LaTeX Font Info:    ... okay on input line 54.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 54.
+LaTeX Font Info:    ... okay on input line 54.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 54.
+LaTeX Font Info:    ... okay on input line 54.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 54.
+LaTeX Font Info:    ... okay on input line 54.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 54.
+LaTeX Font Info:    ... okay on input line 54.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 54.
+LaTeX Font Info:    ... okay on input line 54.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 54.
+LaTeX Font Info:    ... okay on input line 54.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 54.
+LaTeX Font Info:    ... okay on input line 54.
+LaTeX Info: Redefining \degres on input line 54.
+LaTeX Info: Redefining \up on input line 54.
 (/usr/local/texlive/2025/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count367
-\scratchdimen=\dimen319
-\scratchbox=\box79
-\nofMPsegments=\count368
-\nofMParguments=\count369
-\everyMPshowfont=\toks48
-\MPscratchCnt=\count370
-\MPscratchDim=\dimen320
-\MPnumerator=\count371
-\makeMPintoPDFobject=\count372
-\everyMPtoPDFconversion=\toks49
+\scratchcounter=\count375
+\scratchdimen=\dimen342
+\scratchbox=\box81
+\nofMPsegments=\count376
+\nofMParguments=\count377
+\everyMPshowfont=\toks50
+\MPscratchCnt=\count378
+\MPscratchDim=\dimen343
+\MPnumerator=\count379
+\makeMPintoPDFobject=\count380
+\everyMPtoPDFconversion=\toks51
 ) (/usr/local/texlive/2025/texmf-dist/tex/latex/epstopdf-pkg/epstopdf-base.sty
 Package: epstopdf-base 2020-01-24 v2.11 Base part for package epstopdf
 Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 485.
@@ -705,22 +782,24 @@ File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Live
 * \@reversemarginfalse
 * (1in=72.27pt=25.4mm, 1cm=28.453pt)
 
-Package hyperref Info: Link coloring OFF on input line 41.
+Package hyperref Info: Link coloring ON on input line 54.
 \@outlinefile=\write5
 \openout5 = `rapport_scientifique.out'.
 
-\c@lstlisting=\count373
+\c@lstlisting=\count381
 Package pgfplots notification 'compat/show suggested version=true': document has been generated with the most recent feature set (\pgfplotsset{compat=1.18}).
 
 (/usr/local/texlive/2025/texmf-dist/tex/latex/translations/translations-basic-dictionary-french.trsl
 File: translations-basic-dictionary-french.trsl (french translation file `translations-basic-dictionary')
 )
-Package translations Info: loading dictionary `translations-basic-dictionary' for `french'. on input line 41.
-LaTeX Font Info:    Trying to load font information for U+msa on input line 44.
+Package translations Info: loading dictionary `translations-basic-dictionary' for `french'. on input line 54.
+Package caption Info: Begin \AtBeginDocument code.
+Package caption Info: End \AtBeginDocument code.
+LaTeX Font Info:    Trying to load font information for U+msa on input line 57.
  (/usr/local/texlive/2025/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 )
-LaTeX Font Info:    Trying to load font information for U+msb on input line 44.
+LaTeX Font Info:    Trying to load font information for U+msb on input line 57.
  (/usr/local/texlive/2025/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 )
@@ -733,18 +812,20 @@ No file rapport_scientifique.toc.
 [1
 
 {/usr/local/texlive/2025/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{/usr/local/texlive/2025/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc}]
-Overfull \hbox (0.2215pt too wide) in paragraph at lines 57--58
-[]\T1/cmr/m/n/10.95 Homogénéité de la ré-par-ti-tion des matchs do-mi-ci-le/ex-té-rieur entre tous les joueurs (Proxy :
- []
+
+LaTeX Warning: Reference `sec:modelisation' on page 2 undefined on input line 77.
 
 
-LaTeX Warning: Reference `sec:modelisation' on page 2 undefined on input line 69.
+LaTeX Warning: Reference `sec:normalisation_et_objectif_sa' on page 2 undefined on input line 77.
 
 
-LaTeX Warning: Reference `sec:normalisation_et_objectif_sa' on page 2 undefined on input line 69.
+LaTeX Warning: Reference `sec:calibration_pareto_analytique' on page 2 undefined on input line 77.
 
 
-LaTeX Warning: Reference `sec:calibration_pareto_analytique' on page 2 undefined on input line 69.
+LaTeX Warning: Reference `sec:benchmarking' on page 2 undefined on input line 77.
+
+
+LaTeX Warning: Reference `sec:conclusion' on page 2 undefined on input line 77.
 
 
 
@@ -754,31 +835,44 @@ LaTeX Warning: Reference `sec:calibration_pareto_analytique' on page 2 undefined
 
 [4]
 
-LaTeX Warning: Reference `eq:homestrength' on page 5 undefined on input line 180.
+LaTeX Warning: Reference `eq:homestrength' on page 5 undefined on input line 189.
 
 
-/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:194: LaTeX Error: Unicode character â€¯ (U+202F)
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:203: LaTeX Error: Unicode character â€¯ (U+202F)
                not set up for use with LaTeX.
 
 See the LaTeX manual or LaTeX Companion for explanation.
 Type  H <return>  for immediate help.
  ...                                              
                                                   
-l.194 ... faisait varier la notion mÃªme dâ€™Â«â€¯
+l.203 ... faisait varier la notion mÃªme dâ€™Â«â€¯
                                                   Ã©quitÃ©â€¯Â» avec $n$Â : ...
 You may provide a definition with
 \DeclareUnicodeCharacter 
 
 
-/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:194: LaTeX Error: Unicode character â€¯ (U+202F)
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:203: LaTeX Error: Unicode character â€¯ (U+202F)
                not set up for use with LaTeX.
 
 See the LaTeX manual or LaTeX Companion for explanation.
 Type  H <return>  for immediate help.
  ...                                              
                                                   
-l.194 ...rier la notion mÃªme dâ€™Â«â€¯Ã©quitÃ©â€¯
+l.203 ...rier la notion mÃªme dâ€™Â«â€¯Ã©quitÃ©â€¯
                                                   Â» avec $n$Â : le ratio $M...
+You may provide a definition with
+\DeclareUnicodeCharacter 
+
+
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:206: LaTeX Error: Unicode character â€¯ (U+202F)
+               not set up for use with LaTeX.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.206 ...$) mais devient prohibitive auâ€‘delÃ â€¯
+                                                  : le nombre de simulations...
 You may provide a definition with
 \DeclareUnicodeCharacter 
 
@@ -786,69 +880,56 @@ You may provide a definition with
 
 [5]
 
-/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:197: LaTeX Error: Unicode character â€¯ (U+202F)
+LaTeX Warning: Reference `eq:objectif_analytique' on page 6 undefined on input line 215.
+
+
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:215: LaTeX Error: Unicode character â€¯ (U+202F)
                not set up for use with LaTeX.
 
 See the LaTeX manual or LaTeX Companion for explanation.
 Type  H <return>  for immediate help.
  ...                                              
                                                   
-l.197 ...$) mais devient prohibitive auâ€‘delÃ â€¯
-                                                  : le nombre de simulations...
-You may provide a definition with
-\DeclareUnicodeCharacter 
-
-
-LaTeX Warning: Reference `eq:objectif_analytique' on page 6 undefined on input line 206.
-
-
-/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:206: LaTeX Error: Unicode character â€¯ (U+202F)
-               not set up for use with LaTeX.
-
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.206 ... de $-3$ pour HS nâ€™a pas la mÃªme Â«â€¯
+l.215 ... de $-3$ pour HS nâ€™a pas la mÃªme Â«â€¯
                                                   distanceâ€¯Â» intuitive qu...
 You may provide a definition with
 \DeclareUnicodeCharacter 
 
 
-/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:206: LaTeX Error: Unicode character â€¯ (U+202F)
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:215: LaTeX Error: Unicode character â€¯ (U+202F)
                not set up for use with LaTeX.
 
 See the LaTeX manual or LaTeX Companion for explanation.
 Type  H <return>  for immediate help.
  ...                                              
                                                   
-l.206 ...ur HS nâ€™a pas la mÃªme Â«â€¯distanceâ€¯
+l.215 ...ur HS nâ€™a pas la mÃªme Â«â€¯distanceâ€¯
                                                   Â» intuitive quâ€™un $+3$ ...
 You may provide a definition with
 \DeclareUnicodeCharacter 
 
 
-/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:218: LaTeX Error: Unicode character â€¯ (U+202F)
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:227: LaTeX Error: Unicode character â€¯ (U+202F)
                not set up for use with LaTeX.
 
 See the LaTeX manual or LaTeX Companion for explanation.
 Type  H <return>  for immediate help.
  ...                                              
                                                   
-l.218 ...3$, indiquant que le calendrier bat 73â€¯
+l.227 ...3$, indiquant que le calendrier bat 73â€¯
                                                   \% des tirages alÃ©atoires...
 You may provide a definition with
 \DeclareUnicodeCharacter 
 
 
-Overfull \hbox (39.4721pt too wide) in paragraph at lines 221--222
+Overfull \hbox (39.4721pt too wide) in paragraph at lines 230--231
 []\T1/cmr/m/n/10.95 Cette trans-for-ma-tion est im-plé-men-tée dans [][]\T1/cmtt/m/n/10.95 normalization_manager.py []\T1/cmr/m/n/10.95 via la fonc-tion [][]\T1/cmtt/m/n/10.95 z_to_scaled []\T1/cmr/m/n/10.95 : 
  []
 
 (/usr/local/texlive/2025/texmf-dist/tex/latex/listings/lstlang1.sty
 File: lstlang1.sty 2024/09/23 1.10c listings language file
 )
-Overfull \hbox (27.01682pt too wide) in paragraph at lines 228--229
+Overfull \hbox (27.01682pt too wide) in paragraph at lines 237--238
 []\T1/cmr/m/n/10.95 Les sol-veurs mi-ni-misent en-suite la somme pon-dé-rée des ver-sions sig-moïdes (va-riable [][]\T1/cmtt/m/n/10.95 scaled_score[]\T1/cmr/m/n/10.95 ),
  []
 
@@ -858,82 +939,576 @@ Overfull \hbox (27.01682pt too wide) in paragraph at lines 228--229
 
 [7]
 
-LaTeX Warning: Reference `eq:objectif_analytique' on page 8 undefined on input line 318.
+LaTeX Warning: Reference `eq:objectif_analytique' on page 8 undefined on input line 328.
 
-
-Overfull \hbox (45.21722pt too wide) in paragraph at lines 320--321
-\T1/cmr/m/n/10.95 leurs des trois mé-triques nor-ma-li-sées ana-ly-ti-que-ment ($\OML/cmm/m/it/10.95 anal[]norm[]hs$\T1/cmr/m/n/10.95 , $\OML/cmm/m/it/10.95 anal[]norm[]ps$\T1/cmr/m/n/10.95 , $\OML/cmm/m/it/10.95 anal[]norm[]md$\T1/cmr/m/n/10.95 )
- []
-
-<../calibration_plots_n500_analytical_norm/pareto_3d_static_n500_anal_norm.png, id=110, 1405.25pt x 1003.75pt>
-File: ../calibration_plots_n500_analytical_norm/pareto_3d_static_n500_anal_norm.png Graphic file (type png)
-<use ../calibration_plots_n500_analytical_norm/pareto_3d_static_n500_anal_norm.png>
-Package pdftex.def Info: ../calibration_plots_n500_analytical_norm/pareto_3d_static_n500_anal_norm.png  used on input line 325.
-(pdftex.def)             Requested size: 409.71692pt x 292.6576pt.
 
 LaTeX Warning: Reference `fig:pareto_3d_analytique' on page 8 undefined on input line 330.
+
+<./pareto_3d_static_n500_anal_norm.png, id=108, 1405.25pt x 1003.75pt>
+File: ./pareto_3d_static_n500_anal_norm.png Graphic file (type png)
+<use ./pareto_3d_static_n500_anal_norm.png>
+Package pdftex.def Info: ./pareto_3d_static_n500_anal_norm.png  used on input line 335.
+(pdftex.def)             Requested size: 409.71692pt x 292.6576pt.
+
+Overfull \hbox (25.71742pt too wide) in paragraph at lines 347--347
+[]\T1/cmtt/m/n/10.95 open calibration_plots_n500_analytical_norm/pareto_3d_interactive_n500_anal_norm.html[] 
+ []
+
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:353: Missing $ inserted.
+<inserted text> 
+                $
+l.353 ...n "naÃ¯ve" du SA (implÃ©mentÃ©e dans `sa_
+                                                  solver_non_opti.py`) a Ã©t...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+
+LaTeX Warning: Command \' invalid in math mode on input line 353.
+
+
+LaTeX Warning: Command \' invalid in math mode on input line 353.
+
+
+LaTeX Warning: Command \' invalid in math mode on input line 353.
+
+
+LaTeX Warning: Command \' invalid in math mode on input line 353.
+
+
+LaTeX Warning: Command \' invalid in math mode on input line 353.
+
+
+LaTeX Warning: Command \' invalid in math mode on input line 353.
+
+
+LaTeX Warning: Command \` invalid in math mode on input line 353.
+
+
+LaTeX Warning: Command \' invalid in math mode on input line 353.
+
+
+LaTeX Warning: Command \' invalid in math mode on input line 353.
+
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:354: Missing $ inserted.
+<inserted text> 
+                $
+l.354 
+      
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+Missing character: There is no é in font cmr10!
+Missing character: There is no é in font cmr10!
+Missing character: There is no é in font cmr10!
+Missing character: There is no é in font cmr10!
+Missing character: There is no é in font cmr10!
+Missing character: There is no é in font cmr10!
+Missing character: There is no à in font cmr10!
+Missing character: There is no é in font cmr10!
+Missing character: There is no é in font cmr10!
+
+Overfull \hbox (1051.01404pt too wide) in paragraph at lines 353--354
+\T1/cmr/m/n/10.95 une ap-proche ité-ra-tive. Ini-tia-le-ment, une ver-sion "naïve" du SA (im-plé-men-tée dans `sa$[]\OML/cmm/m/it/10.95 olver[]on[]pti:py\OT1/cmr/m/n/10.95 `)\OML/cmm/m/it/10.95 atdveloppe:Cetteversion; bienquefonctionnellementcorrecte; recalculaitintgralementlesmtriqueschaqueitrationetutilisaitdesstructuresdedonnesPythonstandard; larendantlentepourdesinstancesdegrandetaille:$ 
+ []
 
 
 
 [8]
-
-[9 <../calibration_plots_n500_analytical_norm/pareto_3d_static_n500_anal_norm.png>]
-
-LaTeX Warning: Reference `tab:sa-comparison' on page 10 undefined on input line 345.
-
-/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:353: Undefined control sequence.
-<recently read> \multirow 
-                          
-l.353 \multirow
-               {2}{*}{$n$} & \multicolumn{2}{c|}{Z-sum} & \multicolumn{2}{c|...
-The control sequence at the end of the top line
-of your error message was never \def'ed. If you have
-misspelled it (e.g., `\hobx'), type `I' and the correct
-spelling (e.g., `I\hbox'). Otherwise just continue,
-and I'll forget about whatever was undefined.
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:355: Missing $ inserted.
+<inserted text> 
+                $
+l.355 ...nificativement l'algorithme (version `sa_
+                                                  solver.py`). Les optimisat...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
 
 
-Overfull \hbox (33.81537pt too wide) in paragraph at lines 351--366
- [][] 
+LaTeX Warning: Command \' invalid in math mode on input line 355.
+
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:356: Missing $ inserted.
+<inserted text> 
+                $
+l.356 \begin{itemize}
+                     
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:356: Missing \endgroup inserted.
+<inserted text> 
+                \endgroup 
+l.356 \begin{itemize}
+                     
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+Missing character: There is no é in font cmr10!
+
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:357: LaTeX Error: Lonely \item--perhaps a missing list environment.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.357     \item \textbf
+                       {Compilation Just-in-Time (JIT) avec Numba} : La bouc...
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+Underfull \hbox (badness 10000) detected at line 357
+[][]
  []
 
 
-/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:378: Package pgfkeys Error: I do not know the key '/csv/style', to which you passed 'boldwinner', and I am going to ignore it. Perhaps you misspelled it.
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:358: LaTeX Error: Lonely \item--perhaps a missing list environment.
 
-See the pgfkeys package documentation for explanation.
+See the LaTeX manual or LaTeX Companion for explanation.
 Type  H <return>  for immediate help.
  ...                                              
                                                   
-l.378 ...oli & \csvcolii & \csvcoliii & \csvcoliv}
-                                                  
-This error message was generated by an \errmessage
-command, so I can't give any explicit help.
-Pretend that you're Hercule Poirot: Examine all clues,
-and deduce the truth by order and method.
+l.358     \item \textbf
+                       {Utilisation de NumPy} : Les calendriers et les compt...
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
 
 
-/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:378: Package csvsimple Error: File '../benchmark_results.csv' not existent, not readable, or empty!.
+Underfull \hbox (badness 10000) detected at line 358
+[][]
+ []
 
-See the csvsimple package documentation for explanation.
+
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:359: LaTeX Error: Lonely \item--perhaps a missing list environment.
+
+See the LaTeX manual or LaTeX Companion for explanation.
 Type  H <return>  for immediate help.
  ...                                              
                                                   
-l.378 ...oli & \csvcolii & \csvcoliii & \csvcoliv}
-                                                  
-(That was another \errmessage.)
+l.359     \item \textbf
+                       {Mises Ã  jour incrÃ©mentielles} : PlutÃ´t que de rec...
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
 
-</Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/raw_metrics_comparison.png, id=126, 730.8906pt x 875.4306pt>
-File: /Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/raw_metrics_comparison.png Graphic file (type png)
-<use /Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/raw_metrics_comparison.png>
-Package pdftex.def Info: /Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/raw_metrics_comparison.png  used on input line 384.
-(pdftex.def)             Requested size: 409.71692pt x 490.7454pt.
+
+Underfull \hbox (badness 10000) detected at line 359
+[][]
+ []
+
+
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:360: LaTeX Error: Lonely \item--perhaps a missing list environment.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.360     \item \textbf
+                       {ReprÃ©sentation compacte des sÃ©quences} : Le module...
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+Underfull \hbox (badness 10000) detected at line 360
+[][]
+ []
+
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:360: Missing $ inserted.
+<inserted text> 
+                $
+l.360 ...acte des sÃ©quences} : Le module `packed_
+                                                  array_utils` utilise un en...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+
+LaTeX Warning: Command \' invalid in math mode on input line 360.
+
+
+LaTeX Warning: Command \` invalid in math mode on input line 360.
+
+
+LaTeX Warning: Command \' invalid in math mode on input line 360.
+
+
+LaTeX Warning: Command \' invalid in math mode on input line 360.
+
+
+LaTeX Warning: Command \' invalid in math mode on input line 360.
+
+
+LaTeX Warning: Command \' invalid in math mode on input line 360.
+
+
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:361: LaTeX Error: Command \item invalid in math mode.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.361     \item
+                \textbf{Simplification des Voisinages} : La version optimisÃ...
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:361: Missing $ inserted.
+<inserted text> 
+                $
+l.361     \item \textbf
+                       {Simplification des Voisinages} : La version optimisÃ...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+Missing character: There is no é in font cmr10!
+Missing character: There is no è in font cmr10!
+Missing character: There is no é in font cmr10!
+Missing character: There is no é in font cmr10!
+Missing character: There is no é in font cmr10!
+Missing character: There is no é in font cmr10!
+
+Overfull \hbox (725.11002pt too wide) in paragraph at lines 360--361
+[]\T1/cmr/bx/n/10.95 Représentation com-pacte des sé-quences \T1/cmr/m/n/10.95 : Le mo-dule `packed$[]\OML/cmm/m/it/10.95 rray[]tils\OT1/cmr/m/n/10.95 `\OML/cmm/m/it/10.95 utiliseunencodagebinairepourstockerlesstatutsdomicile=extrieur\OT1/cmr/m/n/10.95 (\OML/cmm/m/it/10.95 H=A\OT1/cmr/m/n/10.95 )\OML/cmm/m/it/10.95 deplusieursjoueursdansunseuloctet; optimisantl[]accsmmoireetlecalculdespnalitsdesquence:
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 360--361
+
+ []
+
+
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:361: LaTeX Error: Lonely \item--perhaps a missing list environment.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.361     \item \textbf
+                       {Simplification des Voisinages} : La version optimisÃ...
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+Underfull \hbox (badness 10000) detected at line 361
+[][]
+ []
+
+
+
+[9 <./pareto_3d_static_n500_anal_norm.png>]
+
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:362: LaTeX Error: Lonely \item--perhaps a missing list environment.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.362     \item \textbf
+                       {ParallÃ©lisation des `runs` multiples} : L'utilisati...
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+Underfull \hbox (badness 10000) detected at line 362
+[][]
+ []
+
+
+Overfull \hbox (33.27643pt too wide) in paragraph at lines 362--363
+[]\T1/cmr/bx/n/10.95 Parallélisation des `runs` mul-tiples \T1/cmr/m/n/10.95 : L'uti-li-sa-tion de `concur-rent.futures.ProcessPoolExecutor`
+ []
+
+
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:363: LaTeX Error: \begin{document} ended by \end{itemize}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.363 \end{itemize}
+                   
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:363: Extra \endgroup.
+\end  ...end#1\endcsname \@checkend {#1}\endgroup 
+                                                  \UseHook {env/#1/after}\if...
+l.363 \end{itemize}
+                   
+Things are pretty mixed up, but I think the worst is over.
+
+
+Overfull \hbox (5.475pt too wide) detected at line 417
+$\OT1/cmr/m/n/10.95 162 424 383$
+ []
+
+
+Overfull \hbox (5.475pt too wide) detected at line 417
+$\OT1/cmr/m/n/10.95 150 166 456$
+ []
+
 
 
 [10]
 
-[11 </Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/raw_metrics_comparison.png>]
+LaTeX Warning: Reference `tab:sa-comparison' on page 11 undefined on input line 422.
 
-[12] (./rapport_scientifique.aux)
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:422: Missing $ inserted.
+<inserted text> 
+                $
+l.422 ...parÃ©es Ã  l'exact, utilisant le CSV `sa_
+                                                  algorithms_comparison_resu...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+
+LaTeX Warning: Command \` invalid in math mode on input line 422.
+
+Missing character: There is no à in font cmr10!
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:423: Missing $ inserted.
+<inserted text> 
+                $
+l.423 
+      
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:423: Missing } inserted.
+<inserted text> 
+                }
+l.423 
+      
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+
+Overfull \hbox (85.94577pt too wide) in paragraph at lines 422--423
+\T1/cmr/m/n/10.95 tinctes de celles com-pa-rées à l'exact, uti-li-sant le CSV `sa$[]\OML/cmm/m/it/10.95 lgorithms[]omparison[]esults:csv\OT1/cmr/m/n/10.95 `\OML/cmm/m/it/10.95 quicommence$\T1/cmr/m/n/10.95 n=5$\OML/cmm/m/it/10.95 :[]$ 
+ []
+
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:423: Too many }'s.
+\@par ... \@noitemerr {\@@par }\fi \else {\@@par }
+                                                  \fi 
+l.423 
+      
+You've closed more groups than you opened.
+Such booboos are generally harmless, so keep going.
+
+<./raw_metrics_comparison.png, id=133, 875.4306pt x 1019.9706pt>
+File: ./raw_metrics_comparison.png Graphic file (type png)
+<use ./raw_metrics_comparison.png>
+Package pdftex.def Info: ./raw_metrics_comparison.png  used on input line 429.
+(pdftex.def)             Requested size: 455.24411pt x 530.4189pt.
+<./z_score_comparison.png, id=134, 1002.6258pt x 577.1964pt>
+File: ./z_score_comparison.png Graphic file (type png)
+<use ./z_score_comparison.png>
+Package pdftex.def Info: ./z_score_comparison.png  used on input line 436.
+(pdftex.def)             Requested size: 409.71692pt x 235.8682pt.
+
+LaTeX Warning: Float too large for page by 160.2678pt on input line 441.
+
+
+LaTeX Warning: Reference `fig:raw_metrics_evolution' on page 11 undefined on input line 443.
+
+
+LaTeX Warning: Reference `fig:z_score_comparison' on page 11 undefined on input line 443.
+
+
+LaTeX Warning: Reference `fig:z_score_comparison' on page 11 undefined on input line 443.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 445.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 445.
+
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:446: Missing $ inserted.
+<inserted text> 
+                $
+l.446 ...nÃ©rÃ© par SA-Opti pour $n=25$ (voir `sa_
+                                                  schedule_n25.csv` en annex...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+
+LaTeX Warning: Command \' invalid in math mode on input line 446.
+
+
+LaTeX Warning: Command \` invalid in math mode on input line 447.
+
+
+LaTeX Warning: Command \` invalid in math mode on input line 447.
+
+
+LaTeX Warning: Command \' invalid in math mode on input line 447.
+
+
+LaTeX Warning: Command \' invalid in math mode on input line 447.
+
+
+LaTeX Warning: Command \' invalid in math mode on input line 447.
+
+Missing character: There is no é in font cmr10!
+Missing character: There is no à in font cmr10!
+Missing character: There is no è in font cmr10!
+Missing character: There is no é in font cmr10!
+Missing character: There is no é in font cmr10!
+Missing character: There is no é in font cmr10!
+
+LaTeX Warning: Command \' invalid in math mode on input line 447.
+
+
+LaTeX Warning: Command \' invalid in math mode on input line 447.
+
+
+LaTeX Warning: Command \' invalid in math mode on input line 448.
+
+Missing character: There is no é in font cmr10!
+Missing character: There is no é in font cmr10!
+Missing character: There is no é in font cmr10!
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:449: Missing $ inserted.
+<inserted text> 
+                $
+l.449 \begin{itemize}
+                     
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:449: Missing } inserted.
+<inserted text> 
+                }
+l.449 \begin{itemize}
+                     
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:449: Missing \endgroup inserted.
+<inserted text> 
+                \endgroup 
+l.449 \begin{itemize}
+                     
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+
+Overfull \hbox (426.768pt too wide) in paragraph at lines 446--449
+[]\T1/cmr/m/n/10.95 Le plan-ning gé-néré par SA-Opti pour $\OML/cmm/m/it/10.95 n \OT1/cmr/m/n/10.95 = 25$ \T1/cmr/m/n/10.95 (voir `sa$[]\OML/cmm/m/it/10.95 chedule[]\OT1/cmr/m/n/10.95 25\OML/cmm/m/it/10.95 :csv\OT1/cmr/m/n/10.95 `\OML/cmm/m/it/10.95 enannexeouproduitparlecode\OT1/cmr/m/n/10.95 )\OML/cmm/m/it/10.95 illustrelaqualitatteignable:Lenombredematchsdomicileparjoueuryesttrsbienquilibr \OT1/cmr/m/n/10.95 :
+ []
+
+
+Overfull \hbox (376.03828pt too wide) in paragraph at lines 446--449
+\OML/cmm/m/it/10.95 l[]idalest$\T1/cmr/m/n/10.95 (25-1)/2 = 12$\OML/cmm/m/it/10.95 :Lesvaleursobservesvariententre\OT1/cmr/m/n/10.95 11\OML/cmm/m/it/10.95 et\OT1/cmr/m/n/10.95 13\OML/cmm/m/it/10.95 ; rsultantenunMaxDeviationde\OT1/cmr/m/n/10.95 1\OML/cmm/m/it/10.95 :\OT1/cmr/m/n/10.95 0\OML/cmm/m/it/10.95 ; cequiestexcellent:ExtraitdessquencesH=Apour$\T1/cmr/m/n/10.95 n=25$\OT1/cmr/m/n/10.95 (\OML/cmm/m/it/10.95 Joueur\OT1/cmr/m/n/10.95 1\OML/cmm/m/it/10.95 etJoueur\OT1/cmr/m/n/10.95 20) :
+ []
+
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:449: Too many }'s.
+\@par ... \@noitemerr {\@@par }\fi \else {\@@par }
+                                                  \fi 
+l.449 \begin{itemize}
+                     
+You've closed more groups than you opened.
+Such booboos are generally harmless, so keep going.
+
+
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:450: LaTeX Error: Lonely \item--perhaps a missing list environment.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.450     \item J
+                 oueur 1: \texttt{HAAAAHAAHAHAHAHAHAHAHHAH} (PS faible)
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+Underfull \hbox (badness 10000) detected at line 450
+[][]
+ []
+
+
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:451: LaTeX Error: Lonely \item--perhaps a missing list environment.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.451     \item J
+                 oueur 20: \texttt{AHHAHAHHAHAHAHAHAHAHAHAH} (PS faible)
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+Underfull \hbox (badness 10000) detected at line 451
+[][]
+ []
+
+
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:452: LaTeX Error: \begin{document} ended by \end{itemize}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.452 \end{itemize}
+                   
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:452: Extra \endgroup.
+\end  ...end#1\endcsname \@checkend {#1}\endgroup 
+                                                  \UseHook {env/#1/after}\if...
+l.452 \end{itemize}
+                   
+Things are pretty mixed up, but I think the worst is over.
+
+
+
+[11]
+
+[12 <./raw_metrics_comparison.png> <./z_score_comparison.png>]
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:467: Missing $ inserted.
+<inserted text> 
+                $
+l.467 ...m Les implÃ©mentations des solveurs (`sa_
+                                                  solver.py`, `sa_solver_non...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:468: LaTeX Error: Command \item invalid in math mode.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.468     \item
+                Les scripts pour gÃ©nÃ©rer les donnÃ©es de calibration et le...
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex:468: Missing $ inserted.
+<inserted text> 
+                $
+l.468     \item L
+                 es scripts pour gÃ©nÃ©rer les donnÃ©es de calibration et le...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+
+
+[13] (./rapport_scientifique.aux)
  ***********
 LaTeX2e <2024-11-01> patch level 2
 L3 programming layer <2025-01-18>
@@ -952,21 +1527,21 @@ Package rerunfilecheck Warning: File `rapport_scientifique.out' has changed.
 
 Package rerunfilecheck Info: Checksums for `rapport_scientifique.out':
 (rerunfilecheck)             Before: <no file>
-(rerunfilecheck)             After:  15CF3739469510E53241EA68341A2984;4850.
+(rerunfilecheck)             After:  AD201DD6A3C4CC826ACAC477E73F7FDD;6243.
  ) 
 Here is how much of TeX's memory you used:
- 39251 strings out of 473190
- 923307 string characters out of 5715800
- 1556692 words of memory out of 5000000
- 61885 multiletter control sequences out of 15000+600000
- 576275 words of font info for 76 fonts, out of 8000000 for 9000
+ 41862 strings out of 473190
+ 971688 string characters out of 5715800
+ 1596163 words of memory out of 5000000
+ 64444 multiletter control sequences out of 15000+600000
+ 578660 words of font info for 85 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 99i,10n,101p,1201b,1335s stack positions out of 10000i,1000n,20000p,200000b,200000s
-</usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfbx1095.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfbx1200.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfbx1440.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfcc1095.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfrm0600.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfrm0800.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfrm1095.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfrm1200.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfrm1728.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfti1095.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sftt1000.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sftt1095.pfb>
-Output written on rapport_scientifique.pdf (12 pages, 1036815 bytes).
+ 99i,12n,101p,1125b,1390s stack positions out of 10000i,1000n,20000p,200000b,200000s
+</usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfbx1095.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfbx1200.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfbx1440.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfcc1095.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfrm0600.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfrm0800.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfrm1000.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfrm1095.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfrm1200.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfrm1728.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfti1000.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfti1095.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sftt1000.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sftt1095.pfb>
+Output written on rapport_scientifique.pdf (13 pages, 1486191 bytes).
 PDF statistics:
- 261 PDF objects out of 1000 (max. 8388607)
- 195 compressed objects within 2 object streams
- 74 named destinations out of 1000 (max. 500000)
- 23 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 284 PDF objects out of 1000 (max. 8388607)
+ 210 compressed objects within 3 object streams
+ 79 named destinations out of 1000 (max. 500000)
+ 28 words of extra memory for PDF output out of 10000 (max. 10000000)
 
