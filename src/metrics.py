@@ -1,39 +1,20 @@
 import numpy as np
 
+import numpy as np
+
 def calculate_home_strength(schedule_list, n):
-    """
-    Calculates the raw HomeStrength metric based on player ranks.
-    HS = sum max(0, rank_away_player - rank_home_player) for all matches.
-    This only counts matches where the home player is stronger (lower rank)
-    than the away player.
-    Assumes player IDs are their ranks (1 to n).
-
-    Args:
-        schedule_list (list): A list of rounds, where each round is a list of
-                              (home_player_id, away_player_id) tuples.
-        n (int): Number of players.
-
-    Returns:
-        float: The raw HomeStrength value (always non-negative).
-    """
     if not schedule_list or n == 0:
         return 0.0
 
     raw_hs = 0.0
     for round_matches in schedule_list:
         for home_player, away_player in round_matches:
-            # Ignore matches involving the dummy player (None)
             if home_player is not None and away_player is not None:
-                # Assuming player IDs are 1-based ranks
                 rank_diff = away_player - home_player
                 raw_hs += max(0, rank_diff)
     return raw_hs
 
 def calculate_raw_max_deviation(schedule_list, n):
-    """
-    Calculates the raw Max Deviation metric: MaxDev = max_i | H_i - (n-1)/2 |.
-    H_i is the number of home games for player i.
-    """
     if n <= 1:
         return 0.0
 
@@ -50,11 +31,6 @@ def calculate_raw_max_deviation(schedule_list, n):
     return max_dev
 
 def calculate_raw_total_penalty_sequence(schedule_list, n):
-    """
-    Calculates the total number of penalties (breaks) in the schedule
-    using the LUT definition (penalty for AA and HH).
-    This aligns with the definition used within the SA solver.
-    """
     if n == 0 or not schedule_list:
         return 0
 
@@ -102,13 +78,6 @@ def calculate_raw_total_penalty_sequence(schedule_list, n):
     return total_penalties
 
 def calculate_max_home_strength_denominator(n):
-    """
-    Calculates the theoretical maximum possible value for the new HomeStrength
-    metric (sum max(0, j-i) * x_ijr), used for normalization.
-    This maximum occurs when every stronger player 'i' plays at home against
-    every weaker player 'j'.
-    S_max = sum_{i=1}^{n-1} sum_{j=i+1}^{n} (j - i) = n(n-1)(n+1)/6
-    """
     if n < 2:
         return 1.0
 
@@ -117,11 +86,6 @@ def calculate_max_home_strength_denominator(n):
     return denominator
 
 def calculate_home_games_per_player(schedule_list, n):
-    """
-    Calculates the number of home games played by each player.
-    Player IDs are assumed to be 1 to n.
-    Returns a list where index i corresponds to player i+1.
-    """
     if n == 0:
         return []
     home_games_counts = [0] * n
@@ -171,7 +135,6 @@ def get_all_fairness_metrics(schedule_list, n):
     }
 
 def pprint_fairness_metrics(metrics_dict):
-    """Prints the fairness metrics in a readable format."""
     print("--- Fairness Metrics ---")
     if not metrics_dict:
         print("No metrics to display.")
@@ -216,7 +179,6 @@ def pprint_fairness_metrics(metrics_dict):
     print("------------------------")
 
 if __name__ == '__main__':
-    # Test with n=4 example schedule
     n_test_4 = 4
     schedule_n4_example = [
         [(1, 4), (2, 3)],
@@ -227,7 +189,6 @@ if __name__ == '__main__':
     metrics_n4 = get_all_fairness_metrics(schedule_n4_example, n_test_4)
     pprint_fairness_metrics(metrics_n4)
 
-    # Test with n=3 Round Robin Schedule
     schedule_n3_rr = [
         [(1,2)],
         [(3,1)],
@@ -237,17 +198,14 @@ if __name__ == '__main__':
     metrics_n3 = get_all_fairness_metrics(schedule_n3_rr, 3)
     pprint_fairness_metrics(metrics_n3)
 
-    # Test with n=0
     print("\n--- Testing with n=0 (Empty Metrics) ---")
     metrics_n0 = get_all_fairness_metrics([], 0)
     pprint_fairness_metrics(metrics_n0)
 
-    # Test with n=2, empty schedule
     print("\n--- Testing with n=2, Empty Schedule ---")
     metrics_n2_empty = get_all_fairness_metrics([], 2)
     pprint_fairness_metrics(metrics_n2_empty)
 
-    # Test with n=2, one round schedule (1,2)
     print("\n--- Testing with n=2, Schedule [(1,2)] ---")
     metrics_n2_sched = get_all_fairness_metrics([[(1,2)]], 2)
     pprint_fairness_metrics(metrics_n2_sched)

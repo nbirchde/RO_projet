@@ -6,7 +6,7 @@ log = logging.getLogger(__name__)
 
 def calculate_analytical_factors(n):
     """
-    Calculates the analytical mean (μ) and standard deviation (σ) for HS, PS, and MD assuming a random Home/Away assignment. Formulas now use the corrected σ_PS = √[n(n−2)] / 2.
+    Calculates the analytical mean (μ) and standard deviation (σ) for HS, PS, and MD assuming a random Home/Away assignment.
     """
     if n < 2:
         log.warning(f"Cannot calculate analytical factors for n={n}. Must be n >= 2.")
@@ -55,7 +55,6 @@ def z_to_scaled(z, z_range=50.0):
 
 
 # This function will be used by solvers to calculate the normalized score
-# It now uses analytical factors directly and calculates scaled scores
 def calculate_normalized_score(raw_hs, raw_ps, raw_md, alpha, beta, n, z_range=50.0):
     """
     Calculates the combined normalized score using analytical factors and scaled scores.

@@ -17,23 +17,6 @@ import src.config as config
 
 
 def compute_metrics(schedule, n):
-    """
-    Computes the raw fairness metrics for a given schedule.
-
-    Metrics:
-        - Raw HomeStrength: Sum of max(0, away_rank - home_rank) for all matches.
-        - Raw Total Penalty Sequence: Total count of consecutive home or away games for any player.
-        - Raw Max Deviation: Maximum absolute deviation of the number of home games
-          per player from the ideal average ((n-1)/2).
-
-    Args:
-        schedule (list): The schedule, a list of rounds, each a list of (home, away) tuples (1-based indices).
-        n (int): The number of players.
-
-    Returns:
-        tuple: (raw_hs, raw_ps, raw_md) raw metrics
-    """
-
     raw_home_strength = calculate_home_strength(schedule, n)
     raw_penalites_sequence = calculate_raw_total_penalty_sequence(schedule, n)
     raw_max_dev = calculate_raw_max_deviation(schedule, n)
@@ -42,22 +25,6 @@ def compute_metrics(schedule, n):
 
 
 def neighbor(schedule, n, prob_flip=0.95, prob_swap_rounds=0, prob_swap_players=0.05):
-    """
-    Generates a neighboring schedule by either:
-    - flipping the home/away assignment of a randomly selected match.
-    - swapping two entire rounds (days) in the schedule.
-    - swapping two players throughout the entire schedule.
-
-    The choice of move is made based on the provided probabilities.
-
-    Args:
-        schedule (list): The current schedule (with 1-based indices).
-        n (int): The number of players (real players, excluding dummy).
-
-    Returns:
-        list: A new schedule representing a neighbor of the input schedule.
-
-    """
     if n == 0 or not schedule: return schedule
     new_sched = copy.deepcopy(schedule)
     num_rounds = len(schedule)
@@ -124,25 +91,8 @@ from src.normalization_manager import calculate_normalized_score, calculate_anal
 from src.metrics import calculate_home_strength, calculate_raw_max_deviation, calculate_raw_total_penalty_sequence, get_all_fairness_metrics
 
 def solve_sa(n, iterations=10000, initial_temp=1.0, cooling_rate=0.95, alpha_pen_seq=None, beta_obj=None, seed=51, time_budget=None):
-    """
-    Solves the fair round-robin problem using Simulated Annealing.
-
-    Args:
-        n (int): Even number of players.
-        iterations (int, optional): Number of SA iterations. Defaults to 10000.
-        initial_temp (float, optional): Initial temperature. Defaults to 1.0.
-        cooling_rate (float, optional): Temp. cooling rate. Defaults to 0.95.
-        alpha_pen_seq (float, optional): Weight for Pénalité de séquence objective. Defaults to 1.0.
-        beta_obj (float, optional): Weight for Max Deviation objective. Defaults to 1.0.
-        seed (int, optional): Random seed for reproducibility. Defaults to 51.
-        time_budget (float, optional): Time budget in seconds. If set, overrides iterations.
-
-    Returns:
-        tuple: (best_schedule, best_norm_score_calculated, best_raw_metrics, best_analytical_metrics, best_scaled_score_calculated, best_scaled_metrics)
-    """
     random.seed(seed)
 
-    # Support for time budget
     import time
 
     if alpha_pen_seq is None:
@@ -150,24 +100,20 @@ def solve_sa(n, iterations=10000, initial_temp=1.0, cooling_rate=0.95, alpha_pen
     if beta_obj is None:
         beta_obj = config.BETA
 
-    # Calculate analytical normalization factors once
     (mu_hs, sigma_hs), (mu_ps, sigma_ps), (mu_md, sigma_md) = calculate_analytical_factors(n)
 
     current_sched = initial_schedule(n)
 
-    # Calculate initial raw metrics
     raw_c_home_strength, raw_c_pen_seq, raw_c_max_dev = compute_metrics(current_sched, n)
 
-    # Calculate initial normalized score using analytical factors
     initial_norm_score, obj_c_home_strength, obj_c_pen_seq, obj_c_max_dev, _, _, _, _ = calculate_normalized_score(
         raw_c_home_strength, raw_c_pen_seq, raw_c_max_dev,
         alpha_pen_seq, beta_obj, n
     )
-    current_norm_score = initial_norm_score # Use the weighted sum of z-scores for SA
+    current_norm_score = initial_norm_score
 
     best_sched = copy.deepcopy(current_sched)
     best_norm_score = current_norm_score
-    # Store best raw metrics found so far
     best_raw_metrics_found = (raw_c_home_strength, raw_c_pen_seq, raw_c_max_dev)
 
 
@@ -179,7 +125,6 @@ def solve_sa(n, iterations=10000, initial_temp=1.0, cooling_rate=0.95, alpha_pen
     start_time = time.time()
     last_print = 0
     while True:
-        # Check time budget
         if time_budget is not None:
             elapsed = time.time() - start_time
             if elapsed >= time_budget:
@@ -190,10 +135,8 @@ def solve_sa(n, iterations=10000, initial_temp=1.0, cooling_rate=0.95, alpha_pen
 
         candidate_sched = neighbor(current_sched, n)
 
-        # Calculate raw metrics for candidate schedule
         raw_cand_home_strength, raw_cand_pen_seq, raw_cand_max_dev = compute_metrics(candidate_sched, n)
 
-        # Calculate normalized score for candidate using analytical factors
         candidate_norm_score, obj_cand_home_strength, obj_cand_pen_seq, obj_cand_max_dev, _, _, _, _ = calculate_normalized_score(
             raw_cand_home_strength, raw_cand_pen_seq, raw_cand_max_dev,
             alpha_pen_seq, beta_obj, n
@@ -214,7 +157,6 @@ def solve_sa(n, iterations=10000, initial_temp=1.0, cooling_rate=0.95, alpha_pen
             if current_norm_score < best_norm_score:
                 best_sched = copy.deepcopy(current_sched)
                 best_norm_score = current_norm_score
-                # Update best raw metrics found
                 best_raw_metrics_found = (raw_cand_home_strength, raw_cand_pen_seq, raw_cand_max_dev)
 
 
@@ -222,7 +164,6 @@ def solve_sa(n, iterations=10000, initial_temp=1.0, cooling_rate=0.95, alpha_pen
         if T < 1e-5:
             T = 1e-5
 
-        # Print progress every 10% of iterations or every 10% of time budget
         if time_budget is not None:
             elapsed = time.time() - start_time
             if time_budget > 0 and elapsed - last_print >= time_budget / 10:
@@ -233,7 +174,6 @@ def solve_sa(n, iterations=10000, initial_temp=1.0, cooling_rate=0.95, alpha_pen
                 print(f"Iter {it}/{iterations}, Temp: {T:.4f}, Current: {current_norm_score:.4f}, Best: {best_norm_score:.4f}")
         it += 1
 
-    # Calculate final metrics for the best schedule found using calculate_normalized_score
     best_norm_score_calculated, best_anal_hs, best_anal_ps, best_anal_md, \
     best_scaled_score_calculated, best_scaled_hs, best_scaled_ps, best_scaled_md = calculate_normalized_score(
         best_raw_metrics_found[0], best_raw_metrics_found[1], best_raw_metrics_found[2],
@@ -245,7 +185,6 @@ def solve_sa(n, iterations=10000, initial_temp=1.0, cooling_rate=0.95, alpha_pen
 
     print(f"Final Best Score (Analytical Normalized): {best_norm_score_calculated:.4f} (HS: {best_anal_hs:.4f}, PS: {best_anal_ps:.4f}, MD: {best_anal_md:.4f})")
 
-    # Return the best schedule, the analytical normalized score, raw metrics, analytical metrics, scaled score, and scaled metrics
     return best_sched, best_norm_score_calculated, best_raw_metrics_found, best_analytical_metrics, best_scaled_score_calculated, best_scaled_metrics
 
 
@@ -253,14 +192,12 @@ def main():
     start_time = time.time()
 
     n_arg = int(sys.argv[1]) if len(sys.argv) > 1 else 6
-    # If argument 2 is a float, treat as time budget, else as iterations
     iters_arg = None
     time_budget_arg = None
     if len(sys.argv) > 2:
         try:
-            # Try to parse as float (time budget)
             val = float(sys.argv[2])
-            if '.' in sys.argv[2] or val < 100:  # Heuristic: treat as seconds if float or small int
+            if '.' in sys.argv[2] or val < 100:
                 time_budget_arg = val
             else:
                 iters_arg = int(val)
@@ -276,7 +213,7 @@ def main():
         print(f"Running SA for n={n_arg}, time_budget={time_budget_arg}s, alpha_pen_seq={alpha_pen_seq_arg}, beta={beta_arg}")
         best_schedule, best_norm_score, raw_metrics, analytical_metrics, scaled_score, scaled_metrics = solve_sa(
             n_arg,
-            iterations=100000000,  # Large number, will be overridden by time_budget
+            iterations=100000000,
             alpha_pen_seq=alpha_pen_seq_arg,
             beta_obj=beta_arg,
             time_budget=time_budget_arg
@@ -290,7 +227,6 @@ def main():
             beta_obj=beta_arg
         )
 
-    # Unpack raw, analytical, and scaled metrics
     final_raw_hs, final_raw_ps, final_raw_md = raw_metrics
     final_anal_hs, final_anal_ps, final_anal_md = analytical_metrics
     final_scaled_hs, final_scaled_ps, final_scaled_md = scaled_metrics
@@ -299,7 +235,6 @@ def main():
     print(f"Final Best Score (Analytical Normalized): {best_norm_score:.6f}")
     print(f"best_home_strength: {final_raw_hs}, best_pen_seq: {final_raw_ps}, best_max_dev: {final_raw_md}")
 
-    # Get all metrics using the new function from the final best_schedule
     all_metrics = get_all_fairness_metrics(best_schedule, n_arg)
 
     print("--- Detailed Fairness Metrics ---")

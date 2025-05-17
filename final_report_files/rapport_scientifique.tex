@@ -15,12 +15,14 @@
 \usepackage{booktabs} % For professional quality tables
 \usepackage{siunitx} % For typesetting numbers with units and aligning numbers in tables
 \usepackage{csvsimple} % For including CSV files as tables
-\usepackage{appendix} % For appendix
+% \usepackage{appendix} % Removed as appendix is suppressed
+\usepackage{caption} % For custom captions
 \usepackage{subcaption} % For subfigures
 \usepackage{multirow} % For multirow in tables
 \usepackage{adjustbox} % For resizing tables/figures
 \usepackage{array} % For better column definitions
 \usepackage{float} % For [H] option for figures
+%\usepackage{emptypage} % To remove numbers from empty pages if any (might help with blank page issue)
 
 \geometry{a4paper, margin=2.5cm}
 
@@ -46,8 +48,8 @@
     filecolor=magenta,
     urlcolor=cyan,
     pdftitle={Rapport Projet INFO-H-3000},
-    pdfpagemode=UseNone, % Changed from FullScreen to avoid issues with ToC display on first page
-    pdfstartview={FitH} % Start with page fitted horizontally
+    pdfpagemode=UseNone,
+    pdfstartview={FitH}
 }
 
 % Command to properly display underscores in texttt
@@ -60,10 +62,8 @@
 \begin{document}
 
 \maketitle
-\par\vspace{0.5cm}\hrule\vspace{0.5cm}
 \tableofcontents
-\par\vspace{0.5cm}\hrule\vspace{0.5cm}
-\newpage
+\clearpage
 
 \section{Introduction}
 \subsection{Contexte du Projet}
@@ -332,7 +332,7 @@ La calibration des poids $\alpha$ et $\beta$ dans la fonction objectif (Équatio
 
 Chaque exécution avec une paire $(\alpha, \beta)$ spécifique produit un calendrier, dont les trois métriques normalisées ($Z_{HS}$, $Z_{PS}$, $Z_{MD}$) constituent un point dans l'espace tridimensionnel des objectifs. L'ensemble de ces points forme un nuage à partir duquel le front de Pareto est extrait. Ce front regroupe les solutions non-dominées : celles pour lesquelles aucune amélioration sur un critère n'est possible sans en dégrader au moins un autre. La Figure~\ref{fig:pareto_3d_analytique} illustre ce front. Les scores Z, indiquant l'écart par rapport à la moyenne théorique en termes d'écarts-types, sont préférablement négatifs, signifiant une performance meilleure que la moyenne aléatoire.
 
-\begin{figure}[H] % Use [H] from float package for "here exactly"
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.8\textwidth]{./pareto_3d_static_n500_anal_norm.png}
     \caption{Front de Pareto 3D des métriques d'équité normalisées ($Z_{HS}$, $Z_{PS}$, $Z_{MD}$) pour $n=500$. Les points rouges sont Pareto-optimaux. Des valeurs plus faibles (négatives) sont meilleures.}
@@ -373,29 +373,9 @@ D'autre part, la complexité inhérente au code optimisé (en particulier avec N
 \end{enumerate}
 Bien que fonctionnel, ce mécanisme n'est pas infaillible. L'estimation de la vitesse d'itération peut être optimiste, surtout lorsque plusieurs \textit{runs} parallèles saturent le CPU, pouvant entraîner un phénomène de "throttling" (ralentissement thermique du processeur). Ainsi, le temps d'exécution final peut parfois légèrement dépasser le budget alloué.
 
-\subsection{Comparaison des Performances : Recuit Simulé vs. Approche Exacte}
-Pour les petites instances ($n=4, 6$), nous avons pu comparer nos algorithmes de Recuit Simulé aux solutions obtenues par une méthode exacte (MILP). La comparaison se concentre sur les métriques brutes pour évaluer la capacité des heuristiques à approcher l'optimalité structurelle.
+% SECTION 4.2 SUPPRIMÉE
 
-\begin{table}[H]
-\centering
-\caption{Comparaison des métriques brutes (HS, PS, MD) pour les petites instances.}
-\label{tab:sa_vs_exact}
-\begin{tabular}{l rrr rrr}
-\toprule
-\multirow{2}{*}{Algorithme} & \multicolumn{3}{c}{$n=4$} & \multicolumn{3}{c}{$n=6$} \\
-\cmidrule(lr){2-4} \cmidrule(lr){5-7}
- & HS & PS & MD & HS & PS & MD \\
-\midrule
-MILP Exact & 4.0 & 2 & 0.5 & 22.0 & 4 & 0.5 \\
-SA-Opti (60s) & 3.0 & 2 & 0.5 & 13.0 & 4 & 0.5 \\
-SA-NonOpti (60s) & 3.0 & 2 & 0.5 & 16.0 & 4 & 0.5 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Pour $n=4$ et $n=6$, les deux versions du SA parviennent à égaler les valeurs optimales pour la Pénalité de Séquence (PS) et la Max Deviation (MD) trouvées par la méthode exacte. Pour HomeStrength (HS), les valeurs obtenues par le SA sont très proches et parfois même meilleures (plus faibles) que celles rapportées pour l'exact dans le temps court alloué à ce dernier. Cela suggère que pour ces très petites tailles, le SA explore efficacement l'espace et identifie des solutions de très haute qualité, comparables à l'optimalité.
-
-\subsection{Résultats Chiffrés des Comparaisons SA}
+\subsection{Résultats Chiffrés des Comparaisons SA} % Anciennement 4.3, devient 4.2
 Chaque version du SA a été lancée une fois pour différentes tailles $n$, avec une limite de temps de 60 secondes. Les poids pour la fonction objectif étaient $\alpha=0.8, \beta=1.2$.
 
 \begin{table}[H]
@@ -422,7 +402,7 @@ Chaque version du SA a été lancée une fois pour différentes tailles $n$, ave
 \end{adjustbox}
 \end{table}
 
-\subsection{Analyse Visuelle et Qualitative des Plannings}
+\subsection{Analyse Visuelle et Qualitative des Plannings} % Anciennement 4.4, devient 4.3
 
 \begin{figure}[H]
     \centering
@@ -431,10 +411,10 @@ Chaque version du SA a été lancée une fois pour différentes tailles $n$, ave
         \caption{Évolution des valeurs brutes de HomeStrength (HS), Penalty Sequence (PS) et Max Deviation (MD) en fonction de $n$ pour les versions \textit{Non‑Opti} (bleu) et \textit{Opti} (rouge) du Recuit Simulé, comparées au pire cas théorique (vert). Chaque point correspond à la meilleure solution trouvée en 60 s.}
         \label{fig:raw_metrics_evolution}
     \end{subfigure}
-    \vfill\vspace{1cm} % Add more vertical space
+    \vfill\vspace{1cm}
     \begin{subfigure}{\textwidth}
         \centering
-        \includegraphics[width=0.9\linewidth, height=0.6\textheight, keepaspectratio]{./z_score_comparison.png}
+        \includegraphics[width=\textwidth, height=0.55\textheight, keepaspectratio]{./z_score_comparison.png}
         \caption{Comparaison du score Z-sum (multiplié par -1, donc "plus haut est mieux" ici) entre les versions \textit{Non-Opti} et \textit{Opti}. La version optimisée explore plus efficacement l'espace des solutions.}
         \label{fig:z_score_comparison}
     \end{subfigure}
@@ -444,9 +424,9 @@ Chaque version du SA a été lancée une fois pour différentes tailles $n$, ave
 La Figure~\ref{fig:raw_metrics_evolution} et la Figure~\ref{fig:z_score_comparison} confirment la supériorité de la version optimisée du SA. Concernant le Z-sum (Fig.~\ref{fig:z_score_comparison}), le pic de performance est atteint à $n=700$ pour SA-Opti, tandis que SA-NonOpti plafonne vers $n=100$. Cette "dégradation" apparente du Z-score pour $N$ très grands sous budget temps fixe s'explique par l'immensité croissante de l'espace de recherche et la difficulté à atteindre des améliorations absolues proportionnellement aussi importantes que pour des $N$ intermédiaires.
 
 \subsubsection{Qualité d'un Planning Exemple ($n=25$)}
-Le planning généré par SA-Opti pour $n=25$ (voir \pyfile{sa_schedule_n25.csv}, dont un extrait est en Annexe~\ref{annex:planning_n25}, ou produit par le code) illustre la qualité atteignable. Le nombre de matchs à domicile par joueur y est très bien équilibré : l'idéal est $(25-1)/2 = 12$. Les valeurs observées dans cet exemple varient entre 11 et 13 (Player 10, 14, 19, 20, 21, 22, 23, 24, 25 ont 13 matchs à domicile), résultant en un Max Deviation de 1.0, ce qui est excellent.
+Le planning généré par SA-Opti pour $n=25$ (consultable dans le fichier \pyfile{sa_schedule_n25.csv} produit par le code) illustre la qualité atteignable. Le nombre de matchs à domicile par joueur y est très bien équilibré : l'idéal est $(25-1)/2 = 12$. Les valeurs observées dans l'exemple de fichier CSV fourni varient entre 11 et 13, résultant en un Max Deviation de 1.0, ce qui est excellent.
 
-Extrait des séquences H/A pour $n=25$ pour deux joueurs :
+Extrait des séquences H/A pour $n=25$ (issues du fichier \pyfile{sa_schedule_n25.csv}) pour deux joueurs :
 \begin{itemize}
     \item Joueur 1: \texttt{HAAAAHAAHAHAHAHAHAHAHHAH}
     \item Joueur 25: \texttt{HAHHAHAHAHAHAAHAHAHAHAHH}
@@ -457,7 +437,7 @@ Ces séquences montrent une bonne alternance générale. On observe occasionnell
 \label{sec:conclusion}
 Ce projet a permis de développer et d'évaluer une approche basée sur le Recuit Simulé pour la génération de calendriers de tournois Round Robin équitables. L'optimisation du SA, combinée à une normalisation analytique robuste des métriques d'équité et une calibration soignée des poids de la fonction objectif, a démontré sa capacité à produire des solutions de haute qualité, même pour des instances de grande taille, dans un temps de calcul contraint.
 
-Les comparaisons avec une version non optimisée et, pour les petits cas, avec une approche exacte, ont validé l'efficacité de notre SA optimisé. L'analyse des plannings générés montre un bon respect des différents critères d'équité, bien que des améliorations ciblées (par exemple, sur la pénalisation des longues séries H/A) soient toujours possibles.
+Les comparaisons avec une version non optimisée ont validé l'efficacité de notre SA optimisé. L'analyse des plannings générés montre un bon respect des différents critères d'équité, bien que des améliorations ciblées (par exemple, sur la pénalisation des longues séries H/A) soient toujours possibles.
 
 Pour des travaux futurs, l'exploration d'autres méta-heuristiques (comme la recherche Tabou initialement envisagée) ou l'hybridation d'approches pourrait s'avérer fructueuse. De même, l'étude de fonctions de pénalité alternatives pour la métrique de séquence pourrait affiner davantage l'équité des calendriers sur cet aspect spécifique.
 
@@ -471,24 +451,5 @@ Le code source complet de ce projet est disponible sur un dépôt GitLab (le lie
 \end{itemize}
 Nous encourageons le lecteur à cloner le dépôt et à explorer le code et les outils fournis pour une compréhension plus approfondie de notre travail.
 
-\begin{appendices}
-\section{Extrait du Planning pour n=25}
-\label{annex:planning_n25}
-Voici les premières rondes et les métriques globales du planning généré par SA-Opti pour $n=25$. Le fichier complet \pyfile{sa_schedule_n25.csv} est produit par l'exécution du solveur.
-
-\begin{verbatim}
-Round,Match 1,Match 2,...,Match 12
-Round 1,25v2(H),24v3(H),...,13v14(H)
-Round 2,1v25(H),2v23(H),...,12v13(H)
-... (23 autres rondes) ...
-
-Metric,Value
-Overall Analytical Normalized Score (Z-sum),-21.7878...
-Raw Home Strength,1184.0
-Raw Penalty Sequence,56
-Raw Max Deviation,1.0
-... (détail par joueur) ...
-\end{verbatim}
-\end{appendices}
 
 \end{document}

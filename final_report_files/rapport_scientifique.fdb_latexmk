@@ -1,6 +1,6 @@
 # Fdb version 4
-["pdflatex"] 1747474816.89767 "/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex" "rapport_scientifique.pdf" "rapport_scientifique" 1747474819.31713 2
-  "/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex" 1747474818.82548 40390 2882c4695e7c1d93ccbd75ee2b6bfb8d ""
+["pdflatex"] 1747476678.18699 "/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex" "rapport_scientifique.pdf" "rapport_scientifique" 1747476680.75234 2
+  "/Users/nicholasbirchdelacalle/Documents/BA3/RO/ro-projet/final_report_files/rapport_scientifique.tex" 1747476586.96871 38213 b880e25b1b5ef8ae958343d2ffecc38c ""
   "/usr/local/texlive/2025/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc" 1136849721 2971 def0b6c1f0b107b3b936def894055589 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/tfm/jknappen/ec/ecbi1095.tfm" 1136768653 3072 19a65fbc725cfc66f5a5fc183b9d418b ""
@@ -196,7 +196,6 @@
   "/usr/local/texlive/2025/texmf-dist/tex/latex/amsmath/amsmath.sty" 1730928152 88370 c780f23aea0ece6add91e09b44dca2cd ""
   "/usr/local/texlive/2025/texmf-dist/tex/latex/amsmath/amsopn.sty" 1717359999 4474 23ca1d3a79a57b405388059456d0a8df ""
   "/usr/local/texlive/2025/texmf-dist/tex/latex/amsmath/amstext.sty" 1717359999 2444 71618ea5f2377e33b04fb97afdd0eac2 ""
-  "/usr/local/texlive/2025/texmf-dist/tex/latex/appendix/appendix.sty" 1581200180 8878 d9f65b39ca82f1d70030390eca653b1c ""
   "/usr/local/texlive/2025/texmf-dist/tex/latex/atveryend/atveryend.sty" 1728505250 1695 be6b4d13b33db697fd3fd30b24716c1a ""
   "/usr/local/texlive/2025/texmf-dist/tex/latex/base/article.cls" 1738182759 20144 63d8bacaf52e5abf4db3bc322373e1d4 ""
   "/usr/local/texlive/2025/texmf-dist/tex/latex/base/atbegshi-ltx.sty" 1738182759 2963 d8ec5a1b4e0a106c5c737900202763e4 ""
@@ -270,10 +269,10 @@
   "/usr/local/texlive/2025/texmf-var/web2c/pdftex/pdflatex.fmt" 1745060667 3345734 96f6f7cc2ce50ab21d0c6db8f51fc67e ""
   "/usr/local/texlive/2025/texmf.cnf" 1741450484 577 418a7058ec8e006d8704f60ecd22c938 ""
   "pareto_3d_static_n500_anal_norm.png" 1747397924.55492 133069 dd485ec5c57bba15e1e83650f5cee98a ""
-  "rapport_scientifique.aux" 1747474819.20005 9501 86502b0e45dd164aff38394aeadf08ac "pdflatex"
-  "rapport_scientifique.out" 1747474819.20121 6447 bf61417a5aae6ddebb5a1ed8bc51f797 "pdflatex"
-  "rapport_scientifique.tex" 1747474818.82548 40390 2882c4695e7c1d93ccbd75ee2b6bfb8d ""
-  "rapport_scientifique.toc" 1747474819.2015 3443 73d0d9929c6b943114936298d8ce7e28 "pdflatex"
+  "rapport_scientifique.aux" 1747476680.57563 8788 8f95868a1e83811d06803745579735a8 "pdflatex"
+  "rapport_scientifique.out" 1747476680.57697 5838 651a71ab77f886bf9fd82f4e8b22f0e0 "pdflatex"
+  "rapport_scientifique.tex" 1747476586.96871 38213 b880e25b1b5ef8ae958343d2ffecc38c ""
+  "rapport_scientifique.toc" 1747476680.5773 3222 c1319487bb7108259ad4005815705882 "pdflatex"
   "raw_metrics_comparison.png" 1747472236.72619 901924 d73a3f741b0e0fa12b00e037256af97f ""
   "z_score_comparison.png" 1747472236.99288 225478 cbfe053d143337e01d1a6d08320661ba ""
   (generated)

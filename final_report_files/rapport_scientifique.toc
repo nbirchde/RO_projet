@@ -29,9 +29,7 @@
 \contentsline {section}{\numberline {3}Calibration des Poids et Analyse du Front de Pareto}{8}{section.3}%
 \contentsline {section}{\numberline {4}Développement et Performance du Recuit Simulé}{9}{section.4}%
 \contentsline {subsection}{\numberline {4.1}Protocole Expérimental et Stratégie d'Optimisation}{9}{subsection.4.1}%
-\contentsline {subsection}{\numberline {4.2}Comparaison des Performances : Recuit Simulé vs. Approche Exacte}{11}{subsection.4.2}%
-\contentsline {subsection}{\numberline {4.3}Résultats Chiffrés des Comparaisons SA}{11}{subsection.4.3}%
-\contentsline {subsection}{\numberline {4.4}Analyse Visuelle et Qualitative des Plannings}{13}{subsection.4.4}%
-\contentsline {subsubsection}{\numberline {4.4.1}Qualité d'un Planning Exemple ($n=25$)}{14}{subsubsection.4.4.1}%
+\contentsline {subsection}{\numberline {4.2}Résultats Chiffrés des Comparaisons SA}{11}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Analyse Visuelle et Qualitative des Plannings}{13}{subsection.4.3}%
+\contentsline {subsubsection}{\numberline {4.3.1}Qualité d'un Planning Exemple ($n=25$)}{14}{subsubsection.4.3.1}%
 \contentsline {section}{\numberline {5}Conclusion et Perspectives}{14}{section.5}%
-\contentsline {section}{\numberline {A}Extrait du Planning pour n=25}{15}{appendix.1.A}%
