@@ -1,4 +1,3 @@
-print("Profiler script started...") # ADD THIS LINE
 import os
 import sys
 import time # Add time for measuring execution
@@ -114,6 +113,7 @@ def run_sa_experiments():
     #         log.error(f"Error running exact_model for n=6: {e}")
 
 if __name__ == "__main__":
+    print("Profiler script started...")
     project_root = os.path.dirname(os.path.abspath(__file__))
     os.chdir(project_root)
     
